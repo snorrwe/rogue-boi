@@ -3,7 +3,8 @@
 </script>
 
 <main>
-	<h1>{greet}!</h1>
+	<h1>{greet}</h1>
+    <img src="/icons/ffffff/transparent/1x1/lorc/psychic-waves.svg" />
 </main>
 
 <style>
@@ -12,6 +13,7 @@
 		padding: 1em;
 		max-width: 240px;
 		margin: 0 auto;
+        background: black;
 	}
 
 	h1 {
