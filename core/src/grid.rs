@@ -29,6 +29,13 @@ impl GameGrid {
         }
         Some(&mut self.data[(y * w + x) as usize])
     }
+
+    #[allow(unused)]
+    pub fn fill(&mut self, value: Stuff) {
+        for i in 0..self.dims.x * self.dims.y {
+            self.data[i as usize] = value.clone();
+        }
+    }
 }
 
 impl Index<Vec2> for GameGrid {

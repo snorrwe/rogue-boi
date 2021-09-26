@@ -1,5 +1,6 @@
 mod components;
 mod grid;
+mod map_gen;
 mod math;
 mod systems;
 mod utils;
@@ -52,11 +53,11 @@ pub fn init_core() -> Core {
     world.insert(player, Pos(Vec2::new(16, 16)));
     world.insert(player, Icon("delapouite/person.svg"));
 
-    let dims = Vec2 { x: 32, y: 32 };
+    let dims = Vec2 { x: 64, y: 32 };
     let data = vec![Stuff::default(); dims.x as usize * dims.y as usize].into_boxed_slice();
 
     let mut grid = GameGrid { dims, data };
-    setup_bounds(&mut world, &mut grid);
+    map_gen::generate_map(&mut world, &mut grid);
 
     Core {
         world,
@@ -94,6 +95,17 @@ pub enum StuffPayload {
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy)]
 pub struct Id {
     pub val: u64,
+}
+
+impl From<EntityId> for Id {
+    fn from(eid: EntityId) -> Self {
+        Self { val: eid.into() }
+    }
+}
+impl From<Id> for EntityId {
+    fn from(i: Id) -> Self {
+        i.val.into()
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -155,31 +167,4 @@ impl Core {
 
         q.get(id).map(|Icon(x)| x.to_string())
     }
-}
-
-fn setup_bounds(world: &mut World, grid: &mut GameGrid) {
-    let w = grid.dims.x;
-    let h = grid.dims.y;
-
-    if w == 0 || h == 0 {
-        panic!();
-    }
-
-    for y in 0..h {
-        insert_wall(0, y, world);
-        insert_wall(w - 1, y, world);
-    }
-    for x in 1..w - 1 {
-        insert_wall(x, 0, world);
-        insert_wall(x, h - 1, world);
-    }
-}
-
-fn insert_wall(x: i32, y: i32, w: &mut World) {
-    let pos = Vec2::new(x, y);
-
-    let id = w.spawn_entity();
-    w.insert(id, StuffTag::Wall);
-    w.insert(id, Pos(pos));
-    w.insert(id, Icon("delapouite/brick-wall.svg"));
 }
