@@ -34,7 +34,7 @@ pub struct Core {
     grid: GameGrid,
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = "initCore")]
 pub fn init_core() -> Core {
     #[cfg(debug_assertions)]
     {
@@ -96,23 +96,22 @@ pub struct Id {
 
 #[wasm_bindgen]
 impl Core {
-    pub fn tick(&mut self) -> JsValue {
+    pub fn tick(&mut self, _dt_ms: i32) {
         update_player(self.player, Query::new(&self.world), &mut self.grid);
         update_grid(Query::new(&self.world), &mut self.grid);
-
-        JsValue::from_serde(self.get_grid()).unwrap()
     }
 
-    fn get_grid(&self) -> &GameGrid {
-        &self.grid
+    #[wasm_bindgen(js_name = "getGrid")]
+    pub fn get_grid(&self) -> JsValue {
+        JsValue::from_serde(&self.grid).unwrap()
     }
 
     pub fn width(&self) -> i32 {
-        self.get_grid().dims.x
+        self.grid.dims.x
     }
 
     pub fn height(&self) -> i32 {
-        self.get_grid().dims.y
+        self.grid.dims.y
     }
 
     pub fn player_id(&self) -> String {
@@ -168,8 +167,13 @@ fn update_player(_player: EntityId, _q: Query<Pos>, _grid: &mut GameGrid) {}
 fn update_grid(q: Query<(EntityId, Pos, StuffTag)>, grid: &mut GameGrid) {
     let w = grid.dims.x;
     let h = grid.dims.y;
-    for i in 0..w * h {
-        grid.data[i as usize] = Default::default();
+    assert!(w > 0 && h > 0);
+    // zero out the inner side
+    for y in 1..h - 1 {
+        for x in 1..w - 1 {
+            let i = y * w + x;
+            grid.data[i as usize] = Default::default();
+        }
     }
 
     let q = q.into_inner();
