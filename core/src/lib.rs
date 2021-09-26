@@ -53,7 +53,7 @@ pub fn init_core() -> Core {
     world.insert(player, Pos(Vec2::new(16, 16)));
     world.insert(player, Icon("delapouite/person.svg"));
 
-    let dims = Vec2 { x: 64, y: 32 };
+    let dims = Vec2 { x: 48, y: 32 };
     let data = vec![Stuff::default(); dims.x as usize * dims.y as usize].into_boxed_slice();
     let mut grid = GameGrid { dims, data };
 
@@ -62,9 +62,9 @@ pub fn init_core() -> Core {
         &mut world,
         &mut grid,
         map_gen::MapGenProps {
-            room_min_size: 4,
-            room_max_size: 8,
-            max_rooms: 30,
+            room_min_size: 3,
+            room_max_size: 10,
+            max_rooms: 50,
         },
     );
 

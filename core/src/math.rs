@@ -1,9 +1,11 @@
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Index, IndexMut, Sub, SubAssign};
 
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Default, Debug, PartialEq, Eq, Hash)]
+#[derive(
+    serde::Serialize, serde::Deserialize, Clone, Copy, Default, Debug, PartialEq, Eq, Hash,
+)]
 pub struct Vec2 {
     pub x: i32,
     pub y: i32,
@@ -27,6 +29,10 @@ impl Vec2 {
             0
         };
         Self::new(x, y)
+    }
+
+    pub fn len_sq(self) -> i32 {
+        self.x * self.x + self.y * self.y
     }
 }
 
@@ -61,5 +67,25 @@ impl SubAssign for Vec2 {
     fn sub_assign(&mut self, rhs: Self) {
         self.x -= rhs.x;
         self.y -= rhs.y;
+    }
+}
+
+impl Index<usize> for Vec2 {
+    type Output = i32;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            _ => &self.y,
+        }
+    }
+}
+
+impl IndexMut<usize> for Vec2 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.x,
+            _ => &mut self.y,
+        }
     }
 }

@@ -69,7 +69,7 @@ fn build_rooms(grid: &mut GameGrid, props: &MapGenProps) {
 
         let room = RectRoom::new(x, y, w, h);
         for r in rooms.iter() {
-            if room.intersects(&r) {
+            if room.touches(&r) {
                 continue 'outer;
             }
         }
