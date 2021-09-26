@@ -1,9 +1,11 @@
 mod components;
+mod grid;
 mod math;
 mod utils;
 
 use cao_db::prelude::*;
 use components::*;
+use grid::GameGrid;
 use math::Vec2;
 
 use wasm_bindgen::prelude::*;
@@ -87,34 +89,6 @@ pub enum StuffPayload {
     Wall,
 }
 
-#[derive(serde::Serialize)]
-pub struct GameGrid {
-    pub dims: Vec2,
-    pub data: Box<[Stuff]>,
-}
-
-impl GameGrid {
-    pub fn contains(&self, x: i32, y: i32) -> bool {
-        0 <= x && 0 <= y && x < self.dims.x && y < self.dims.y
-    }
-
-    pub fn at(&self, x: i32, y: i32) -> Option<&Stuff> {
-        let w = self.dims.x;
-        if !self.contains(x, y) {
-            return None;
-        }
-        Some(&self.data[(y * w + x) as usize])
-    }
-
-    pub fn at_mut(&mut self, x: i32, y: i32) -> Option<&mut Stuff> {
-        let w = self.dims.x;
-        if !self.contains(x, y) {
-            return None;
-        }
-        Some(&mut self.data[(y * w + x) as usize])
-    }
-}
-
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy)]
 pub struct Id {
     pub val: u64,
@@ -132,7 +106,7 @@ impl Core {
     pub fn tick(&mut self, dt_ms: i32) {
         self.time += dt_ms;
         // min cooldown
-        if !self.inputs.is_empty() && self.time > 200 {
+        if !self.inputs.is_empty() && self.time > 120 {
             // logic update
             update_player(
                 self.inputs.as_slice(),
@@ -233,8 +207,8 @@ fn update_player(inputs: &[InputEvent], player: EntityId, q: Query<Pos>, grid: &
             match tile.payload {
                 StuffPayload::Empty => {
                     // update the grid asap so the monsters will see the updated player position
-                    let old_stuff = std::mem::take(grid.at_mut(pos.x, pos.y).unwrap());
-                    *grid.at_mut(new_pos.x, new_pos.y).unwrap() = old_stuff;
+                    let old_stuff = std::mem::take(&mut grid[*pos]);
+                    grid[new_pos] = old_stuff;
 
                     *pos = new_pos;
                 }
