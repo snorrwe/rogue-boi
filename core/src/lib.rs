@@ -14,7 +14,8 @@ db!(
     module rogue_db
     components
     Pos,
-    PlayerTag
+    PlayerTag,
+    Icon,
 );
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -40,6 +41,7 @@ pub fn init_core() -> Core {
     let mut world = World::new(500_000);
     let player = world.spawn_entity();
     world.insert(player, Pos(Vec2::new(16, 16)));
+    world.insert(player, Icon("delapouite/person.svg"));
 
     Core {
         world_diameter: Vec2 { x: 32, y: 32 },
@@ -48,26 +50,47 @@ pub fn init_core() -> Core {
     }
 }
 
-#[derive(serde::Serialize, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, serde::Serialize)]
+pub struct Stuff {
+    pub id: Option<Id>,
+    #[serde(flatten)]
+    pub payload: StuffPayload,
+}
+
+impl Default for Stuff {
+    fn default() -> Self {
+        Self {
+            id: None,
+            payload: StuffPayload::Empty,
+        }
+    }
+}
+
+#[derive(Clone, serde::Serialize)]
 #[serde(tag = "ty")]
-pub enum Stuff {
+pub enum StuffPayload {
     Empty,
     Player,
 }
 
 #[derive(serde::Serialize)]
-pub struct FrameBuffer {
+pub struct GameGrid {
     pub dims: Vec2,
     pub grid: Box<[Stuff]>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy)]
+pub struct Id {
+    pub val: u64,
 }
 
 #[wasm_bindgen]
 impl Core {
     pub fn tick(&mut self) -> JsValue {
-        let mut fb = FrameBuffer {
+        let mut fb = GameGrid {
             dims: self.world_diameter,
             grid: vec![
-                Stuff::Empty;
+                Stuff::default();
                 self.world_diameter.x as usize * self.world_diameter.y as usize
             ]
             .into_boxed_slice(),
@@ -89,11 +112,25 @@ impl Core {
     pub fn player_id(&self) -> String {
         self.player.to_string()
     }
+
+    pub fn get_icon(&self, id: JsValue) -> Option<String> {
+        let id: Id = id.into_serde().unwrap();
+        let id: EntityId = id.val.into();
+        debug_assert!(self.world.is_valid(id));
+
+        let q = Query::<Icon>::new(&self.world);
+        let q = q.into_inner();
+
+        q.get(id).map(|Icon(x)| x.to_string())
+    }
 }
 
-fn insert_player(player: EntityId, q: Query<Pos>, fb: &mut FrameBuffer) {
+fn insert_player(player: EntityId, q: Query<Pos>, fb: &mut GameGrid) {
     let q = q.into_inner();
     let pos = q.get(player).expect("Player has no pos");
 
-    fb.grid[(fb.dims.x * pos.0.y + pos.0.x) as usize] = Stuff::Player;
+    fb.grid[(fb.dims.x * pos.0.y + pos.0.x) as usize] = Stuff {
+        id: Some(Id { val: player.into() }),
+        payload: StuffPayload::Player,
+    };
 }

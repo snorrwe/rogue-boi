@@ -1,16 +1,15 @@
 <script>
+    export let core;
     export let grid;
-
-    import {Tile} from "./entities.js";
 </script>
 
 <div class="grid" style="--cols: {grid.dims.x}; --rows: {grid.dims.y}">
 
 {#each grid.grid as item}
     <div class="grid-item">
-{#if Tile[item?.ty]}
-        <img src="/icons/ffffff/transparent/1x1/{Tile[item.ty]}" />
-{/if}
+        {#if item.id }
+            <img src="/icons/ffffff/transparent/1x1/{core.get_icon(item.id)}" />
+        {/if}
     </div>
 {/each}
 

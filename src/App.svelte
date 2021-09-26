@@ -5,9 +5,8 @@
 </script>
 
 <main>
-<!-- <img src="/icons/ffffff/transparent/1x1/lorc/psychic-waves.svg" /> -->
     {#if core != null}
-        <Grid grid={core.tick()} />
+        <Grid grid={core.tick()} core={core} />
     {/if}
 </main>
 
