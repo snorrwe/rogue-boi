@@ -27,8 +27,6 @@
     }
 
     .grid-item {
-        min-height: 1em;
-        min-width: 1em;
     }
 </style>
 
