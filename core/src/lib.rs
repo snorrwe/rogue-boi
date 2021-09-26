@@ -13,10 +13,12 @@ use rogue_db::{Db as World, Query};
 db!(
     module rogue_db
     components
-    Pos,
-    PlayerTag,
-    WallTag,
-    Icon,
+    [
+        Pos,
+        PlayerTag,
+        WallTag,
+        Icon,
+    ]
 );
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
