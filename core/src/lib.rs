@@ -93,6 +93,28 @@ pub struct GameGrid {
     pub data: Box<[Stuff]>,
 }
 
+impl GameGrid {
+    pub fn contains(&self, x: i32, y: i32) -> bool {
+        0 <= x && 0 <= y && x < self.dims.x && y < self.dims.y
+    }
+
+    pub fn at(&self, x: i32, y: i32) -> Option<&Stuff> {
+        let w = self.dims.x;
+        if !self.contains(x, y) {
+            return None;
+        }
+        Some(&self.data[(y * w + x) as usize])
+    }
+
+    pub fn at_mut(&mut self, x: i32, y: i32) -> Option<&mut Stuff> {
+        let w = self.dims.x;
+        if !self.contains(x, y) {
+            return None;
+        }
+        Some(&mut self.data[(y * w + x) as usize])
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy)]
 pub struct Id {
     pub val: u64,
@@ -186,7 +208,7 @@ fn insert_wall(x: i32, y: i32, w: &mut World) {
     w.insert(id, Icon("delapouite/brick-wall.svg"));
 }
 
-fn update_player(inputs: &[InputEvent], player: EntityId, q: Query<Pos>, _grid: &mut GameGrid) {
+fn update_player(inputs: &[InputEvent], player: EntityId, q: Query<Pos>, grid: &mut GameGrid) {
     let mut delta = Vec2::new(0, 0);
 
     for event in inputs {
@@ -202,9 +224,25 @@ fn update_player(inputs: &[InputEvent], player: EntityId, q: Query<Pos>, _grid: 
     if delta.x != 0 && delta.y != 0 {
         delta.x = 0;
     }
+    if delta.x != 0 || delta.y != 0 {
+        let q = q.into_inner();
+        let pos = &mut q.get_mut(player).expect("Failed to get player pos").0;
 
-    let q = q.into_inner();
-    q.get_mut(player).expect("Failed to get player pos").0 += delta;
+        let new_pos = *pos + delta;
+        if let Some(tile) = grid.at(new_pos.x, new_pos.y) {
+            match tile.payload {
+                StuffPayload::Empty => {
+                    // update the grid asap so the monsters will see the updated player position
+                    let old_stuff = std::mem::take(grid.at_mut(pos.x, pos.y).unwrap());
+                    *grid.at_mut(new_pos.x, new_pos.y).unwrap() = old_stuff;
+
+                    *pos = new_pos;
+                }
+                StuffPayload::Wall => { /* don't step */ }
+                StuffPayload::Player => unreachable!(),
+            }
+        }
+    }
 }
 
 fn update_grid(q: Query<(EntityId, Pos, StuffTag)>, grid: &mut GameGrid) {
