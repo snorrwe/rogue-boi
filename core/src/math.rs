@@ -1,9 +1,9 @@
-use std::ops::{Add, AddAssign};
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Default, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Default, Debug, PartialEq, Eq, Hash)]
 pub struct Vec2 {
     pub x: i32,
     pub y: i32,
@@ -12,6 +12,21 @@ pub struct Vec2 {
 impl Vec2 {
     pub fn new(x: i32, y: i32) -> Self {
         Self { x, y }
+    }
+
+    /// not really normalized, but reduces all dims to [-1‥1]
+    pub fn as_direction(self) -> Self {
+        let x = if self.x != 0 {
+            self.x / self.x.abs()
+        } else {
+            0
+        };
+        let y = if self.y != 0 {
+            self.y / self.y.abs()
+        } else {
+            0
+        };
+        Self::new(x, y)
     }
 }
 
@@ -29,5 +44,22 @@ impl AddAssign for Vec2 {
     fn add_assign(&mut self, rhs: Self) {
         self.x += rhs.x;
         self.y += rhs.y;
+    }
+}
+
+impl Sub for Vec2 {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let mut res = self;
+        res -= rhs;
+        res
+    }
+}
+
+impl SubAssign for Vec2 {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.x -= rhs.x;
+        self.y -= rhs.y;
     }
 }
