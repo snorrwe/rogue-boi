@@ -1,5 +1,10 @@
+mod rect_room;
+mod tunnel_iter;
+
+use self::rect_room::RectRoom;
+use self::tunnel_iter::TunnelIter;
 use cao_db::prelude::*;
-use rand::Rng;
+use rand::{prelude::SliceRandom, Rng};
 
 use crate::{
     components::{Icon, Pos, StuffTag},
@@ -9,14 +14,20 @@ use crate::{
     Stuff, StuffPayload,
 };
 
-pub fn generate_map(world: &mut Db, grid: &mut GameGrid) {
+pub struct MapGenProps {
+    pub room_min_size: u32,
+    pub room_max_size: u32,
+    pub max_rooms: u32,
+}
+
+pub fn generate_map(player_id: EntityId, world: &mut Db, grid: &mut GameGrid, props: MapGenProps) {
     // fill the map with walls and delete old entities
     //
     for (_p, stuff) in grid.iter_mut() {
         if let Some(id) = stuff.id.take() {
             // delete all but player entities from the database
             if !matches!(stuff.payload, StuffPayload::Player) {
-                world.delete_entity(id.val.into());
+                world.delete_entity(id.into());
             }
         }
         stuff.payload = StuffPayload::Wall;
@@ -24,7 +35,7 @@ pub fn generate_map(world: &mut Db, grid: &mut GameGrid) {
 
     // build rooms
     //
-    build_rooms(grid);
+    build_rooms(grid, &props);
 
     // insert entities into db
     //
@@ -38,23 +49,46 @@ pub fn generate_map(world: &mut Db, grid: &mut GameGrid) {
             StuffPayload::Player => {
                 // update player pos
                 let pos = Pos(pos);
-                world.insert(stuff.id.expect("player id").into(), pos);
+                stuff.id = Some(player_id.into());
+                world.insert(player_id, pos);
             }
         }
     }
 }
 
-fn build_rooms(grid: &mut GameGrid) {
+fn build_rooms(grid: &mut GameGrid, props: &MapGenProps) {
     let mut rng = rand::thread_rng();
+    let mut rooms = Vec::<RectRoom>::with_capacity(props.max_rooms as usize);
 
-    let room0 = RectRoom::new(16, 15, 10, 15);
-    room0.carve(grid);
-    let room1 = RectRoom::new(1, 1, 3, 4);
-    room1.carve(grid);
+    'outer: for _ in 0..props.max_rooms {
+        let w = rng.gen_range(props.room_min_size, props.room_max_size) as i32;
+        let h = rng.gen_range(props.room_min_size, props.room_max_size) as i32;
 
-    for p in tunnel_between(&mut rng, room0.center(), room1.center()) {
-        grid[p] = Stuff::default();
+        let x = rng.gen_range(1, grid.dims.x - 1 - w);
+        let y = rng.gen_range(1, grid.dims.y - 1 - h);
+
+        let room = RectRoom::new(x, y, w, h);
+        for r in rooms.iter() {
+            if room.intersects(&r) {
+                continue 'outer;
+            }
+        }
+        room.carve(grid);
+        rooms.push(room);
     }
+
+    assert!(rooms.len() >= 2);
+    rooms.shuffle(&mut rng);
+
+    for (r1, r2) in rooms.iter().zip(rooms.iter().skip(1)) {
+        // connect these rooms
+        for p in tunnel_between(&mut rng, r1.center(), r2.center()) {
+            grid[p] = Stuff::default();
+        }
+    }
+
+    // spawn the player in the first room
+    grid[rooms[0].center()].payload = StuffPayload::Player;
 }
 
 fn tunnel_between(mut rng: impl Rng, start: Vec2, end: Vec2) -> impl Iterator<Item = Vec2> {
@@ -74,81 +108,10 @@ fn tunnel_between(mut rng: impl Rng, start: Vec2, end: Vec2) -> impl Iterator<It
     TunnelIter::new(start, end, Vec2::new(cornerx, cornery))
 }
 
-struct TunnelIter {
-    current: Vec2,
-    end: Vec2,
-    corner: Vec2,
-}
-
-impl TunnelIter {
-    fn new(start: Vec2, end: Vec2, corner: Vec2) -> Self {
-        Self {
-            current: start,
-            end,
-            corner,
-        }
-    }
-}
-
-impl Iterator for TunnelIter {
-    type Item = Vec2;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current == self.end {
-            return None;
-        }
-        let dc = self.corner - self.current;
-        let dc = dc.as_direction();
-        let de = self.end - self.current;
-        let de = de.as_direction();
-
-        if dc.x == -de.x || dc.y == -de.y {
-            // we're between the corner and the end, move towards end
-            self.current += de;
-        } else {
-            // move towards the corner
-            self.current += dc;
-        }
-
-        Some(self.current)
-    }
-}
-
 fn insert_wall(pos: Vec2, w: &mut Db) -> EntityId {
     let id = w.spawn_entity();
     w.insert(id, StuffTag::Wall);
     w.insert(id, Pos(pos));
     w.insert(id, Icon("delapouite/brick-wall.svg"));
     id
-}
-
-struct RectRoom {
-    pub(crate) x1: i32,
-    pub(crate) y1: i32,
-    pub(crate) x2: i32,
-    pub(crate) y2: i32,
-}
-
-impl RectRoom {
-    pub fn new(x1: i32, y1: i32, width: i32, height: i32) -> Self {
-        Self {
-            x1,
-            y1,
-            x2: x1 + width,
-            y2: y1 + height,
-        }
-    }
-
-    pub fn center(&self) -> Vec2 {
-        Vec2::new((self.x2 + self.x1) / 2, (self.y2 + self.y1) / 2)
-    }
-
-    /// carve out this room
-    pub fn carve(&self, grid: &mut GameGrid) {
-        for y in self.y1..=self.y2 {
-            for x in self.x1..=self.x2 {
-                grid[Vec2::new(x, y)] = Stuff::default();
-            }
-        }
-    }
 }

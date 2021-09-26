@@ -55,9 +55,18 @@ pub fn init_core() -> Core {
 
     let dims = Vec2 { x: 64, y: 32 };
     let data = vec![Stuff::default(); dims.x as usize * dims.y as usize].into_boxed_slice();
-
     let mut grid = GameGrid { dims, data };
-    map_gen::generate_map(&mut world, &mut grid);
+
+    map_gen::generate_map(
+        player,
+        &mut world,
+        &mut grid,
+        map_gen::MapGenProps {
+            room_min_size: 4,
+            room_max_size: 8,
+            max_rooms: 30,
+        },
+    );
 
     Core {
         world,
