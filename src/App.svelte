@@ -12,7 +12,6 @@
             ty: 'KeyDown',
             key: event.key
         });
-        event.preventDefault();
     });
 
 	const gameLoop = () => {
