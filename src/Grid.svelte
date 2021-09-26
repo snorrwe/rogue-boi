@@ -5,7 +5,7 @@
 
 <div class="grid" style="--cols: {grid.dims.x}; --rows: {grid.dims.y}">
 
-{#each grid.grid as item}
+{#each grid.data as item}
     <div class="grid-item">
         {#if item.id }
             <img src="/icons/ffffff/transparent/1x1/{core.get_icon(item.id)}" />

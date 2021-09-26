@@ -27,7 +27,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 /// State object
 #[wasm_bindgen]
 pub struct Core {
-    pub world_diameter: Vec2,
+    grid: GameGrid,
     world: World,
     player: EntityId,
 }
@@ -43,10 +43,15 @@ pub fn init_core() -> Core {
     world.insert(player, Pos(Vec2::new(16, 16)));
     world.insert(player, Icon("delapouite/person.svg"));
 
+    let dims = Vec2 { x: 32, y: 32 };
+    let data = vec![Stuff::default(); dims.x as usize * dims.y as usize].into_boxed_slice();
+
+    let grid = GameGrid { dims, data };
+
     Core {
-        world_diameter: Vec2 { x: 32, y: 32 },
         world,
         player,
+        grid,
     }
 }
 
@@ -76,7 +81,7 @@ pub enum StuffPayload {
 #[derive(serde::Serialize)]
 pub struct GameGrid {
     pub dims: Vec2,
-    pub grid: Box<[Stuff]>,
+    pub data: Box<[Stuff]>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy)]
@@ -87,26 +92,21 @@ pub struct Id {
 #[wasm_bindgen]
 impl Core {
     pub fn tick(&mut self) -> JsValue {
-        let mut fb = GameGrid {
-            dims: self.world_diameter,
-            grid: vec![
-                Stuff::default();
-                self.world_diameter.x as usize * self.world_diameter.y as usize
-            ]
-            .into_boxed_slice(),
-        };
+        for i in 0..self.grid.dims.x * self.grid.dims.y {
+            self.grid.data[i as usize] = Stuff::default();
+        }
 
-        insert_player(self.player, Query::new(&self.world), &mut fb);
+        insert_player(self.player, Query::new(&self.world), &mut self.grid);
 
-        JsValue::from_serde(&fb).unwrap()
+        JsValue::from_serde(&self.grid).unwrap()
     }
 
     pub fn width(&self) -> i32 {
-        self.world_diameter.x
+        self.grid.dims.x
     }
 
     pub fn height(&self) -> i32 {
-        self.world_diameter.y
+        self.grid.dims.y
     }
 
     pub fn player_id(&self) -> String {
@@ -125,11 +125,11 @@ impl Core {
     }
 }
 
-fn insert_player(player: EntityId, q: Query<Pos>, fb: &mut GameGrid) {
+fn insert_player(player: EntityId, q: Query<Pos>, grid: &mut GameGrid) {
     let q = q.into_inner();
     let pos = q.get(player).expect("Player has no pos");
 
-    fb.grid[(fb.dims.x * pos.0.y + pos.0.x) as usize] = Stuff {
+    grid.data[(grid.dims.x * pos.0.y + pos.0.x) as usize] = Stuff {
         id: Some(Id { val: player.into() }),
         payload: StuffPayload::Player,
     };
