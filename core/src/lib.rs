@@ -139,27 +139,22 @@ fn setup_bounds(w: &mut World, grid: &mut GameGrid) {
     }
 
     for y in 0..height {
-        insert_wall(width, 0, y, w, grid);
-        insert_wall(width, width - 1, y, w, grid);
+        insert_wall(0, y, w);
+        insert_wall(width - 1, y, w);
     }
     for x in 1..width - 1 {
-        insert_wall(width, x, 0, w, grid);
-        insert_wall(width, x, height - 1, w, grid);
+        insert_wall(x, 0, w);
+        insert_wall(x, height - 1, w);
     }
 }
 
-fn insert_wall(width: i32, x: i32, y: i32, w: &mut World, grid: &mut GameGrid) {
+fn insert_wall(x: i32, y: i32, w: &mut World) {
     let pos = Vec2::new(x, y);
 
     let id = w.spawn_entity();
     w.insert(id, StuffTag::Wall);
     w.insert(id, Pos(pos));
     w.insert(id, Icon("delapouite/brick-wall.svg"));
-
-    grid.data[(y * width + x) as usize] = Stuff {
-        id: Some(Id { val: id.into() }),
-        payload: StuffPayload::Wall,
-    };
 }
 
 fn update_player(_player: EntityId, _q: Query<Pos>, _grid: &mut GameGrid) {}
@@ -168,12 +163,9 @@ fn update_grid(q: Query<(EntityId, Pos, StuffTag)>, grid: &mut GameGrid) {
     let w = grid.dims.x;
     let h = grid.dims.y;
     assert!(w > 0 && h > 0);
-    // zero out the inner side
-    for y in 1..h - 1 {
-        for x in 1..w - 1 {
-            let i = y * w + x;
-            grid.data[i as usize] = Default::default();
-        }
+    // zero out the map
+    for i in 0..w * h {
+        grid.data[i as usize] = Default::default();
     }
 
     let q = q.into_inner();

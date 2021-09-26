@@ -22,8 +22,8 @@
 
     .grid {
         display: grid;
-        grid-template-columns: repeat(var(--cols), 2em);
-        grid-auto-rows: 2em;
+        grid-template-columns: repeat(var(--cols), 1.8em);
+        grid-auto-rows: 1.8em;
     }
 
     .grid-item {
