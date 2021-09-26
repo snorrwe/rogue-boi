@@ -15,6 +15,7 @@ db!(
     components
     Pos,
     PlayerTag,
+    WallTag,
     Icon,
 );
 
@@ -27,9 +28,9 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 /// State object
 #[wasm_bindgen]
 pub struct Core {
-    grid: GameGrid,
     world: World,
     player: EntityId,
+    grid: GameGrid,
 }
 
 #[wasm_bindgen]
@@ -46,7 +47,8 @@ pub fn init_core() -> Core {
     let dims = Vec2 { x: 32, y: 32 };
     let data = vec![Stuff::default(); dims.x as usize * dims.y as usize].into_boxed_slice();
 
-    let grid = GameGrid { dims, data };
+    let mut grid = GameGrid { dims, data };
+    setup_bounds(&mut world, &mut grid);
 
     Core {
         world,
@@ -76,6 +78,7 @@ impl Default for Stuff {
 pub enum StuffPayload {
     Empty,
     Player,
+    Wall,
 }
 
 #[derive(serde::Serialize)]
@@ -92,21 +95,21 @@ pub struct Id {
 #[wasm_bindgen]
 impl Core {
     pub fn tick(&mut self) -> JsValue {
-        for i in 0..self.grid.dims.x * self.grid.dims.y {
-            self.grid.data[i as usize] = Stuff::default();
-        }
+        update_player(self.player, Query::new(&self.world), &mut self.grid);
 
-        insert_player(self.player, Query::new(&self.world), &mut self.grid);
+        JsValue::from_serde(self.get_grid()).unwrap()
+    }
 
-        JsValue::from_serde(&self.grid).unwrap()
+    fn get_grid(&self) -> &GameGrid {
+        &self.grid
     }
 
     pub fn width(&self) -> i32 {
-        self.grid.dims.x
+        self.get_grid().dims.x
     }
 
     pub fn height(&self) -> i32 {
-        self.grid.dims.y
+        self.get_grid().dims.y
     }
 
     pub fn player_id(&self) -> String {
@@ -125,7 +128,39 @@ impl Core {
     }
 }
 
-fn insert_player(player: EntityId, q: Query<Pos>, grid: &mut GameGrid) {
+fn setup_bounds(w: &mut World, grid: &mut GameGrid) {
+    let width = grid.dims.x;
+    let height = grid.dims.y;
+
+    if width == 0 || height == 0 {
+        panic!();
+    }
+
+    for y in 0..height {
+        insert_wall(width, 0, y, w, grid);
+        insert_wall(width, width - 1, y, w, grid);
+    }
+    for x in 1..width - 1 {
+        insert_wall(width, x, 0, w, grid);
+        insert_wall(width, x, height - 1, w, grid);
+    }
+}
+
+fn insert_wall(width: i32, x: i32, y: i32, w: &mut World, grid: &mut GameGrid) {
+    let pos = Vec2::new(x, y);
+
+    let id = w.spawn_entity();
+    w.insert(id, WallTag);
+    w.insert(id, Pos(pos));
+    w.insert(id, Icon("delapouite/brick-wall.svg"));
+
+    grid.data[(y * width + x) as usize] = Stuff {
+        id: Some(Id { val: id.into() }),
+        payload: StuffPayload::Wall,
+    };
+}
+
+fn update_player(player: EntityId, q: Query<Pos>, grid: &mut GameGrid) {
     let q = q.into_inner();
     let pos = q.get(player).expect("Player has no pos");
 
