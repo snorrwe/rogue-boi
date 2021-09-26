@@ -36,6 +36,25 @@ impl GameGrid {
             self.data[i as usize] = value.clone();
         }
     }
+
+    #[allow(unused)]
+    pub fn iter(&self) -> impl Iterator<Item = (Vec2, &Stuff)> {
+        let w = self.dims.x;
+        let h = self.dims.y;
+
+        (0..h).flat_map(move |y| {
+            (0..w).map(move |x| (Vec2::new(x, y), &self.data[(y * w + x) as usize]))
+        })
+    }
+
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (Vec2, &mut Stuff)> {
+        let w = self.dims.x;
+        self.data.iter_mut().enumerate().map(move |(i, v)| {
+            let x = i as i32 % w;
+            let y = i as i32 / w;
+            (Vec2::new(x, y), v)
+        })
+    }
 }
 
 impl Index<Vec2> for GameGrid {

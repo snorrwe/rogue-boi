@@ -11,21 +11,17 @@ use crate::{
 pub fn generate_map(world: &mut Db, grid: &mut GameGrid) {
     // fill the map with walls and delete old entities
     //
-    for y in 0..grid.dims.y {
-        for x in 0..grid.dims.x {
-            let p = Vec2::new(x, y);
-            let stuff = &grid[p];
-            if let Some(id) = stuff.id {
-                // delete all but player entities from the database
-                if !matches!(stuff.payload, StuffPayload::Player) {
-                    world.delete_entity(id.val.into());
-                }
+    for (_p, stuff) in grid.iter_mut() {
+        if let Some(id) = stuff.id {
+            // delete all but player entities from the database
+            if !matches!(stuff.payload, StuffPayload::Player) {
+                world.delete_entity(id.val.into());
             }
-            grid[p] = Stuff {
-                id: None,
-                payload: StuffPayload::Wall,
-            };
         }
+        *stuff = Stuff {
+            id: None,
+            payload: StuffPayload::Wall,
+        };
     }
 
     // build rooms
@@ -37,21 +33,18 @@ pub fn generate_map(world: &mut Db, grid: &mut GameGrid) {
 
     // insert entities into db
     //
-    for y in 0..grid.dims.y {
-        for x in 0..grid.dims.x {
-            let p = Vec2::new(x, y);
-            let stuff = &mut grid[p];
-            match stuff.payload {
-                StuffPayload::Wall => {
-                    let id = insert_wall(x, y, world);
-                    stuff.id = Some(id.into());
-                }
-                StuffPayload::Empty => {}
-                StuffPayload::Player => {
-                    // update player pos
-                    let pos = Pos(Vec2::new(x, y));
-                    world.insert(stuff.id.expect("player id").into(), pos);
-                }
+    for (pos, stuff) in grid.iter_mut() {
+        let Vec2 { x, y } = pos;
+        match stuff.payload {
+            StuffPayload::Wall => {
+                let id = insert_wall(x, y, world);
+                stuff.id = Some(id.into());
+            }
+            StuffPayload::Empty => {}
+            StuffPayload::Player => {
+                // update player pos
+                let pos = Pos(pos);
+                world.insert(stuff.id.expect("player id").into(), pos);
             }
         }
     }
