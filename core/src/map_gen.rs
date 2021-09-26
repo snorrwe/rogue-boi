@@ -12,16 +12,13 @@ pub fn generate_map(world: &mut Db, grid: &mut GameGrid) {
     // fill the map with walls and delete old entities
     //
     for (_p, stuff) in grid.iter_mut() {
-        if let Some(id) = stuff.id {
+        if let Some(id) = stuff.id.take() {
             // delete all but player entities from the database
             if !matches!(stuff.payload, StuffPayload::Player) {
                 world.delete_entity(id.val.into());
             }
         }
-        *stuff = Stuff {
-            id: None,
-            payload: StuffPayload::Wall,
-        };
+        stuff.payload = StuffPayload::Wall;
     }
 
     // build rooms
