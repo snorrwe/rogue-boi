@@ -32,6 +32,8 @@ pub struct Core {
     world: World,
     player: EntityId,
     grid: GameGrid,
+    inputs: Vec<InputEvent>,
+    time: i32,
 }
 
 #[wasm_bindgen(js_name = "initCore")]
@@ -56,6 +58,8 @@ pub fn init_core() -> Core {
         world,
         player,
         grid,
+        inputs: Vec::with_capacity(512),
+        time: 0,
     }
 }
 
@@ -94,11 +98,36 @@ pub struct Id {
     pub val: u64,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[serde(tag = "ty")]
+pub enum InputEvent {
+    KeyUp { key: String },
+    KeyDown { key: String },
+}
+
 #[wasm_bindgen]
 impl Core {
-    pub fn tick(&mut self, _dt_ms: i32) {
-        update_player(self.player, Query::new(&self.world), &mut self.grid);
+    pub fn tick(&mut self, dt_ms: i32) {
+        self.time += dt_ms;
+        // min cooldown
+        if !self.inputs.is_empty() && self.time > 200 {
+            // logic update
+            update_player(
+                self.inputs.as_slice(),
+                self.player,
+                Query::new(&self.world),
+                &mut self.grid,
+            );
+            self.time = 0;
+            self.inputs.clear();
+        }
         update_grid(Query::new(&self.world), &mut self.grid);
+    }
+
+    #[wasm_bindgen(js_name = "pushEvent")]
+    pub fn push_event(&mut self, event: JsValue) {
+        let event: InputEvent = event.into_serde().unwrap();
+        self.inputs.push(event);
     }
 
     #[wasm_bindgen(js_name = "getGrid")]
@@ -157,7 +186,26 @@ fn insert_wall(x: i32, y: i32, w: &mut World) {
     w.insert(id, Icon("delapouite/brick-wall.svg"));
 }
 
-fn update_player(_player: EntityId, _q: Query<Pos>, _grid: &mut GameGrid) {}
+fn update_player(inputs: &[InputEvent], player: EntityId, q: Query<Pos>, _grid: &mut GameGrid) {
+    let mut delta = Vec2::new(0, 0);
+
+    for event in inputs {
+        match event {
+            InputEvent::KeyDown { key } if key == "w" => delta.y = -1,
+            InputEvent::KeyDown { key } if key == "s" => delta.y = 1,
+            InputEvent::KeyDown { key } if key == "a" => delta.x = -1,
+            InputEvent::KeyDown { key } if key == "d" => delta.x = 1,
+            _ => {}
+        }
+    }
+
+    if delta.x != 0 && delta.y != 0 {
+        delta.x = 0;
+    }
+
+    let q = q.into_inner();
+    q.get_mut(player).expect("Failed to get player pos").0 += delta;
+}
 
 fn update_grid(q: Query<(EntityId, Pos, StuffTag)>, grid: &mut GameGrid) {
     let w = grid.dims.x;

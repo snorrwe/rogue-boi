@@ -7,6 +7,14 @@
     const grid = writable(null);
 	let last = new Date().getTime();
 
+    document.addEventListener('keydown', (event) => {
+        core.pushEvent({
+            ty: 'KeyDown',
+            key: event.key
+        });
+        event.preventDefault();
+    });
+
 	const gameLoop = () => {
 		const now = new Date().getTime();
 
