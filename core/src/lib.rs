@@ -130,21 +130,21 @@ impl Core {
     }
 }
 
-fn setup_bounds(w: &mut World, grid: &mut GameGrid) {
-    let width = grid.dims.x;
-    let height = grid.dims.y;
+fn setup_bounds(world: &mut World, grid: &mut GameGrid) {
+    let w = grid.dims.x;
+    let h = grid.dims.y;
 
-    if width == 0 || height == 0 {
+    if w == 0 || h == 0 {
         panic!();
     }
 
-    for y in 0..height {
-        insert_wall(0, y, w);
-        insert_wall(width - 1, y, w);
+    for y in 0..h {
+        insert_wall(0, y, world);
+        insert_wall(w - 1, y, world);
     }
-    for x in 1..width - 1 {
-        insert_wall(x, 0, w);
-        insert_wall(x, height - 1, w);
+    for x in 1..w - 1 {
+        insert_wall(x, 0, world);
+        insert_wall(x, h - 1, world);
     }
 }
 
