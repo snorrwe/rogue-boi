@@ -15,9 +15,8 @@ db!(
     components
     [
         Pos,
-        PlayerTag,
-        WallTag,
         Icon,
+        StuffTag,
     ]
 );
 
@@ -43,6 +42,7 @@ pub fn init_core() -> Core {
     }
     let mut world = World::new(500_000);
     let player = world.spawn_entity();
+    world.insert(player, StuffTag::Player);
     world.insert(player, Pos(Vec2::new(16, 16)));
     world.insert(player, Icon("delapouite/person.svg"));
 
@@ -98,6 +98,7 @@ pub struct Id {
 impl Core {
     pub fn tick(&mut self) -> JsValue {
         update_player(self.player, Query::new(&self.world), &mut self.grid);
+        update_grid(Query::new(&self.world), &mut self.grid);
 
         JsValue::from_serde(self.get_grid()).unwrap()
     }
@@ -152,7 +153,7 @@ fn insert_wall(width: i32, x: i32, y: i32, w: &mut World, grid: &mut GameGrid) {
     let pos = Vec2::new(x, y);
 
     let id = w.spawn_entity();
-    w.insert(id, WallTag);
+    w.insert(id, StuffTag::Wall);
     w.insert(id, Pos(pos));
     w.insert(id, Icon("delapouite/brick-wall.svg"));
 
@@ -162,12 +163,31 @@ fn insert_wall(width: i32, x: i32, y: i32, w: &mut World, grid: &mut GameGrid) {
     };
 }
 
-fn update_player(player: EntityId, q: Query<Pos>, grid: &mut GameGrid) {
-    let q = q.into_inner();
-    let pos = q.get(player).expect("Player has no pos");
+fn update_player(_player: EntityId, _q: Query<Pos>, _grid: &mut GameGrid) {}
 
-    grid.data[(grid.dims.x * pos.0.y + pos.0.x) as usize] = Stuff {
-        id: Some(Id { val: player.into() }),
-        payload: StuffPayload::Player,
-    };
+fn update_grid(q: Query<(EntityId, Pos, StuffTag)>, grid: &mut GameGrid) {
+    let w = grid.dims.x;
+    let h = grid.dims.y;
+    for i in 0..w * h {
+        grid.data[i as usize] = Default::default();
+    }
+
+    let q = q.into_inner();
+    let it1 = q.1.iter();
+    let it2 = q.2.iter();
+    for (idx, (pos, tag)) in join!(it1, it2) {
+        let tag: &StuffTag = tag;
+        let id = q.0.id_at_index(idx);
+        let pos = pos.0;
+
+        let payload = match tag {
+            StuffTag::Player => StuffPayload::Player,
+            StuffTag::Wall => StuffPayload::Wall,
+        };
+
+        grid.data[(pos.y * w + pos.x) as usize] = Stuff {
+            id: Some(Id { val: id.into() }),
+            payload,
+        };
+    }
 }
