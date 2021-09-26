@@ -34,10 +34,9 @@ pub fn generate_map(world: &mut Db, grid: &mut GameGrid) {
     // insert entities into db
     //
     for (pos, stuff) in grid.iter_mut() {
-        let Vec2 { x, y } = pos;
         match stuff.payload {
             StuffPayload::Wall => {
-                let id = insert_wall(x, y, world);
+                let id = insert_wall(pos, world);
                 stuff.id = Some(id.into());
             }
             StuffPayload::Empty => {}
@@ -50,9 +49,7 @@ pub fn generate_map(world: &mut Db, grid: &mut GameGrid) {
     }
 }
 
-fn insert_wall(x: i32, y: i32, w: &mut Db) -> EntityId {
-    let pos = Vec2::new(x, y);
-
+fn insert_wall(pos: Vec2, w: &mut Db) -> EntityId {
     let id = w.spawn_entity();
     w.insert(id, StuffTag::Wall);
     w.insert(id, Pos(pos));
