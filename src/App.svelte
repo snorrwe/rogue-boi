@@ -1,10 +1,14 @@
 <script>
-	export let greet;
+	export let core;
+
+    import Grid from "./Grid.svelte"
 </script>
 
 <main>
-	<h1>{greet}</h1>
-    <img src="/icons/ffffff/transparent/1x1/lorc/psychic-waves.svg" />
+<!-- <img src="/icons/ffffff/transparent/1x1/lorc/psychic-waves.svg" /> -->
+    {#if core != null}
+        <Grid grid={core.tick()} />
+    {/if}
 </main>
 
 <style>
@@ -16,7 +20,7 @@
         background: black;
 	}
 
-	h1 {
+	pre {
 		color: #ff3e00;
 		text-transform: uppercase;
 		font-size: 4em;
