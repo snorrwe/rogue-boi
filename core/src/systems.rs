@@ -1,13 +1,18 @@
 use crate::{
     components::{Pos, StuffTag},
-    grid::GameGrid,
+    grid::Grid,
     math::Vec2,
     rogue_db::*,
     Id, InputEvent, Stuff, StuffPayload,
 };
 use cao_db::prelude::*;
 
-pub fn update_player(inputs: &[InputEvent], player: EntityId, q: Query<Pos>, grid: &mut GameGrid) {
+pub fn update_player(
+    inputs: &[InputEvent],
+    player: EntityId,
+    q: Query<Pos>,
+    grid: &mut Grid<Stuff>,
+) {
     let mut delta = Vec2::new(0, 0);
 
     for event in inputs {
@@ -44,14 +49,12 @@ pub fn update_player(inputs: &[InputEvent], player: EntityId, q: Query<Pos>, gri
     }
 }
 
-pub fn update_grid(q: Query<(EntityId, Pos, StuffTag)>, grid: &mut GameGrid) {
-    let w = grid.dims.x;
-    let h = grid.dims.y;
+pub fn update_grid(q: Query<(EntityId, Pos, StuffTag)>, grid: &mut Grid<Stuff>) {
+    let w = grid.width();
+    let h = grid.height();
     assert!(w > 0 && h > 0);
     // zero out the map
-    for i in 0..w * h {
-        grid.data[i as usize] = Default::default();
-    }
+    grid.fill(Default::default());
 
     let q = q.into_inner();
     let it1 = q.1.iter();
@@ -66,7 +69,7 @@ pub fn update_grid(q: Query<(EntityId, Pos, StuffTag)>, grid: &mut GameGrid) {
             StuffTag::Wall => StuffPayload::Wall,
         };
 
-        grid.data[(pos.y * w + pos.x) as usize] = Stuff {
+        grid[Vec2::new(pos.x, pos.y)] = Stuff {
             id: Some(Id { val: id.into() }),
             payload,
         };

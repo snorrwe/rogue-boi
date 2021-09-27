@@ -8,7 +8,7 @@ use rand::{prelude::SliceRandom, Rng};
 
 use crate::{
     components::{Icon, Pos, StuffTag},
-    grid::GameGrid,
+    grid::Grid,
     math::Vec2,
     rogue_db::*,
     Stuff, StuffPayload,
@@ -20,7 +20,7 @@ pub struct MapGenProps {
     pub max_rooms: u32,
 }
 
-pub fn generate_map(player_id: EntityId, world: &mut Db, grid: &mut GameGrid, props: MapGenProps) {
+pub fn generate_map(player_id: EntityId, world: &mut Db, grid: &mut Grid<Stuff>, props: MapGenProps) {
     // fill the map with walls and delete old entities
     //
     for (_p, stuff) in grid.iter_mut() {
@@ -56,7 +56,7 @@ pub fn generate_map(player_id: EntityId, world: &mut Db, grid: &mut GameGrid, pr
     }
 }
 
-fn build_rooms(grid: &mut GameGrid, props: &MapGenProps) {
+fn build_rooms(grid: &mut Grid<Stuff>, props: &MapGenProps) {
     let mut rng = rand::thread_rng();
     let mut rooms = Vec::<RectRoom>::with_capacity(props.max_rooms as usize);
 
@@ -64,8 +64,8 @@ fn build_rooms(grid: &mut GameGrid, props: &MapGenProps) {
         let w = rng.gen_range(props.room_min_size, props.room_max_size) as i32;
         let h = rng.gen_range(props.room_min_size, props.room_max_size) as i32;
 
-        let x = rng.gen_range(1, grid.dims.x - 1 - w);
-        let y = rng.gen_range(1, grid.dims.y - 1 - h);
+        let x = rng.gen_range(1, grid.width() - 1 - w);
+        let y = rng.gen_range(1, grid.height() - 1 - h);
 
         let room = RectRoom::new(x, y, w, h);
         for r in rooms.iter() {

@@ -7,7 +7,7 @@ mod utils;
 
 use cao_db::prelude::*;
 use components::*;
-use grid::GameGrid;
+use grid::Grid;
 use math::Vec2;
 
 use systems::{update_grid, update_player};
@@ -36,7 +36,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub struct Core {
     world: World,
     player: EntityId,
-    grid: GameGrid,
+    grid: Grid<Stuff>,
     inputs: Vec<InputEvent>,
     time: i32,
 }
@@ -54,9 +54,7 @@ pub fn init_core() -> Core {
     world.insert(player, Icon("delapouite/person.svg"));
 
     let dims = Vec2 { x: 48, y: 32 };
-    let data = vec![Stuff::default(); dims.x as usize * dims.y as usize].into_boxed_slice();
-    let mut grid = GameGrid { dims, data };
-
+    let mut grid = Grid::new(dims);
     map_gen::generate_map(
         player,
         &mut world,
@@ -156,11 +154,11 @@ impl Core {
     }
 
     pub fn width(&self) -> i32 {
-        self.grid.dims.x
+        self.grid.width()
     }
 
     pub fn height(&self) -> i32 {
-        self.grid.dims.y
+        self.grid.height()
     }
 
     pub fn player_id(&self) -> String {

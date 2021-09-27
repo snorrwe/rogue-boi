@@ -1,4 +1,4 @@
-use crate::{grid::GameGrid, math::Vec2, Stuff};
+use crate::{grid::Grid, math::Vec2};
 
 pub struct RectRoom {
     pub(crate) min: Vec2,
@@ -18,10 +18,10 @@ impl RectRoom {
     }
 
     /// carve out this room
-    pub fn carve(&self, grid: &mut GameGrid) {
+    pub fn carve<T: Default + serde::Serialize>(&self, grid: &mut Grid<T>) {
         for y in self.min.y..=self.max.y {
             for x in self.min.x..=self.max.x {
-                grid[Vec2::new(x, y)] = Stuff::default();
+                grid[Vec2::new(x, y)] = T::default();
             }
         }
     }
