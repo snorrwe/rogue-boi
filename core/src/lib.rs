@@ -101,6 +101,7 @@ pub enum StuffPayload {
     Wall,
 }
 
+/// Id sent to JS
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy)]
 pub struct Id {
     pub val: u64,
