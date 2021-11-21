@@ -10,7 +10,7 @@ use components::*;
 use grid::Grid;
 use math::Vec2;
 
-use systems::{update_grid, update_player};
+use systems::{update_fov, update_grid, update_player};
 use wasm_bindgen::prelude::*;
 
 use rogue_db::{Db as World, Query};
@@ -37,6 +37,8 @@ pub struct Core {
     world: World,
     player: EntityId,
     grid: Grid<Stuff>,
+    visible: Grid<bool>,
+    explored: Grid<bool>,
     inputs: Vec<InputEvent>,
     time: i32,
 }
@@ -70,6 +72,8 @@ pub fn init_core() -> Core {
         world,
         player,
         grid,
+        visible: Grid::new(dims),
+        explored: Grid::new(dims),
         inputs: Vec::with_capacity(512),
         time: 0,
     }
@@ -125,6 +129,17 @@ pub enum InputEvent {
 
 #[wasm_bindgen]
 impl Core {
+    pub fn init(&mut self) {
+        self.tick(0);
+        update_fov(
+            self.player,
+            Query::new(&self.world),
+            &self.grid,
+            &mut self.explored,
+            &mut self.visible,
+        );
+    }
+
     pub fn tick(&mut self, dt_ms: i32) {
         self.time += dt_ms;
         // min cooldown
@@ -136,10 +151,23 @@ impl Core {
                 Query::new(&self.world),
                 &mut self.grid,
             );
+            update_fov(
+                self.player,
+                Query::new(&self.world),
+                &self.grid,
+                &mut self.explored,
+                &mut self.visible,
+            );
             self.time = 0;
             self.inputs.clear();
         }
         update_grid(Query::new(&self.world), &mut self.grid);
+    }
+
+    #[wasm_bindgen(js_name = "visible")]
+    pub fn visible(&self, pos: JsValue) -> bool {
+        let pos = pos.into_serde().unwrap();
+        self.visible[pos]
     }
 
     #[wasm_bindgen(js_name = "pushEvent")]

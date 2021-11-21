@@ -49,6 +49,86 @@ pub fn update_player(
     }
 }
 
+fn is_transparent(grid: &Grid<Stuff>, pos: Vec2) -> bool {
+    match grid.at(pos.x, pos.y).map(|x| &x.payload) {
+        Some(StuffPayload::Empty) => true,
+        _ => false,
+    }
+}
+
+/// return wether the segment hits something and where
+fn walk_grid(from: Vec2, to: Vec2, grid: &Grid<Stuff>, skip_initial: bool) -> Option<Vec2> {
+    let dx = to.x - from.x;
+    let dy = to.y - from.y;
+
+    let nx = dx.abs() as f32;
+    let ny = dy.abs() as f32;
+
+    let sign_x = if dx > 0 { 1 } else { -1 };
+    let sign_y = if dy > 0 { 1 } else { -1 };
+
+    let mut p = from;
+    let mut ix = 0.0;
+    let mut iy = 0.0;
+    if skip_initial {
+        if (0.5 + ix) / nx < (0.5 + iy) / ny {
+            // step horizontal
+            p.x += sign_x;
+            ix += 1.0;
+        } else {
+            //vertical
+            p.y += sign_y;
+            iy += 1.0;
+        }
+    }
+    while ix < nx || iy < ny {
+        if !is_transparent(grid, p) {
+            return Some(p);
+        }
+        if (0.5 + ix) / nx < (0.5 + iy) / ny {
+            // step horizontal
+            p.x += sign_x;
+            ix += 1.0;
+        } else {
+            // step vertical
+            p.y += sign_y;
+            iy += 1.0;
+        }
+    }
+    None
+}
+
+fn set_visible(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Vec2, radius: i32) {
+    visible.splat_set([Vec2::ZERO, visible.dims()], false);
+    // walk around the edge of the visible range
+    for y in -radius..=radius {
+        for x in -radius..=radius {
+            let limit = player_pos + Vec2::new(x, y);
+            match walk_grid(player_pos, limit, grid, true) {
+                Some(pos) if (pos - limit).len_sq() <= 2 => visible[Vec2::new(pos.x, pos.y)] = true,
+                _ => {}
+            }
+        }
+    }
+}
+
+/// recompute visible area
+pub fn update_fov(
+    player: EntityId,
+    q: Query<Pos>,
+    grid: &Grid<Stuff>,
+    explored: &mut Grid<bool>,
+    visible: &mut Grid<bool>,
+) {
+    let q = q.into_inner();
+    let player_pos = q.get(player).unwrap();
+    set_visible(&grid, visible, player_pos.0, 8);
+    visible[player_pos.0] = true;
+    explored.or_eq(&visible);
+    // do not highlight the player
+    visible[player_pos.0] = false;
+}
+
 pub fn update_grid(q: Query<(EntityId, Pos, StuffTag)>, grid: &mut Grid<Stuff>) {
     let w = grid.width();
     let h = grid.height();

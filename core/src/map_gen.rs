@@ -20,7 +20,12 @@ pub struct MapGenProps {
     pub max_rooms: u32,
 }
 
-pub fn generate_map(player_id: EntityId, world: &mut Db, grid: &mut Grid<Stuff>, props: MapGenProps) {
+pub fn generate_map(
+    player_id: EntityId,
+    world: &mut Db,
+    grid: &mut Grid<Stuff>,
+    props: MapGenProps,
+) {
     // fill the map with walls and delete old entities
     //
     for (_p, stuff) in grid.iter_mut() {

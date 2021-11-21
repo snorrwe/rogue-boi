@@ -21,6 +21,10 @@ impl<T: serde::Serialize> Grid<T> {
         }
     }
 
+    pub fn dims(&self) -> Vec2 {
+        self.dims
+    }
+
     pub fn width(&self) -> i32 {
         self.dims.x
     }
@@ -34,19 +38,19 @@ impl<T: serde::Serialize> Grid<T> {
     }
 
     pub fn at(&self, x: i32, y: i32) -> Option<&T> {
-        let w = self.dims.x;
         if !self.contains(x, y) {
             return None;
         }
+        let w = self.dims.x;
         Some(&self.data[(y * w + x) as usize])
     }
 
     #[allow(unused)]
     pub fn at_mut(&mut self, x: i32, y: i32) -> Option<&mut T> {
-        let w = self.dims.x;
         if !self.contains(x, y) {
             return None;
         }
+        let w = self.dims.x;
         Some(&mut self.data[(y * w + x) as usize])
     }
 
@@ -77,6 +81,32 @@ impl<T: serde::Serialize> Grid<T> {
             let y = i as i32 / w;
             (Vec2::new(x, y), v)
         })
+    }
+
+    pub fn or_eq(&mut self, rhs: &Self)
+    where
+        T: std::ops::BitOrAssign + Copy,
+    {
+        let maxx = self.dims.x.min(rhs.dims.x);
+        let maxy = self.dims.y.min(rhs.dims.y);
+
+        for y in 0..maxy {
+            for x in 0..maxx {
+                let pos = Vec2::new(x, y);
+                self[pos] |= rhs[pos];
+            }
+        }
+    }
+
+    pub fn splat_set(&mut self, [from, to]: [Vec2; 2], value: T)
+    where
+        T: Clone,
+    {
+        for y in from.y..to.y {
+            for x in from.x..to.x {
+                self[Vec2::new(x, y)] = value.clone();
+            }
+        }
     }
 }
 

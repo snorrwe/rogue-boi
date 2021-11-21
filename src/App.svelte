@@ -2,10 +2,10 @@
     import { writable } from 'svelte/store';
     import Grid from "./Grid.svelte"
 
-	export let core;
+    export let core;
 
     const grid = writable(null);
-	let last = new Date().getTime();
+    let last = new Date().getTime();
 
     document.addEventListener('keydown', (event) => {
         core.pushEvent({
@@ -14,17 +14,17 @@
         });
     });
 
-	const gameLoop = () => {
-		const now = new Date().getTime();
+    const gameLoop = () => {
+        const now = new Date().getTime();
 
-		core.tick(now - last);
+        core.tick(now - last);
 
         grid.set(core.getGrid());
-		last = now;
+        last = now;
 
-		requestAnimationFrame(gameLoop);
-	};
-	requestAnimationFrame(gameLoop);
+        requestAnimationFrame(gameLoop);
+    };
+    requestAnimationFrame(gameLoop);
 </script>
 
 <main>
@@ -34,8 +34,8 @@
 </main>
 
 <style>
-	main {
-		padding: 1em;
-		margin: 0 auto;
-	}
+    main {
+        padding: 1em;
+        margin: 0 auto;
+    }
 </style>
