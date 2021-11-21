@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Index, IndexMut, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Sub, SubAssign};
 
 use wasm_bindgen::prelude::*;
 
@@ -83,6 +83,17 @@ impl Index<usize> for Vec2 {
         match index {
             0 => &self.x,
             _ => &self.y,
+        }
+    }
+}
+
+impl Mul<i32> for Vec2 {
+    type Output = Self;
+
+    fn mul(self, rhs: i32) -> Self::Output {
+        Self {
+            x: self.x * rhs,
+            y: self.y * rhs,
         }
     }
 }

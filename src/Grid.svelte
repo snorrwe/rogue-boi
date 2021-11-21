@@ -3,15 +3,18 @@
     export let grid;
 
     const isItemVisible = (i, grid) => {
-        let y = Math.floor(i / grid.dims.x);
-        let x = i - y * grid.dims.x;
+        let y = Math.floor(i / grid.grid.dims.x);
+        let x = i - y * grid.grid.dims.x;
+
+        x += grid.offset.x;
+        y += grid.offset.y;
         return core.visible({x,y})
     }
 </script>
 
-<div class="grid" style="--cols: {grid.dims.x}; --rows: {grid.dims.y}">
+<div class="grid" style="--cols: {grid.grid.dims.x}; --rows: {grid.grid.dims.y}">
 
-{#each grid.data as item, i}
+{#each grid.grid.data as item, i}
     <div class="grid-item" >
         <div class:grid_visible="{isItemVisible(i, grid)}">
             {#if item.id}

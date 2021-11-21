@@ -39,6 +39,7 @@ pub struct Core {
     grid: Grid<Stuff>,
     visible: Grid<bool>,
     explored: Grid<bool>,
+    viewport: Vec2,
     inputs: Vec<InputEvent>,
     time: i32,
 }
@@ -69,6 +70,7 @@ pub fn init_core() -> Core {
     );
 
     Core {
+        viewport: Vec2::new(15, 15),
         world,
         player,
         grid,
@@ -127,6 +129,12 @@ pub enum InputEvent {
     KeyDown { key: String },
 }
 
+#[derive(serde::Serialize)]
+pub struct RenderedGrid {
+    pub grid: Grid<Stuff>,
+    pub offset: Vec2,
+}
+
 #[wasm_bindgen]
 impl Core {
     pub fn init(&mut self) {
@@ -166,8 +174,8 @@ impl Core {
 
     #[wasm_bindgen(js_name = "visible")]
     pub fn visible(&self, pos: JsValue) -> bool {
-        let pos = pos.into_serde().unwrap();
-        self.visible[pos]
+        let Vec2 { x, y } = pos.into_serde().unwrap();
+        self.visible.at(x, y).copied().unwrap_or(false)
     }
 
     #[wasm_bindgen(js_name = "pushEvent")]
@@ -176,9 +184,28 @@ impl Core {
         self.inputs.push(event);
     }
 
+    pub fn player_pos(&self) -> Vec2 {
+        let q: Query<Pos> = Query::new(&self.world);
+        q.into_inner().get(self.player).unwrap().0
+    }
+
     #[wasm_bindgen(js_name = "getGrid")]
     pub fn get_grid(&self) -> JsValue {
-        JsValue::from_serde(&self.grid).unwrap()
+        let mut result = Grid::new(self.viewport * 2);
+        let player_pos = self.player_pos();
+        let min = player_pos - self.viewport;
+        let max = player_pos + self.viewport;
+        for y in min.y.max(0)..max.y.min(self.grid.height()) {
+            for x in min.x.max(0)..max.x.min(self.grid.width()) {
+                let pos = Vec2::new(x, y);
+                result[pos - min] = self.grid[pos].clone();
+            }
+        }
+        let result = RenderedGrid {
+            grid: result,
+            offset: min,
+        };
+        JsValue::from_serde(&result).unwrap()
     }
 
     pub fn width(&self) -> i32 {
