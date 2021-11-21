@@ -110,6 +110,7 @@ fn set_visible(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Vec2, r
                     Some(pos) if (pos - limit).len_sq() <= 2 => {
                         visible[Vec2::new(pos.x, pos.y)] = true
                     }
+                    None => visible[Vec2::new(limit.x, limit.y)] = true,
                     _ => {}
                 }
             }

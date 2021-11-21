@@ -19,6 +19,8 @@
         <div class:grid_visible="{isItemVisible(i, grid)}">
             {#if item.id}
                 <img src="/icons/ffffff/transparent/1x1/{core.get_icon(item.id)}" />
+            {:else}
+                <div class="floor"></div>
             {/if}
         </div>
     </div>
@@ -40,6 +42,11 @@
     .grid-item .grid_visible {
         color: yellow;
         background: yellow;
+    }
+
+    .floor {
+        height: 2rem;
+        width: 2rem;
     }
 </style>
 
