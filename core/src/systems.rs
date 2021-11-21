@@ -100,13 +100,18 @@ fn walk_grid(from: Vec2, to: Vec2, grid: &Grid<Stuff>, skip_initial: bool) -> Op
 
 fn set_visible(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Vec2, radius: i32) {
     visible.splat_set([Vec2::ZERO, visible.dims()], false);
-    // walk around the edge of the visible range
+    // walk the visible range
+    let r2 = radius * radius;
     for y in -radius..=radius {
         for x in -radius..=radius {
             let limit = player_pos + Vec2::new(x, y);
-            match walk_grid(player_pos, limit, grid, true) {
-                Some(pos) if (pos - limit).len_sq() <= 2 => visible[Vec2::new(pos.x, pos.y)] = true,
-                _ => {}
+            if (player_pos - limit).len_sq() <= r2 {
+                match walk_grid(player_pos, limit, grid, true) {
+                    Some(pos) if (pos - limit).len_sq() <= 2 => {
+                        visible[Vec2::new(pos.x, pos.y)] = true
+                    }
+                    _ => {}
+                }
             }
         }
     }
