@@ -12,8 +12,13 @@
 yarn dev
 ```
 
+### Icons
+
+Icons are from [game-icons.net](https://game-icons.net/)
+
 ### TODO
 
-- Fuck off svelte and draw on the canvas
-    svelte is just too slow
-- Keep on keeping on
+- [ ] Replace svelte and draw on the canvas
+    the DOM just feels too slow
+- [ ] ????
+- [ ] Profit
