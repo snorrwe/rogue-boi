@@ -7,17 +7,43 @@ use cao_db::prelude::*;
 use rand::{prelude::SliceRandom, Rng};
 
 use crate::{
-    components::{Icon, Pos, StuffTag},
+    components::{Icon, Pos, StuffTag, ENEMY_TAGS},
     grid::Grid,
     math::Vec2,
     rogue_db::*,
-    Stuff, StuffPayload,
+    Id, Stuff, StuffPayload,
 };
 
 pub struct MapGenProps {
     pub room_min_size: u32,
     pub room_max_size: u32,
     pub max_rooms: u32,
+    pub max_monsters_per_room: u32,
+}
+
+fn init_entity(pos: Vec2, tag: StuffTag, world: &mut Db, grid: &mut Grid<Stuff>) {
+    // TODO: merge wall and player too pls
+    todo!()
+}
+
+fn place_entities(
+    rng: &mut impl Rng,
+    grid: &mut Grid<Option<StuffTag>>,
+    room: &RectRoom,
+    max_monsters: u32,
+) {
+    let n_monsters = rng.gen_range(0, max_monsters);
+
+    for _ in 0..n_monsters {
+        let x = rng.gen_range(room.min.x + 1, room.max.x + 1);
+        let y = rng.gen_range(room.min.y + 1, room.max.y + 1);
+
+        let pos = Vec2::new(x, y);
+        if grid[pos].is_none() {
+            let tag = ENEMY_TAGS.choose(rng).unwrap();
+            grid[pos] = Some(*tag);
+        }
+    }
 }
 
 pub fn generate_map(
@@ -26,42 +52,47 @@ pub fn generate_map(
     grid: &mut Grid<Stuff>,
     props: MapGenProps,
 ) {
+    let mut working_set = Grid::new(grid.dims());
     // fill the map with walls and delete old entities
     //
-    for (_p, stuff) in grid.iter_mut() {
-        if let Some(id) = stuff.id.take() {
+    for (p, stuff) in grid.iter_mut() {
+        if let Some(id) = stuff {
             // delete all but player entities from the database
-            if !matches!(stuff.payload, StuffPayload::Player) {
-                world.delete_entity(id.into());
+            let id: EntityId = (*id).into();
+            if id != player_id {
+                world.delete_entity(id);
             }
         }
-        stuff.payload = StuffPayload::Wall;
+        working_set[p] = Some(StuffTag::Wall);
+        *stuff = None;
     }
 
-    // build rooms
-    //
-    build_rooms(grid, &props);
+    build_rooms(&mut working_set, &props);
 
     // insert entities into db
     //
-    for (pos, stuff) in grid.iter_mut() {
-        match stuff.payload {
-            StuffPayload::Wall => {
+    for (pos, tag) in working_set.iter().filter_map(|(p, t)| t.map(|t| (p, t))) {
+        match tag {
+            StuffTag::Wall => {
                 let id = insert_wall(pos, world);
-                stuff.id = Some(id.into());
+                grid[pos] = Some(id.into());
             }
-            StuffPayload::Empty => {}
-            StuffPayload::Player => {
+            StuffTag::Player => {
                 // update player pos
-                let pos = Pos(pos);
-                stuff.id = Some(player_id.into());
-                world.insert(player_id, pos);
+                world.insert(player_id, Pos(pos));
+                grid[pos] = Some(player_id.into());
+            }
+            StuffTag::Troll | StuffTag::Orc => {
+                let id = world.spawn_entity();
+                grid[pos] = Some(id.into());
+                world.insert(id, tag);
+                init_entity(pos, tag, world, grid);
             }
         }
     }
 }
 
-fn build_rooms(grid: &mut Grid<Stuff>, props: &MapGenProps) {
+fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps) {
     let mut rng = rand::thread_rng();
     let mut rooms = Vec::<RectRoom>::with_capacity(props.max_rooms as usize);
 
@@ -88,12 +119,12 @@ fn build_rooms(grid: &mut Grid<Stuff>, props: &MapGenProps) {
     for (r1, r2) in rooms.iter().zip(rooms.iter().skip(1)) {
         // connect these rooms
         for p in tunnel_between(&mut rng, r1.center(), r2.center()) {
-            grid[p] = Stuff::default();
+            grid[p] = None;
         }
     }
 
     // spawn the player in the first room
-    grid[rooms[0].center()].payload = StuffPayload::Player;
+    grid[rooms[0].center()] = Some(StuffTag::Player);
 }
 
 fn tunnel_between(mut rng: impl Rng, start: Vec2, end: Vec2) -> impl Iterator<Item = Vec2> {

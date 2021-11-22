@@ -1,5 +1,5 @@
 <script>
-    export let core;
+    /* export let core; */
     export let grid;
 </script>
 
@@ -8,8 +8,8 @@
 {#each grid.grid.data as item, i}
     <div class="grid-item" >
         <div class:grid_visible="{item.visible}">
-            {#if item.payload?.id && item.explored}
-                <img src="/icons/ffffff/transparent/1x1/{core.get_icon(item.payload.id)}" />
+            {#if item.icon && item.explored}
+                <img src="/icons/ffffff/transparent/1x1/{item.icon}" />
             {:else}
                 <div class="floor"></div>
             {/if}

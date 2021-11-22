@@ -22,6 +22,7 @@ db!(
         Pos,
         Icon,
         StuffTag,
+        Hp,
     ]
 );
 
@@ -56,20 +57,21 @@ pub fn init_core() -> Core {
     world.insert(player, Pos(Vec2::new(16, 16)));
     world.insert(player, Icon("delapouite/person.svg"));
 
-    let dims = Vec2 { x: 48, y: 32 };
+    let dims = Vec2 { x: 64, y: 64 };
     let mut grid = Grid::new(dims);
     map_gen::generate_map(
         player,
         &mut world,
         &mut grid,
         map_gen::MapGenProps {
-            room_min_size: 3,
+            room_min_size: 6,
             room_max_size: 10,
             max_rooms: 50,
+            max_monsters_per_room: 2,
         },
     );
 
-    Core {
+    let mut core = Core {
         viewport: Vec2::new(15, 15),
         world,
         player,
@@ -78,31 +80,40 @@ pub fn init_core() -> Core {
         explored: Grid::new(dims),
         inputs: Vec::with_capacity(512),
         time: 0,
-    }
+    };
+    core.init();
+    core
 }
 
-#[derive(Clone, serde::Serialize)]
-pub struct Stuff {
-    pub id: Option<Id>,
-    #[serde(flatten)]
-    pub payload: StuffPayload,
-}
-
-impl Default for Stuff {
-    fn default() -> Self {
-        Self {
-            id: None,
-            payload: StuffPayload::Empty,
-        }
-    }
-}
+pub type Stuff = Option<Id>;
 
 #[derive(Clone, serde::Serialize)]
 #[serde(tag = "ty")]
 pub enum StuffPayload {
     Empty,
-    Player,
+    Player { id: Id },
     Wall,
+    Troll { id: Id },
+    Orc { id: Id },
+}
+
+impl StuffPayload {
+    pub fn from_world(id: EntityId, world: &World) -> Self {
+        let tag = <World as AsQuery<StuffTag>>::as_query(world).get(id);
+        match tag {
+            None => StuffPayload::Empty,
+            Some(StuffTag::Wall) => Self::Wall,
+            Some(StuffTag::Player) => Self::Player { id: id.into() },
+            Some(StuffTag::Troll) => Self::Troll { id: id.into() },
+            Some(StuffTag::Orc) => Self::Orc { id: id.into() },
+        }
+    }
+}
+
+impl Default for StuffPayload {
+    fn default() -> Self {
+        Self::Empty
+    }
 }
 
 /// Id sent to JS
@@ -116,9 +127,16 @@ impl From<EntityId> for Id {
         Self { val: eid.into() }
     }
 }
+
 impl From<Id> for EntityId {
     fn from(i: Id) -> Self {
         i.val.into()
+    }
+}
+
+impl<'a> From<&'a Id> for EntityId {
+    fn from(id: &'a Id) -> Self {
+        (*id).into()
     }
 }
 
@@ -137,22 +155,17 @@ pub struct RenderedGrid {
 
 #[derive(serde::Serialize, Default, Clone)]
 pub struct OutputStuff {
-    pub payload: Option<Stuff>,
     pub visible: bool,
     pub explored: bool,
+    pub icon: Option<&'static str>,
+    #[serde(flatten)]
+    pub payload: StuffPayload,
 }
 
 #[wasm_bindgen]
 impl Core {
     pub fn init(&mut self) {
         self.tick(0);
-        update_fov(
-            self.player,
-            Query::new(&self.world),
-            &self.grid,
-            &mut self.explored,
-            &mut self.visible,
-        );
     }
 
     pub fn tick(&mut self, dt_ms: i32) {
@@ -166,17 +179,17 @@ impl Core {
                 Query::new(&self.world),
                 &mut self.grid,
             );
-            update_fov(
-                self.player,
-                Query::new(&self.world),
-                &self.grid,
-                &mut self.explored,
-                &mut self.visible,
-            );
             self.time = 0;
             self.inputs.clear();
         }
         update_grid(Query::new(&self.world), &mut self.grid);
+        update_fov(
+            self.player,
+            Query::new(&self.world),
+            &self.grid,
+            &mut self.explored,
+            &mut self.visible,
+        );
     }
 
     #[wasm_bindgen(js_name = "pushEvent")]
@@ -203,7 +216,14 @@ impl Core {
                 output.explored = self.explored[pos];
                 output.visible = self.visible[pos];
                 if output.explored {
-                    output.payload = self.grid[pos].clone().into();
+                    if let Some(id) = self.grid[pos] {
+                        output.payload = StuffPayload::from_world(id.into(), &self.world);
+                        if let Some(Icon(icon)) =
+                            <World as AsQuery<Icon>>::as_query(&self.world).get(id.into())
+                        {
+                            output.icon = Some(icon);
+                        }
+                    }
                 }
                 result[pos - min] = output;
             }
@@ -229,7 +249,7 @@ impl Core {
 
     pub fn get_icon(&self, id: JsValue) -> Option<String> {
         let id: Id = id.into_serde().unwrap();
-        let id: EntityId = id.val.into();
+        let id: EntityId = id.into();
         debug_assert!(self.world.is_valid(id));
 
         let q = Query::<Icon>::new(&self.world);

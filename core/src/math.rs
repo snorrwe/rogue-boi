@@ -1,4 +1,7 @@
-use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Sub, SubAssign};
+use std::{
+    fmt::Display,
+    ops::{Add, AddAssign, Index, IndexMut, Mul, Sub, SubAssign},
+};
 
 use wasm_bindgen::prelude::*;
 
@@ -9,6 +12,12 @@ use wasm_bindgen::prelude::*;
 pub struct Vec2 {
     pub x: i32,
     pub y: i32,
+}
+
+impl Display for Vec2 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_list().entry(&self.x).entry(&self.y).finish()
+    }
 }
 
 impl Vec2 {

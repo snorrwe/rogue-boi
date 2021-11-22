@@ -114,7 +114,12 @@ impl<T: serde::Serialize> Index<Vec2> for Grid<T> {
     type Output = T;
 
     fn index(&self, index: Vec2) -> &Self::Output {
-        assert!(self.contains(index.x, index.y));
+        assert!(
+            self.contains(index.x, index.y),
+            "{} is out of bounds of: {:?}",
+            index,
+            self.dims
+        );
         let w = self.dims.x;
         let Vec2 { x, y } = index;
         &self.data[(y * w + x) as usize]
@@ -123,7 +128,12 @@ impl<T: serde::Serialize> Index<Vec2> for Grid<T> {
 
 impl<T: serde::Serialize> IndexMut<Vec2> for Grid<T> {
     fn index_mut(&mut self, index: Vec2) -> &mut Self::Output {
-        assert!(self.contains(index.x, index.y));
+        assert!(
+            self.contains(index.x, index.y),
+            "{} is out of bounds of: {:?}",
+            index,
+            self.dims
+        );
         let w = self.dims.x;
         let Vec2 { x, y } = index;
         &mut self.data[(y * w + x) as usize]
