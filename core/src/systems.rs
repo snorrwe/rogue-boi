@@ -57,7 +57,12 @@ fn is_transparent(grid: &Grid<Stuff>, pos: Vec2) -> bool {
 }
 
 /// return wether the segment hits something and where
-fn walk_grid(from: Vec2, to: Vec2, grid: &Grid<Stuff>, skip_initial: bool) -> Option<Vec2> {
+fn walk_grid_on_segment(
+    from: Vec2,
+    to: Vec2,
+    grid: &Grid<Stuff>,
+    skip_initial: bool,
+) -> Option<Vec2> {
     let dx = to.x - from.x;
     let dy = to.y - from.y;
 
@@ -104,7 +109,7 @@ fn set_visible(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Vec2, r
     for y in -radius..=radius {
         for x in -radius..=radius {
             let limit = player_pos + Vec2::new(x, y);
-            match walk_grid(player_pos, limit, grid, true) {
+            match walk_grid_on_segment(player_pos, limit, grid, true) {
                 Some(pos) if (pos - limit).len_sq() <= 2 => visible[Vec2::new(pos.x, pos.y)] = true,
                 None => visible[Vec2::new(limit.x, limit.y)] = true,
                 _ => {}
