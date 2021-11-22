@@ -8,7 +8,7 @@
 
         x += grid.offset.x;
         y += grid.offset.y;
-        return core.visible({x,y})
+        return core.visible(x, y)
     }
     const isItemExplored = (i, grid) => {
         let y = Math.floor(i / grid.grid.dims.x);
@@ -16,7 +16,7 @@
 
         x += grid.offset.x;
         y += grid.offset.y;
-        return core.explored({x,y})
+        return core.explored(x, y)
     }
 </script>
 

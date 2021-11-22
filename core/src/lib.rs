@@ -173,14 +173,12 @@ impl Core {
     }
 
     #[wasm_bindgen(js_name = "visible")]
-    pub fn visible(&self, pos: JsValue) -> bool {
-        let Vec2 { x, y } = pos.into_serde().unwrap();
+    pub fn visible(&self, x: i32, y: i32) -> bool {
         self.visible.at(x, y).copied().unwrap_or(false)
     }
 
     #[wasm_bindgen(js_name = "explored")]
-    pub fn explored(&self, pos: JsValue) -> bool {
-        let Vec2 { x, y } = pos.into_serde().unwrap();
+    pub fn explored(&self, x: i32, y: i32) -> bool {
         self.explored.at(x, y).copied().unwrap_or(false)
     }
 
@@ -204,7 +202,11 @@ impl Core {
         for y in min.y.max(0)..max.y.min(self.grid.height()) {
             for x in min.x.max(0)..max.x.min(self.grid.width()) {
                 let pos = Vec2::new(x, y);
-                result[pos - min] = self.grid[pos].clone();
+                if self.explored[pos] {
+                    result[pos - min] = self.grid[pos].clone();
+                } else {
+                    result[pos - min] = Stuff::default();
+                }
             }
         }
         let result = RenderedGrid {
