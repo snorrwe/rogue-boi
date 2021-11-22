@@ -131,8 +131,15 @@ pub enum InputEvent {
 
 #[derive(serde::Serialize)]
 pub struct RenderedGrid {
-    pub grid: Grid<Stuff>,
+    pub grid: Grid<OutputStuff>,
     pub offset: Vec2,
+}
+
+#[derive(serde::Serialize, Default, Clone)]
+pub struct OutputStuff {
+    pub payload: Option<Stuff>,
+    pub visible: bool,
+    pub explored: bool,
 }
 
 #[wasm_bindgen]
@@ -172,16 +179,6 @@ impl Core {
         update_grid(Query::new(&self.world), &mut self.grid);
     }
 
-    #[wasm_bindgen(js_name = "visible")]
-    pub fn visible(&self, x: i32, y: i32) -> bool {
-        self.visible.at(x, y).copied().unwrap_or(false)
-    }
-
-    #[wasm_bindgen(js_name = "explored")]
-    pub fn explored(&self, x: i32, y: i32) -> bool {
-        self.explored.at(x, y).copied().unwrap_or(false)
-    }
-
     #[wasm_bindgen(js_name = "pushEvent")]
     pub fn push_event(&mut self, event: JsValue) {
         let event: InputEvent = event.into_serde().unwrap();
@@ -202,11 +199,13 @@ impl Core {
         for y in min.y.max(0)..max.y.min(self.grid.height()) {
             for x in min.x.max(0)..max.x.min(self.grid.width()) {
                 let pos = Vec2::new(x, y);
-                if self.explored[pos] {
-                    result[pos - min] = self.grid[pos].clone();
-                } else {
-                    result[pos - min] = Stuff::default();
+                let mut output = OutputStuff::default();
+                output.explored = self.explored[pos];
+                output.visible = self.visible[pos];
+                if output.explored {
+                    output.payload = self.grid[pos].clone().into();
                 }
+                result[pos - min] = output;
             }
         }
         let result = RenderedGrid {

@@ -1,32 +1,15 @@
 <script>
     export let core;
     export let grid;
-
-    const isItemVisible = (i, grid) => {
-        let y = Math.floor(i / grid.grid.dims.x);
-        let x = i - y * grid.grid.dims.x;
-
-        x += grid.offset.x;
-        y += grid.offset.y;
-        return core.visible(x, y)
-    }
-    const isItemExplored = (i, grid) => {
-        let y = Math.floor(i / grid.grid.dims.x);
-        let x = i - y * grid.grid.dims.x;
-
-        x += grid.offset.x;
-        y += grid.offset.y;
-        return core.explored(x, y)
-    }
 </script>
 
 <div class="grid" style="--cols: {grid.grid.dims.x}; --rows: {grid.grid.dims.y}">
 
 {#each grid.grid.data as item, i}
     <div class="grid-item" >
-        <div class:grid_visible="{isItemVisible(i, grid)}">
-            {#if item.id && isItemExplored(i, grid)}
-                <img src="/icons/ffffff/transparent/1x1/{core.get_icon(item.id)}" />
+        <div class:grid_visible="{item.visible}">
+            {#if item.payload?.id && item.explored}
+                <img src="/icons/ffffff/transparent/1x1/{core.get_icon(item.payload.id)}" />
             {:else}
                 <div class="floor"></div>
             {/if}
