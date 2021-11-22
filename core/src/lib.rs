@@ -178,6 +178,12 @@ impl Core {
         self.visible.at(x, y).copied().unwrap_or(false)
     }
 
+    #[wasm_bindgen(js_name = "explored")]
+    pub fn explored(&self, pos: JsValue) -> bool {
+        let Vec2 { x, y } = pos.into_serde().unwrap();
+        self.explored.at(x, y).copied().unwrap_or(false)
+    }
+
     #[wasm_bindgen(js_name = "pushEvent")]
     pub fn push_event(&mut self, event: JsValue) {
         let event: InputEvent = event.into_serde().unwrap();

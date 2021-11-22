@@ -101,18 +101,13 @@ fn walk_grid(from: Vec2, to: Vec2, grid: &Grid<Stuff>, skip_initial: bool) -> Op
 fn set_visible(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Vec2, radius: i32) {
     visible.splat_set([Vec2::ZERO, visible.dims()], false);
     // walk the visible range
-    let r2 = radius * radius;
     for y in -radius..=radius {
         for x in -radius..=radius {
             let limit = player_pos + Vec2::new(x, y);
-            if (player_pos - limit).len_sq() <= r2 {
-                match walk_grid(player_pos, limit, grid, true) {
-                    Some(pos) if (pos - limit).len_sq() <= 2 => {
-                        visible[Vec2::new(pos.x, pos.y)] = true
-                    }
-                    None => visible[Vec2::new(limit.x, limit.y)] = true,
-                    _ => {}
-                }
+            match walk_grid(player_pos, limit, grid, true) {
+                Some(pos) if (pos - limit).len_sq() <= 2 => visible[Vec2::new(pos.x, pos.y)] = true,
+                None => visible[Vec2::new(limit.x, limit.y)] = true,
+                _ => {}
             }
         }
     }
@@ -128,11 +123,9 @@ pub fn update_fov(
 ) {
     let q = q.into_inner();
     let player_pos = q.get(player).unwrap();
-    set_visible(&grid, visible, player_pos.0, 8);
+    set_visible(&grid, visible, player_pos.0, 10);
     visible[player_pos.0] = true;
     explored.or_eq(&visible);
-    // do not highlight the player
-    visible[player_pos.0] = false;
 }
 
 pub fn update_grid(q: Query<(EntityId, Pos, StuffTag)>, grid: &mut Grid<Stuff>) {
