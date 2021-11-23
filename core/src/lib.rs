@@ -170,6 +170,7 @@ pub struct OutputStuff {
 impl Core {
     pub fn init(&mut self) {
         self.tick(0);
+        self.update_output();
     }
 
     pub fn tick(&mut self, dt_ms: i32) {
