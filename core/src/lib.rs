@@ -43,6 +43,7 @@ pub struct Core {
     viewport: Vec2,
     inputs: Vec<InputEvent>,
     time: i32,
+    output_cache: JsValue,
 }
 
 #[wasm_bindgen(js_name = "initCore")]
@@ -74,6 +75,7 @@ pub fn init_core() -> Core {
     );
 
     let mut core = Core {
+        output_cache: JsValue::null(),
         viewport: Vec2::new(15, 15),
         world,
         player,
@@ -174,6 +176,8 @@ impl Core {
         self.time += dt_ms;
         // min cooldown
         if !self.inputs.is_empty() && self.time > 120 {
+            let _span = tracing::span!(tracing::Level::DEBUG, "game_update").entered();
+
             // logic update
             update_player(
                 self.inputs.as_slice(),
@@ -183,15 +187,17 @@ impl Core {
             );
             self.time = 0;
             self.inputs.clear();
+            update_grid(Query::new(&self.world), &mut self.grid);
+            update_fov(
+                self.player,
+                Query::new(&self.world),
+                &self.grid,
+                &mut self.explored,
+                &mut self.visible,
+            );
+
+            self.update_output();
         }
-        update_grid(Query::new(&self.world), &mut self.grid);
-        update_fov(
-            self.player,
-            Query::new(&self.world),
-            &self.grid,
-            &mut self.explored,
-            &mut self.visible,
-        );
     }
 
     #[wasm_bindgen(js_name = "pushEvent")]
@@ -200,13 +206,14 @@ impl Core {
         self.inputs.push(event);
     }
 
-    pub fn player_pos(&self) -> Vec2 {
+    fn player_pos(&self) -> Vec2 {
         let q: Query<Pos> = Query::new(&self.world);
         q.into_inner().get(self.player).unwrap().0
     }
 
-    #[wasm_bindgen(js_name = "getGrid")]
-    pub fn get_grid(&self) -> JsValue {
+    fn update_output(&mut self) {
+        let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
+
         let mut result = Grid::new(self.viewport * 2);
         let player_pos = self.player_pos();
         let min = player_pos - self.viewport;
@@ -234,7 +241,12 @@ impl Core {
             grid: result,
             offset: min,
         };
-        JsValue::from_serde(&result).unwrap()
+        self.output_cache = JsValue::from_serde(&result).unwrap();
+    }
+
+    #[wasm_bindgen(js_name = "getGrid")]
+    pub fn get_grid(&self) -> JsValue {
+        self.output_cache.clone()
     }
 
     pub fn width(&self) -> i32 {

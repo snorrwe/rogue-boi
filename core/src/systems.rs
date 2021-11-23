@@ -3,10 +3,9 @@ use crate::{
     grid::Grid,
     math::Vec2,
     rogue_db::*,
-    Id, InputEvent, Stuff, StuffPayload,
+    InputEvent, Stuff,
 };
 use cao_db::prelude::*;
-use tracing::debug;
 
 pub fn update_player(
     inputs: &[InputEvent],
