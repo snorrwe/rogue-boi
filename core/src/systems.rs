@@ -116,6 +116,34 @@ fn set_visible(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Vec2, r
     }
 }
 
+/// go over the visible range and if an item is adjacent to a visible empty tile, then set that to
+/// visible as well
+fn flood_vizibility(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Vec2, radius: i32) {
+    let _s = tracing::debug_span!("flood").entered();
+
+    let mut to_update = smallvec::SmallVec::<[_; 64]>::new();
+    for y in -radius..=radius {
+        for x in -radius..=radius {
+            let pos = player_pos + Vec2::new(x, y);
+            if visible.at(pos.x, pos.y).copied().unwrap_or(false) {
+                continue;
+            }
+            for y in -1..=1 {
+                for x in -1..=1 {
+                    if visible.at(pos.x + x, pos.y + y).copied().unwrap_or(false)
+                        && grid[pos + Vec2::new(x, y)].is_none()
+                    {
+                        to_update.push(pos);
+                    }
+                }
+            }
+        }
+    }
+    for pos in to_update {
+        visible[pos] = true;
+    }
+}
+
 /// recompute visible area
 pub fn update_fov(
     player: EntityId,
@@ -124,10 +152,13 @@ pub fn update_fov(
     explored: &mut Grid<bool>,
     visible: &mut Grid<bool>,
 ) {
+    const RADIUS: i32 = 8;
+
     let q = q.into_inner();
     let player_pos = q.get(player).unwrap();
-    set_visible(&grid, visible, player_pos.0, 10);
+    set_visible(&grid, visible, player_pos.0, RADIUS);
     visible[player_pos.0] = true;
+    flood_vizibility(&grid, visible, player_pos.0, RADIUS);
     explored.or_eq(&visible);
 }
 
