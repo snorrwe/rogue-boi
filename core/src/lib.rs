@@ -228,11 +228,9 @@ impl Core {
                 if output.explored {
                     if let Some(id) = self.grid[pos] {
                         output.payload = StuffPayload::from_world(id.into(), &self.world);
-                        if let Some(Icon(icon)) =
-                            <World as AsQuery<Icon>>::as_query(&self.world).get(id.into())
-                        {
-                            output.icon = Some(icon);
-                        }
+                        output.icon = <World as AsQuery<Icon>>::as_query(&self.world)
+                            .get(id.into())
+                            .map(|icon| icon.0);
                     }
                 }
                 result[pos - min] = output;
