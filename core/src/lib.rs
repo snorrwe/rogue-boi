@@ -51,6 +51,8 @@ pub fn init_core() -> Core {
     {
         utils::set_panic_hook();
     }
+    tracing_wasm::set_as_global_default();
+
     let mut world = World::new(500_000);
     let player = world.spawn_entity();
     world.insert(player, StuffTag::Player);
