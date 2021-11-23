@@ -119,7 +119,7 @@ impl Default for StuffPayload {
 }
 
 /// Id sent to JS
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
 pub struct Id {
     pub val: u64,
 }

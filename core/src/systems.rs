@@ -6,6 +6,7 @@ use crate::{
     Id, InputEvent, Stuff, StuffPayload,
 };
 use cao_db::prelude::*;
+use tracing::debug;
 
 pub fn update_player(
     inputs: &[InputEvent],
@@ -65,41 +66,37 @@ fn walk_grid_on_segment(
     let dx = to.x - from.x;
     let dy = to.y - from.y;
 
-    let nx = dx.abs() as f32;
-    let ny = dy.abs() as f32;
-
     let sign_x = if dx > 0 { 1 } else { -1 };
     let sign_y = if dy > 0 { 1 } else { -1 };
+
+    let nx = dx.abs() as f32;
+    let ny = dy.abs() as f32;
 
     let mut p = from;
     let mut ix = 0.0;
     let mut iy = 0.0;
     if skip_initial {
-        if (0.5 + ix) / nx < (0.5 + iy) / ny {
-            // step horizontal
-            p.x += sign_x;
-            ix += 1.0;
-        } else {
-            //vertical
-            p.y += sign_y;
-            iy += 1.0;
-        }
+        step(&mut p, &mut ix, &mut iy, nx, ny, sign_x, sign_y);
     }
     while ix < nx || iy < ny {
-        if !grid.at(p.x, p.y).and_then(|x| x.as_ref()).is_some() {
+        if grid.at(p.x, p.y).and_then(|x| x.as_ref()).is_some() {
             return Some(p);
         }
-        if (0.5 + ix) / nx < (0.5 + iy) / ny {
-            // step horizontal
-            p.x += sign_x;
-            ix += 1.0;
-        } else {
-            // step vertical
-            p.y += sign_y;
-            iy += 1.0;
-        }
+        step(&mut p, &mut ix, &mut iy, nx, ny, sign_x, sign_y);
     }
     None
+}
+
+fn step(p: &mut Vec2, ix: &mut f32, iy: &mut f32, nx: f32, ny: f32, sign_x: i32, sign_y: i32) {
+    if (0.5 + *ix) / nx < (0.5 + *iy) / ny {
+        // step horizontal
+        p.x += sign_x;
+        *ix += 1.0;
+    } else {
+        //vertical
+        p.y += sign_y;
+        *iy += 1.0;
+    }
 }
 
 fn set_visible(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Vec2, radius: i32) {
@@ -109,7 +106,6 @@ fn set_visible(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Vec2, r
         for x in -radius..=radius {
             let limit = player_pos + Vec2::new(x, y);
             match walk_grid_on_segment(player_pos, limit, grid, true) {
-                Some(pos) if (pos - limit).len_sq() <= 2 => visible[limit] = true,
                 None => {
                     if let Some(visible) = visible.at_mut(limit.x, limit.y) {
                         *visible = true;
