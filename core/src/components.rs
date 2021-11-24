@@ -13,6 +13,22 @@ pub enum StuffTag {
     Orc,
 }
 
+impl StuffTag {
+    pub fn is_opaque(self) -> bool {
+        match self {
+            StuffTag::Wall => true,
+            StuffTag::Player | StuffTag::Troll | StuffTag::Orc => false,
+        }
+    }
+
+    pub fn static_visiblity(self) -> bool {
+        match self {
+            StuffTag::Wall => true,
+            StuffTag::Player | StuffTag::Troll | StuffTag::Orc => false,
+        }
+    }
+}
+
 pub const ENEMY_TAGS: &[StuffTag] = &[StuffTag::Troll, StuffTag::Orc];
 
 #[derive(Debug, Clone, Copy)]

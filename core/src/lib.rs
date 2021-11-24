@@ -227,10 +227,15 @@ impl Core {
                 output.visible = self.visible[pos];
                 if output.explored {
                     if let Some(id) = self.grid[pos] {
-                        output.payload = StuffPayload::from_world(id.into(), &self.world);
-                        output.icon = <World as AsQuery<Icon>>::as_query(&self.world)
+                        let ty = <World as AsQuery<StuffTag>>::as_query(&self.world)
                             .get(id.into())
-                            .map(|icon| icon.0);
+                            .expect("Failed to get tag of stuff");
+                        if output.visible || ty.static_visiblity() {
+                            output.payload = StuffPayload::from_world(id.into(), &self.world);
+                            output.icon = <World as AsQuery<Icon>>::as_query(&self.world)
+                                .get(id.into())
+                                .map(|icon| icon.0);
+                        }
                     }
                 }
                 result[pos - min] = output;

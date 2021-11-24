@@ -60,6 +60,7 @@ fn walk_grid_on_segment(
     from: Vec2,
     to: Vec2,
     grid: &Grid<Stuff>,
+    tags: ComponentFrag<StuffTag>,
     skip_initial: bool,
 ) -> Option<Vec2> {
     let dx = to.x - from.x;
@@ -78,7 +79,16 @@ fn walk_grid_on_segment(
         step(&mut p, &mut ix, &mut iy, nx, ny, sign_x, sign_y);
     }
     while ix < nx || iy < ny {
-        if grid.at(p.x, p.y).and_then(|x| x.as_ref()).is_some() {
+        // if there is an entity at this position and the entity is opaque
+        if grid
+            .at(p.x, p.y)
+            .and_then(|x| x.as_ref())
+            .and_then(|id| {
+                tags.get(id.into())
+                    .and_then(|tag| tag.is_opaque().then(|| ()))
+            })
+            .is_some()
+        {
             return Some(p);
         }
         step(&mut p, &mut ix, &mut iy, nx, ny, sign_x, sign_y);
@@ -98,13 +108,19 @@ fn step(p: &mut Vec2, ix: &mut f32, iy: &mut f32, nx: f32, ny: f32, sign_x: i32,
     }
 }
 
-fn set_visible(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Vec2, radius: i32) {
+fn set_visible(
+    grid: &Grid<Stuff>,
+    visible: &mut Grid<bool>,
+    tags: ComponentFrag<StuffTag>,
+    player_pos: Vec2,
+    radius: i32,
+) {
     visible.splat_set([Vec2::ZERO, visible.dims()], false);
     // walk the visible range
     for y in -radius..=radius {
         for x in -radius..=radius {
             let limit = player_pos + Vec2::new(x, y);
-            match walk_grid_on_segment(player_pos, limit, grid, true) {
+            match walk_grid_on_segment(player_pos, limit, grid, tags, true) {
                 None => {
                     if let Some(visible) = visible.at_mut(limit.x, limit.y) {
                         *visible = true;
@@ -147,7 +163,7 @@ fn flood_vizibility(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Ve
 /// recompute visible area
 pub fn update_fov(
     player: EntityId,
-    q: Query<Pos>,
+    q: Query<(StuffTag, Pos)>,
     grid: &Grid<Stuff>,
     explored: &mut Grid<bool>,
     visible: &mut Grid<bool>,
@@ -155,8 +171,8 @@ pub fn update_fov(
     const RADIUS: i32 = 8;
 
     let q = q.into_inner();
-    let player_pos = q.get(player).unwrap();
-    set_visible(&grid, visible, player_pos.0, RADIUS);
+    let player_pos = q.1.get(player).unwrap();
+    set_visible(&grid, visible, q.0, player_pos.0, RADIUS);
     visible[player_pos.0] = true;
     flood_vizibility(&grid, visible, player_pos.0, RADIUS);
     explored.or_eq(&visible);
