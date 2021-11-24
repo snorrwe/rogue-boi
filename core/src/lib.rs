@@ -49,19 +49,30 @@ pub struct Core {
     output_cache: JsValue,
 }
 
-#[wasm_bindgen(js_name = "initCore")]
-pub fn init_core() -> Core {
+fn init_player(world: &mut World) -> EntityId {
+    let player = world.spawn_entity();
+    world.insert(player, StuffTag::Player);
+    world.insert(player, Pos(Vec2::new(16, 16)));
+    world.insert(player, Icon("delapouite/person.svg"));
+    world.insert(player, Hp::new(10));
+
+    player
+}
+
+#[wasm_bindgen(start)]
+pub fn start() {
     #[cfg(debug_assertions)]
     {
         utils::set_panic_hook();
     }
     tracing_wasm::set_as_global_default();
+}
 
+#[wasm_bindgen(js_name = "initCore")]
+pub fn init_core() -> Core {
     let mut world = World::new(500_000);
-    let player = world.spawn_entity();
-    world.insert(player, StuffTag::Player);
-    world.insert(player, Pos(Vec2::new(16, 16)));
-    world.insert(player, Icon("delapouite/person.svg"));
+
+    let player = init_player(&mut world);
 
     let dims = Vec2 { x: 64, y: 64 };
     let mut grid = Grid::new(dims);

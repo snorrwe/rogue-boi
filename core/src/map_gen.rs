@@ -27,7 +27,9 @@ fn init_entity(pos: Vec2, tag: StuffTag, world: &mut Db, grid: &mut Grid<Stuff>)
     world.insert(id, tag);
     world.insert(id, Pos(pos));
     match tag {
-        StuffTag::Player => {}
+        StuffTag::Player => {
+            unreachable!()
+        }
         StuffTag::Wall => {
             world.insert(id, Icon("delapouite/brick-wall.svg"));
         }

@@ -200,8 +200,8 @@ pub fn update_enemies(
     q: Query<(EntityId, Pos, Ai, StuffTag)>,
     _grid: &Grid<Stuff>,
 ) {
-    let (ids, _pos, ai, _tags) = q.into_inner();
-    for (idx, _) in ai.iter() {
+    let (ids, _pos, ai, tags) = q.into_inner();
+    for (idx, _) in join!(ai.iter(), tags.iter()) {
         let id = ids.id_at_index(idx);
         info!("AI entity {} is waiting for a real turn :(", id);
     }
