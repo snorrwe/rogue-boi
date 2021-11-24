@@ -15,6 +15,8 @@ use wasm_bindgen::prelude::*;
 
 use rogue_db::{Db as World, Query};
 
+use crate::systems::update_enemies;
+
 db!(
     module rogue_db
     components
@@ -23,6 +25,7 @@ db!(
         Icon,
         StuffTag,
         Hp,
+        Ai,
     ]
 );
 
@@ -176,29 +179,32 @@ impl Core {
     pub fn tick(&mut self, dt_ms: i32) {
         self.time += dt_ms;
         // min cooldown
-        if !self.inputs.is_empty() && self.time > 120 {
-            let _span = tracing::span!(tracing::Level::DEBUG, "game_update").entered();
-
-            // logic update
-            update_player(
-                self.inputs.as_slice(),
-                self.player,
-                Query::new(&self.world),
-                &mut self.grid,
-            );
-            self.time = 0;
-            self.inputs.clear();
-            update_grid(Query::new(&self.world), &mut self.grid);
-            update_fov(
-                self.player,
-                Query::new(&self.world),
-                &self.grid,
-                &mut self.explored,
-                &mut self.visible,
-            );
-
-            self.update_output();
+        if self.inputs.is_empty() || self.time < 120 {
+            return;
         }
+        let _span = tracing::span!(tracing::Level::DEBUG, "game_update").entered();
+
+        // logic update
+        update_player(
+            self.inputs.as_slice(),
+            self.player,
+            Query::new(&self.world),
+            &mut self.grid,
+        );
+        update_enemies(self.player, Query::new(&self.world), &mut self.grid);
+
+        self.time = 0;
+        self.inputs.clear();
+        update_grid(Query::new(&self.world), &mut self.grid);
+        update_fov(
+            self.player,
+            Query::new(&self.world),
+            &self.grid,
+            &mut self.explored,
+            &mut self.visible,
+        );
+
+        self.update_output();
     }
 
     #[wasm_bindgen(js_name = "pushEvent")]

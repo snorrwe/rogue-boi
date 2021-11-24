@@ -1,5 +1,5 @@
 use crate::{
-    components::{Pos, StuffTag},
+    components::{Ai, Pos, StuffTag},
     grid::Grid,
     math::Vec2,
     rogue_db::*,
@@ -195,5 +195,17 @@ pub fn update_grid(q: Query<(EntityId, Pos)>, grid: &mut Grid<Stuff>) {
         let pos = pos.0;
 
         grid[Vec2::new(pos.x, pos.y)] = Some(id.into());
+    }
+}
+
+pub fn update_enemies(
+    _player_id: EntityId,
+    q: Query<(EntityId, Pos, Ai, StuffTag)>,
+    _grid: &Grid<Stuff>,
+) {
+    let (ids, _pos, ai, _tags) = q.into_inner();
+    for (idx, _) in ai.iter() {
+        let id = ids.id_at_index(idx);
+        info!("AI entity {} is waiting for a real turn :(", id);
     }
 }

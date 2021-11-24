@@ -5,6 +5,9 @@ pub struct Pos(pub Vec2);
 
 pub struct Icon(pub &'static str);
 
+#[derive(Debug, Clone, Copy)]
+pub struct Ai;
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize)]
 pub enum StuffTag {
     Player,
