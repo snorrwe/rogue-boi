@@ -15,7 +15,7 @@ use wasm_bindgen::prelude::*;
 
 use rogue_db::{Db as World, Query};
 
-use crate::systems::update_enemies;
+use crate::systems::{update_enemies, update_hp};
 
 db!(
     module rogue_db
@@ -203,6 +203,7 @@ impl Core {
             &mut self.grid,
         );
         update_enemies(self.player, Query::new(&self.world), &mut self.grid);
+        update_hp(&mut self.world);
 
         self.time = 0;
         self.inputs.clear();

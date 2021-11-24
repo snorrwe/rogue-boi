@@ -1,12 +1,12 @@
 use crate::{
-    components::{Ai, Pos, StuffTag},
+    components::{Ai, Hp, Pos, StuffTag},
     grid::Grid,
     math::Vec2,
     rogue_db::*,
     InputEvent, Stuff,
 };
 use cao_db::prelude::*;
-use tracing::info;
+use tracing::{debug, info};
 
 pub fn update_player(
     inputs: &[InputEvent],
@@ -204,5 +204,18 @@ pub fn update_enemies(
     for (idx, _) in join!(ai.iter(), tags.iter()) {
         let id = ids.id_at_index(idx);
         info!("AI entity {} is waiting for a real turn :(", id);
+    }
+}
+
+pub fn update_hp(world: &mut Db) {
+    let mut delete_list = smallvec::SmallVec::<[_; 32]>::new();
+    let query = Query::<(EntityId, Hp)>::new(&world);
+    let (ids, hps) = query.into_inner();
+    for (idx, _) in hps.iter().filter(|(_, hp)| hp.current <= 0) {
+        delete_list.push(ids.id_at_index(idx));
+    }
+    for id in delete_list {
+        debug!("Entity {} died", id);
+        world.delete_entity(id);
     }
 }
