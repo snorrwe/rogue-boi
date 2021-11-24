@@ -266,8 +266,4 @@ impl Core {
     pub fn height(&self) -> i32 {
         self.grid.height()
     }
-
-    pub fn player_id(&self) -> String {
-        self.player.to_string()
-    }
 }
