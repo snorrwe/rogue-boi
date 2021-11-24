@@ -158,7 +158,7 @@ impl<'a> From<&'a Id> for EntityId {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 #[serde(tag = "ty")]
 pub enum InputEvent {
     KeyUp { key: String },

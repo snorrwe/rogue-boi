@@ -18,10 +18,10 @@ pub fn update_player(
 
     for event in inputs {
         match event {
-            InputEvent::KeyDown { key } if key == "w" => delta.y = -1,
-            InputEvent::KeyDown { key } if key == "s" => delta.y = 1,
-            InputEvent::KeyDown { key } if key == "a" => delta.x = -1,
-            InputEvent::KeyDown { key } if key == "d" => delta.x = 1,
+            InputEvent::KeyDown { key } if key == "w" || key == "ArrowUp" => delta.y = -1,
+            InputEvent::KeyDown { key } if key == "s" || key == "ArrowDown" => delta.y = 1,
+            InputEvent::KeyDown { key } if key == "a" || key == "ArrowLeft" => delta.x = -1,
+            InputEvent::KeyDown { key } if key == "d" || key == "ArrowRight" => delta.x = 1,
             _ => {}
         }
     }
