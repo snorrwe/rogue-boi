@@ -87,10 +87,7 @@ fn walk_grid_on_segment(
         if grid
             .at(p.x, p.y)
             .and_then(|x| x.as_ref())
-            .and_then(|id| {
-                tags.get(id.into())
-                    .and_then(|tag| tag.is_opaque().then(|| ()))
-            })
+            .and_then(|id| tags.get(id.into()).filter(|tag| tag.is_opaque()))
             .is_some()
         {
             return Some(p);
