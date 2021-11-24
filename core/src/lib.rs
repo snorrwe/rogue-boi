@@ -259,15 +259,4 @@ impl Core {
     pub fn player_id(&self) -> String {
         self.player.to_string()
     }
-
-    pub fn get_icon(&self, id: JsValue) -> Option<String> {
-        let id: Id = id.into_serde().unwrap();
-        let id: EntityId = id.into();
-        debug_assert!(self.world.is_valid(id));
-
-        let q = Query::<Icon>::new(&self.world);
-        let q = q.into_inner();
-
-        q.get(id).map(|Icon(x)| x.to_string())
-    }
 }
