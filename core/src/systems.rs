@@ -6,6 +6,7 @@ use crate::{
     InputEvent, Stuff,
 };
 use cao_db::prelude::*;
+use tracing::info;
 
 pub fn update_player(
     inputs: &[InputEvent],
@@ -35,10 +36,13 @@ pub fn update_player(
         let new_pos = *pos + delta;
         match grid.at(new_pos.x, new_pos.y) {
             Some(Some(id)) => {
-                match q.1.get(id.into()).unwrap() {
+                let id = id.into();
+                match q.1.get(id).unwrap() {
                     StuffTag::Player => unreachable!(),
                     StuffTag::Wall => { /* don't step */ }
-                    StuffTag::Troll | StuffTag::Orc => todo!("hit the enemy"),
+                    StuffTag::Troll | StuffTag::Orc => {
+                        info!("kick enemy {} who found it hella annoying", id)
+                    }
                 }
             }
             Some(None) => {
