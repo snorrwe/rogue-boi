@@ -11,7 +11,7 @@ use tracing::{debug, info};
 pub fn update_player(
     inputs: &[InputEvent],
     player: EntityId,
-    q: Query<(Pos, StuffTag)>,
+    q: Query<(Pos, StuffTag, Hp)>,
     grid: &mut Grid<Stuff>,
 ) {
     let mut delta = Vec2::new(0, 0);
@@ -41,7 +41,9 @@ pub fn update_player(
                     StuffTag::Player => unreachable!(),
                     StuffTag::Wall => { /* don't step */ }
                     StuffTag::Troll | StuffTag::Orc => {
-                        info!("kick enemy {} who found it hella annoying", id)
+                        let hp = q.2.get_mut(id).expect("Enemy has no hp");
+                        hp.current -= 1;
+                        debug!("kick enemy {}: {:?}", id, hp)
                     }
                 }
             }
