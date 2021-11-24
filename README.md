@@ -2,9 +2,9 @@
 
 ### Install deps
 
--   [rust](TBA)
--   [wasm-pack](TBA)
--   Run `yarn`
+- [rust](TBA)
+- [wasm-pack](TBA)
+- Run `yarn`
 
 ### Run
 

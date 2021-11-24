@@ -25,7 +25,7 @@ export default [
 				css: (css) => {
 					css.write('public/build/bundle.css');
 				},
-                emitCss: false
+				emitCss: false
 			}),
 
 			// If you have external dependencies installed from
@@ -58,15 +58,15 @@ export default [
 		watch: {
 			clearScreen: false
 		}
-	},
-    // {
-    //   input: {
-    //     foo: "./core/Cargo.toml",
-    //   },
-    //   plugins: [
-    //     rust(),
-    //   ],
-    // }
+	}
+	// {
+	//   input: {
+	//     foo: "./core/Cargo.toml",
+	//   },
+	//   plugins: [
+	//     rust(),
+	//   ],
+	// }
 ];
 
 function serve() {

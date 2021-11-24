@@ -1,41 +1,41 @@
 <script>
-    import { writable } from 'svelte/store';
-    import Grid from "./Grid.svelte"
+	import { writable } from 'svelte/store';
+	import Grid from './Grid.svelte';
 
-    export let core;
+	export let core;
 
-    const grid = writable(null);
-    let last = new Date().getTime();
+	const grid = writable(null);
+	let last = new Date().getTime();
 
-    document.addEventListener('keydown', (event) => {
-        core.pushEvent({
-            ty: 'KeyDown',
-            key: event.key
-        });
-    });
+	document.addEventListener('keydown', (event) => {
+		core.pushEvent({
+			ty: 'KeyDown',
+			key: event.key
+		});
+	});
 
-    const gameLoop = () => {
-        const now = new Date().getTime();
+	const gameLoop = () => {
+		const now = new Date().getTime();
 
-        core.tick(now - last);
+		core.tick(now - last);
 
-        grid.set(core.getGrid());
-        last = now;
+		grid.set(core.getGrid());
+		last = now;
 
-        requestAnimationFrame(gameLoop);
-    };
-    requestAnimationFrame(gameLoop);
+		requestAnimationFrame(gameLoop);
+	};
+	requestAnimationFrame(gameLoop);
 </script>
 
 <main>
-    {#if core != null && $grid != null}
-        <Grid grid={$grid} core={core} />
-    {/if}
+	{#if core != null && $grid != null}
+		<Grid grid={$grid} {core} />
+	{/if}
 </main>
 
 <style>
-    main {
-        padding: 1em;
-        margin: 0 auto;
-    }
+	main {
+		padding: 1em;
+		margin: 0 auto;
+	}
 </style>
