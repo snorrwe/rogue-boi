@@ -7,11 +7,11 @@ use cao_db::prelude::*;
 use rand::{prelude::SliceRandom, Rng};
 
 use crate::{
-    components::{Icon, Pos, StuffTag, ENEMY_TAGS},
+    components::{Hp, Icon, Pos, StuffTag, ENEMY_TAGS},
     grid::Grid,
     math::Vec2,
     rogue_db::*,
-    Id, Stuff, StuffPayload,
+    Stuff,
 };
 
 pub struct MapGenProps {
@@ -22,8 +22,24 @@ pub struct MapGenProps {
 }
 
 fn init_entity(pos: Vec2, tag: StuffTag, world: &mut Db, grid: &mut Grid<Stuff>) {
-    // TODO: merge wall and player too pls
-    todo!()
+    let id = world.spawn_entity();
+    grid[pos] = Some(id.into());
+    world.insert(id, tag);
+    world.insert(id, Pos(pos));
+    match tag {
+        StuffTag::Player => {}
+        StuffTag::Wall => {
+            world.insert(id, Icon("delapouite/brick-wall.svg"));
+        }
+        StuffTag::Troll => {
+            world.insert(id, Hp::new(8));
+            world.insert(id, Icon("skoll/troll.svg"));
+        }
+        StuffTag::Orc => {
+            world.insert(id, Hp::new(4));
+            world.insert(id, Icon("delapouite/orc-head.svg"));
+        }
+    }
 }
 
 fn place_entities(
@@ -73,19 +89,12 @@ pub fn generate_map(
     //
     for (pos, tag) in working_set.iter().filter_map(|(p, t)| t.map(|t| (p, t))) {
         match tag {
-            StuffTag::Wall => {
-                let id = insert_wall(pos, world);
-                grid[pos] = Some(id.into());
-            }
             StuffTag::Player => {
                 // update player pos
                 world.insert(player_id, Pos(pos));
                 grid[pos] = Some(player_id.into());
             }
-            StuffTag::Troll | StuffTag::Orc => {
-                let id = world.spawn_entity();
-                grid[pos] = Some(id.into());
-                world.insert(id, tag);
+            _ => {
                 init_entity(pos, tag, world, grid);
             }
         }
@@ -123,6 +132,10 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps) {
         }
     }
 
+    for room in rooms.iter().skip(1) {
+        place_entities(&mut rng, grid, room, props.max_monsters_per_room);
+    }
+
     // spawn the player in the first room
     grid[rooms[0].center()] = Some(StuffTag::Player);
 }
@@ -142,12 +155,4 @@ fn tunnel_between(mut rng: impl Rng, start: Vec2, end: Vec2) -> impl Iterator<It
     }
 
     TunnelIter::new(start, end, Vec2::new(cornerx, cornery))
-}
-
-fn insert_wall(pos: Vec2, w: &mut Db) -> EntityId {
-    let id = w.spawn_entity();
-    w.insert(id, StuffTag::Wall);
-    w.insert(id, Pos(pos));
-    w.insert(id, Icon("delapouite/brick-wall.svg"));
-    id
 }
