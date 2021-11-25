@@ -16,6 +16,8 @@ pub enum StuffTag {
     Orc,
 }
 
+pub const ENEMY_TAGS: &[StuffTag] = &[StuffTag::Troll, StuffTag::Orc];
+
 impl StuffTag {
     pub fn is_opaque(self) -> bool {
         match self {
@@ -32,8 +34,6 @@ impl StuffTag {
         }
     }
 }
-
-pub const ENEMY_TAGS: &[StuffTag] = &[StuffTag::Troll, StuffTag::Orc];
 
 #[derive(Debug, Clone, Copy)]
 pub struct Hp {
