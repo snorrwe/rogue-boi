@@ -210,9 +210,9 @@ pub fn update_enemies(
 }
 
 pub fn update_hp(world: &mut Db) {
-    // update AI hps 
+    // update AI hps
     //
-    let mut delete_list = smallvec::SmallVec::<[_; 32]>::new();
+    let mut delete_list = smallvec::SmallVec::<[_; 4]>::new();
     let query = Query::<(EntityId, Hp, Ai)>::new(&world);
     let (ids, hps, ai) = query.into_inner();
     for (idx, _) in join!(hps.iter(), ai.iter()).filter(|(_, (hp, _ai))| hp.current <= 0) {
