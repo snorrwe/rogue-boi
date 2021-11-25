@@ -6,7 +6,7 @@ use crate::{
     InputEvent, Stuff,
 };
 use cao_db::prelude::*;
-use tracing::{debug, info};
+use tracing::debug;
 
 pub fn update_player(
     inputs: &[InputEvent],
@@ -62,12 +62,11 @@ pub fn update_player(
 }
 
 /// return wether the segment hits something and where
-fn walk_grid_on_segment(
+fn walk_grid_on_segment<const SKIP_INITIAL: bool>(
     from: Vec2,
     to: Vec2,
     grid: &Grid<Stuff>,
     tags: ComponentFrag<StuffTag>,
-    skip_initial: bool,
 ) -> Option<Vec2> {
     let dx = to.x - from.x;
     let dy = to.y - from.y;
@@ -81,7 +80,7 @@ fn walk_grid_on_segment(
     let mut p = from;
     let mut ix = 0.0;
     let mut iy = 0.0;
-    if skip_initial {
+    if SKIP_INITIAL {
         step(&mut p, &mut ix, &mut iy, nx, ny, sign_x, sign_y);
     }
     while ix < nx || iy < ny {
@@ -123,13 +122,10 @@ fn set_visible(
     for y in -radius..=radius {
         for x in -radius..=radius {
             let limit = player_pos + Vec2::new(x, y);
-            match walk_grid_on_segment(player_pos, limit, grid, tags, true) {
-                None => {
-                    if let Some(visible) = visible.at_mut(limit.x, limit.y) {
-                        *visible = true;
-                    }
+            if walk_grid_on_segment::<true>(player_pos, limit, grid, tags).is_none() {
+                if let Some(visible) = visible.at_mut(limit.x, limit.y) {
+                    *visible = true;
                 }
-                _ => {}
             }
         }
     }
@@ -200,7 +196,7 @@ pub fn update_grid(q: Query<(EntityId, Pos)>, grid: &mut Grid<Stuff>) {
 pub fn update_melee_ai(
     player_id: EntityId,
     q: Query<(EntityId, Pos, MeleeAi, StuffTag, Hp)>,
-    _grid: &Grid<Stuff>,
+    grid: &Grid<Stuff>,
 ) {
     let (ids, pos, ai, tags, hp) = q.into_inner();
     let player_hp = hp.get_mut(player_id).expect("Failed to get player hp");
@@ -208,6 +204,7 @@ pub fn update_melee_ai(
     let Pos(player_pos) = *pos.get(player_id).expect("Failed to get player pos");
 
     for (idx, (MeleeAi { power }, (_tag, Pos(pos)))) in join!(ai.iter(), tags.iter(), pos.iter()) {
+        let pos = *pos;
         let _id = ids.id_at_index(idx);
         if pos.chebyshev(player_pos) <= 1 {
             player_hp.current -= power;
@@ -215,6 +212,9 @@ pub fn update_melee_ai(
                 "bonk the player with power {}. Player hp: {:?}",
                 power, player_hp
             );
+        } else if walk_grid_on_segment::<true>(pos, player_pos, grid, tags).is_none() {
+            // TODO: pathfinder
+            debug!("walk towards player");
         }
     }
 }
