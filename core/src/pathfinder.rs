@@ -71,19 +71,14 @@ pub fn find_path(
         }
         let new_g = current.gcost + 1;
 
-        let new_neighbours: ArrayVec<_, 4> = [
-            Vec2::new(1, 0),
-            Vec2::new(-1, 0),
-            Vec2::new(0, 1),
-            Vec2::new(0, -1),
-        ]
-        .iter()
-        .map(|x| current.pos + *x)
-        .filter(|pos| grid[*pos].is_none())
-        // if it's a new node, or if it's cheaper than the previous visit
-        // this is required because we only check the cross neighbours, so our `f` const function is inconsistent
-        .filter(|pos| gcost.get(pos).map(|cost| new_g < *cost).unwrap_or(true))
-        .collect();
+        let new_neighbours: ArrayVec<_, 4> = [Vec2::X, -Vec2::X, Vec2::Y, -Vec2::Y]
+            .iter()
+            .map(|x| current.pos + *x)
+            .filter(|pos| grid[*pos].is_none())
+            // if it's a new node, or if it's cheaper than the previous visit
+            // this is required because we only check the cross neighbours, so our `f` const function is inconsistent
+            .filter(|pos| gcost.get(pos).map(|cost| new_g < *cost).unwrap_or(true))
+            .collect();
 
         for neighbour in new_neighbours.into_iter() {
             came_from.insert(neighbour, current.pos);

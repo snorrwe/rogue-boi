@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Add, AddAssign, Index, IndexMut, Mul, Sub, SubAssign},
+    ops::{Add, AddAssign, Index, IndexMut, Mul, Neg, Sub, SubAssign},
 };
 
 use wasm_bindgen::prelude::*;
@@ -22,6 +22,9 @@ impl Display for Vec2 {
 
 impl Vec2 {
     pub const ZERO: Vec2 = Vec2 { x: 0, y: 0 };
+    pub const ONE: Vec2 = Vec2 { x: 1, y: 1 };
+    pub const X: Vec2 = Vec2 { x: 1, y: 0 };
+    pub const Y: Vec2 = Vec2 { x: 0, y: 1 };
 
     pub fn new(x: i32, y: i32) -> Self {
         Self { x, y }
@@ -121,6 +124,17 @@ impl IndexMut<usize> for Vec2 {
         match index {
             0 => &mut self.x,
             _ => &mut self.y,
+        }
+    }
+}
+
+impl Neg for Vec2 {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self {
+            x: -self.x,
+            y: -self.y,
         }
     }
 }
