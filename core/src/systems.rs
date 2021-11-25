@@ -215,11 +215,14 @@ pub fn update_hp(world: &mut Db) {
     let mut delete_list = smallvec::SmallVec::<[_; 4]>::new();
     let query = Query::<(EntityId, Hp, Ai)>::new(&world);
     let (ids, hps, ai) = query.into_inner();
-    for (idx, _) in join!(hps.iter(), ai.iter()).filter(|(_, (hp, _ai))| hp.current <= 0) {
-        delete_list.push(ids.id_at_index(idx));
-    }
-    for id in delete_list {
+    join!(hps.iter(), ai.iter())
+        .filter(|(_, (hp, _ai))| hp.current <= 0)
+        .into_iter()
+        .for_each(|(idx, _)| {
+            delete_list.push(ids.id_at_index(idx));
+        });
+    delete_list.into_iter().for_each(|id| {
         debug!("Entity {} died", id);
         world.delete_entity(id);
-    }
+    });
 }

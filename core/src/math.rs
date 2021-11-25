@@ -46,6 +46,11 @@ impl Vec2 {
         self.x * self.x + self.y * self.y
     }
 
+    /// Chebyshev distance from self to the other
+    pub fn chebyshev(self, rhs: Vec2) -> i32 {
+        (self.x - rhs.x).abs().max((self.y - rhs.y).abs())
+    }
+
     pub fn splat(val: i32) -> Self {
         Self::new(val, val)
     }
