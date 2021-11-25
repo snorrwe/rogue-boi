@@ -51,6 +51,10 @@ impl Vec2 {
         (self.x - rhs.x).abs().max((self.y - rhs.y).abs())
     }
 
+    pub fn manhatten(self, rhs: Vec2) -> i32 {
+        (self.x - rhs.x).abs() + (self.y - rhs.y).abs()
+    }
+
     pub fn splat(val: i32) -> Self {
         Self::new(val, val)
     }

@@ -2,10 +2,12 @@ use crate::{
     components::{Ai, Hp, MeleeAi, Pos, StuffTag},
     grid::Grid,
     math::Vec2,
+    pathfinder::find_path,
     rogue_db::*,
     InputEvent, Stuff,
 };
 use cao_db::prelude::*;
+use smallvec::SmallVec;
 use tracing::debug;
 
 pub fn update_player(
@@ -203,8 +205,9 @@ pub fn update_melee_ai(
 
     let Pos(player_pos) = *pos.get(player_id).expect("Failed to get player pos");
 
-    for (idx, (MeleeAi { power }, (_tag, Pos(pos)))) in join!(ai.iter(), tags.iter(), pos.iter()) {
-        let pos = *pos;
+    for (idx, (MeleeAi { power }, (_tag, Pos(pos)))) in
+        join!(ai.iter(), tags.iter(), pos.iter_mut())
+    {
         let _id = ids.id_at_index(idx);
         if pos.chebyshev(player_pos) <= 1 {
             player_hp.current -= power;
@@ -212,9 +215,16 @@ pub fn update_melee_ai(
                 "bonk the player with power {}. Player hp: {:?}",
                 power, player_hp
             );
-        } else if walk_grid_on_segment::<true>(pos, player_pos, grid, tags).is_none() {
+        } else if walk_grid_on_segment::<true>(*pos, player_pos, grid, tags).is_none() {
             // TODO: pathfinder
-            debug!("walk towards player");
+            let mut path = SmallVec::new(); // TODO: cache paths?
+            find_path(*pos, player_pos, grid, &mut path);
+            debug!("walk towards player {:?}", path);
+
+            path.pop(); // the first position is the monster itself
+            if let Some(new_pos) = path.pop() {
+                *pos = new_pos;
+            }
         }
     }
 }

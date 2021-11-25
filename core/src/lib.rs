@@ -2,6 +2,7 @@ mod components;
 mod grid;
 mod map_gen;
 mod math;
+mod pathfinder;
 mod systems;
 mod utils;
 
