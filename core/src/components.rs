@@ -1,7 +1,7 @@
 use crate::math::Vec2;
 use serde::Serialize;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize)]
 pub struct Pos(pub Vec2);
 
 pub struct Icon(pub &'static str);
@@ -41,7 +41,7 @@ impl StuffTag {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize)]
 pub struct Hp {
     pub current: i32,
     pub max: i32,

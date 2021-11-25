@@ -167,7 +167,11 @@ pub enum InputEvent {
 }
 
 #[derive(serde::Serialize)]
-pub struct RenderedGrid {
+pub struct RenderedOutput {
+    #[serde(rename = "playerPos")]
+    pub player_pos: Pos,
+    #[serde(rename = "playerHp")]
+    pub player_hp: Hp,
     pub grid: Grid<OutputStuff>,
     pub offset: Vec2,
 }
@@ -226,18 +230,23 @@ impl Core {
         self.inputs.push(event);
     }
 
-    fn player_pos(&self) -> Vec2 {
-        let q: Query<Pos> = Query::new(&self.world);
-        q.into_inner().get(self.player).unwrap().0
+    fn player_data(&self) -> (Pos, Hp) {
+        let q: Query<(Pos, Hp)> = Query::new(&self.world);
+        let (pos, hp) = q.into_inner();
+
+        (
+            *pos.get(self.player).unwrap(),
+            *hp.get(self.player).unwrap(),
+        )
     }
 
     fn update_output(&mut self) {
         let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
 
         let mut result = Grid::new(self.viewport * 2);
-        let player_pos = self.player_pos();
-        let min = player_pos - self.viewport;
-        let max = player_pos + self.viewport;
+        let (player_pos, player_hp) = self.player_data();
+        let min = player_pos.0 - self.viewport;
+        let max = player_pos.0 + self.viewport;
         for y in min.y.max(0)..max.y.min(self.grid.height()) {
             for x in min.x.max(0)..max.x.min(self.grid.width()) {
                 let pos = Vec2::new(x, y);
@@ -260,7 +269,9 @@ impl Core {
                 result[pos - min] = output;
             }
         }
-        let result = RenderedGrid {
+        let result = RenderedOutput {
+            player_pos,
+            player_hp,
             grid: result,
             offset: min,
         };
