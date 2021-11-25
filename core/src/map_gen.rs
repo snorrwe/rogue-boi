@@ -54,7 +54,7 @@ fn place_entities(
     room: &RectRoom,
     max_monsters: u32,
 ) {
-    let n_monsters = rng.gen_range(0, max_monsters);
+    let n_monsters = rng.gen_range(0, max_monsters + 1);
 
     for _ in 0..n_monsters {
         let x = rng.gen_range(room.min.x + 1, room.max.x + 1);
