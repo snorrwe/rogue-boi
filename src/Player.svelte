@@ -6,7 +6,7 @@
 <div>
 {#if hp != null}
     <p id="player-hp">
-        HP: {hp.current} / {hp.max}
+        Health: {hp.current} / {hp.max}
     </p>
 {/if}
 {#if pos != null}
