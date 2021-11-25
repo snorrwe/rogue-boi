@@ -10,6 +10,9 @@ pub struct Icon(pub &'static str);
 pub struct Ai;
 
 #[derive(Debug, Clone, Copy)]
+pub struct Walkable;
+
+#[derive(Debug, Clone, Copy)]
 pub struct MeleeAi {
     pub power: i32,
 }

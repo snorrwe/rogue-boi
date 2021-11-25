@@ -28,6 +28,7 @@ db!(
         Hp,
         Ai,
         MeleeAi,
+        Walkable,
     ]
 );
 

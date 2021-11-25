@@ -1,5 +1,5 @@
 use crate::{
-    components::{Ai, Hp, MeleeAi, Pos, StuffTag},
+    components::{Ai, Hp, MeleeAi, Pos, StuffTag, Walkable},
     grid::Grid,
     math::Vec2,
     pathfinder::find_path,
@@ -197,10 +197,10 @@ pub fn update_grid(q: Query<(EntityId, Pos)>, grid: &mut Grid<Stuff>) {
 
 pub fn update_melee_ai(
     player_id: EntityId,
-    q: Query<(EntityId, Pos, MeleeAi, StuffTag, Hp)>,
+    q: Query<(EntityId, Pos, MeleeAi, StuffTag, Hp, Walkable)>,
     grid: &Grid<Stuff>,
 ) {
-    let (ids, pos, ai, tags, hp) = q.into_inner();
+    let (ids, pos, ai, tags, hp, walkable) = q.into_inner();
     let player_hp = hp.get_mut(player_id).expect("Failed to get player hp");
 
     let Pos(player_pos) = *pos.get(player_id).expect("Failed to get player pos");
@@ -218,7 +218,7 @@ pub fn update_melee_ai(
         } else if walk_grid_on_segment::<true>(*pos, player_pos, grid, tags).is_none() {
             // TODO: pathfinder
             let mut path = SmallVec::new(); // TODO: cache paths?
-            find_path(*pos, player_pos, grid, &mut path);
+            find_path(*pos, player_pos, grid, walkable, &mut path);
             debug!("walk towards player {:?}", path);
 
             path.pop(); // the first position is the monster itself
