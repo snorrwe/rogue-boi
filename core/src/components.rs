@@ -1,12 +1,18 @@
 use crate::math::Vec2;
 use serde::Serialize;
 
+#[derive(Debug, Clone, Copy)]
 pub struct Pos(pub Vec2);
 
 pub struct Icon(pub &'static str);
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ai;
+
+#[derive(Debug, Clone, Copy)]
+pub struct MeleeAi {
+    pub power: i32,
+}
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize)]
 pub enum StuffTag {

@@ -1,5 +1,5 @@
 use crate::{
-    components::{Ai, Hp, Pos, StuffTag},
+    components::{Ai, Hp, MeleeAi, Pos, StuffTag},
     grid::Grid,
     math::Vec2,
     rogue_db::*,
@@ -197,15 +197,25 @@ pub fn update_grid(q: Query<(EntityId, Pos)>, grid: &mut Grid<Stuff>) {
     }
 }
 
-pub fn update_enemies(
-    _player_id: EntityId,
-    q: Query<(EntityId, Pos, Ai, StuffTag)>,
+pub fn update_melee_ai(
+    player_id: EntityId,
+    q: Query<(EntityId, Pos, MeleeAi, StuffTag, Hp)>,
     _grid: &Grid<Stuff>,
 ) {
-    let (ids, _pos, ai, tags) = q.into_inner();
-    for (idx, _) in join!(ai.iter(), tags.iter()) {
-        let id = ids.id_at_index(idx);
-        info!("AI entity {} is waiting for a real turn :(", id);
+    let (ids, pos, ai, tags, hp) = q.into_inner();
+    let player_hp = hp.get_mut(player_id).expect("Failed to get player hp");
+
+    let Pos(player_pos) = *pos.get(player_id).expect("Failed to get player pos");
+
+    for (idx, (MeleeAi { power }, (_tag, Pos(pos)))) in join!(ai.iter(), tags.iter(), pos.iter()) {
+        let _id = ids.id_at_index(idx);
+        if pos.chebyshev(player_pos) <= 1 {
+            player_hp.current -= power;
+            debug!(
+                "bonk the player with power {}. Player hp: {:?}",
+                power, player_hp
+            );
+        }
     }
 }
 
