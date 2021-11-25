@@ -44,10 +44,10 @@ pub struct Core {
     grid: Grid<Stuff>,
     visible: Grid<bool>,
     explored: Grid<bool>,
-    viewport: Vec2,
     inputs: Vec<InputEvent>,
-    time: i32,
     output_cache: JsValue,
+    viewport: Vec2,
+    time: i32,
 }
 
 fn init_player(world: &mut World) -> EntityId {
@@ -90,14 +90,14 @@ pub fn init_core() -> Core {
     );
 
     let mut core = Core {
-        output_cache: JsValue::null(),
-        viewport: Vec2::new(15, 15),
         world,
         player,
         grid,
         visible: Grid::new(dims),
         explored: Grid::new(dims),
         inputs: Vec::with_capacity(512),
+        output_cache: JsValue::null(),
+        viewport: Vec2::new(15, 15),
         time: 0,
     };
     core.init();
