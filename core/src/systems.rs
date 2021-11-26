@@ -64,7 +64,7 @@ pub fn update_player(
 }
 
 /// return wether the segment hits something and where
-fn walk_grid_on_segment<const SKIP_INITIAL: bool>(
+fn walk_grid_on_segment(
     from: Vec2,
     to: Vec2,
     grid: &Grid<Stuff>,
@@ -82,9 +82,8 @@ fn walk_grid_on_segment<const SKIP_INITIAL: bool>(
     let mut p = from;
     let mut ix = 0.0;
     let mut iy = 0.0;
-    if SKIP_INITIAL {
-        step(&mut p, &mut ix, &mut iy, nx, ny, sign_x, sign_y);
-    }
+    // skip the first pos
+    step(&mut p, &mut ix, &mut iy, nx, ny, sign_x, sign_y);
     while ix < nx || iy < ny {
         // if there is an entity at this position and the entity is opaque
         if grid
@@ -124,7 +123,7 @@ fn set_visible(
     for y in -radius..=radius {
         for x in -radius..=radius {
             let limit = player_pos + Vec2::new(x, y);
-            if walk_grid_on_segment::<true>(player_pos, limit, grid, tags).is_none() {
+            if walk_grid_on_segment(player_pos, limit, grid, tags).is_none() {
                 if let Some(visible) = visible.at_mut(limit.x, limit.y) {
                     *visible = true;
                 }
@@ -215,7 +214,7 @@ pub fn update_melee_ai(
                 "bonk the player with power {}. Player hp: {:?}",
                 power, player_hp
             );
-        } else if walk_grid_on_segment::<true>(*pos, player_pos, grid, tags).is_none() {
+        } else if walk_grid_on_segment(*pos, player_pos, grid, tags).is_none() {
             // TODO: pathfinder
             let mut path = SmallVec::new(); // TODO: cache paths?
             find_path(*pos, player_pos, grid, walkable, &mut path);
