@@ -198,7 +198,7 @@ pub fn update_grid(q: Query<(EntityId, Pos)>, grid: &mut Grid<Stuff>) {
 pub fn update_melee_ai(
     player_id: EntityId,
     q: Query<(EntityId, Pos, MeleeAi, StuffTag, Hp, Walkable)>,
-    grid: &Grid<Stuff>,
+    grid: &mut Grid<Stuff>,
 ) {
     let (ids, pos, ai, tags, hp, walkable) = q.into_inner();
     let player_hp = hp.get_mut(player_id).expect("Failed to get player hp");
@@ -208,7 +208,7 @@ pub fn update_melee_ai(
     for (idx, (MeleeAi { power }, (_tag, Pos(pos)))) in
         join!(ai.iter(), tags.iter(), pos.iter_mut())
     {
-        let _id = ids.id_at_index(idx);
+        let id = ids.id_at_index(idx);
         if pos.chebyshev(player_pos) <= 1 {
             player_hp.current -= power;
             debug!(
@@ -223,6 +223,8 @@ pub fn update_melee_ai(
 
             path.pop(); // the first position is the monster itself
             if let Some(new_pos) = path.pop() {
+                grid[*pos] = None;
+                grid[new_pos] = Some(id.into());
                 *pos = new_pos;
             }
         }

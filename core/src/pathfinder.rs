@@ -69,7 +69,7 @@ pub fn find_path(
 
     while let Some(current) = open_set.pop() {
         if current.pos.manhatten(to) <= 1 {
-            reconstruct_path(current.pos, &came_from, path);
+            reconstruct_path(from, current.pos, &came_from, path);
             return true;
         }
         let new_g = current.gcost + 1;
@@ -101,6 +101,7 @@ pub fn find_path(
 }
 
 fn reconstruct_path(
+    target: Vec2,
     mut pos: Vec2,
     came_from: &HashMap<Vec2, Vec2>,
     path: &mut SmallVec<[Vec2; 32]>,
@@ -109,5 +110,8 @@ fn reconstruct_path(
     while let Some(p) = came_from.get(&pos) {
         path.push(*p);
         pos = *p;
+        if p.manhatten(target) <= 1 {
+            return;
+        }
     }
 }
