@@ -1,5 +1,5 @@
 use crate::{
-    components::{Ai, Hp, Icon, MeleeAi, PlayerTag, Pos, StuffTag, Walkable},
+    components::{Ai, Hp, Icon, MeleeAi, PlayerTag, Pos, StuffTag, Walkable, ICONS},
     grid::Grid,
     math::Vec2,
     pathfinder::find_path,
@@ -9,6 +9,17 @@ use crate::{
 use cao_db::prelude::*;
 use smallvec::SmallVec;
 use tracing::{debug, info, trace};
+
+pub fn init_player(world: &mut Db) -> EntityId {
+    let player = world.spawn_entity();
+    world.insert(player, StuffTag::Player);
+    world.insert(player, Pos(Vec2::new(16, 16)));
+    world.insert(player, ICONS["person"]);
+    world.insert(player, Hp::new(10));
+    world.insert(player, PlayerTag);
+
+    player
+}
 
 pub fn update_player(
     inputs: &[InputEvent],
@@ -265,7 +276,7 @@ pub fn update_hp(world: &mut Db) {
         if hp.current <= 0 {
             info!("Player died");
             tags.remove(player_id);
-            *icon = Icon::ICONS[4];
+            *icon = ICONS["tombstone"];
         }
     }
 }

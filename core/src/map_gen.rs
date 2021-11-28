@@ -7,7 +7,7 @@ use cao_db::prelude::*;
 use rand::{prelude::SliceRandom, Rng};
 
 use crate::{
-    components::{Ai, Hp, Icon, MeleeAi, Pos, StuffTag, ENEMY_TAGS},
+    components::{Ai, Hp, MeleeAi, Pos, StuffTag, ENEMY_TAGS, ICONS},
     grid::Grid,
     math::Vec2,
     rogue_db::*,
@@ -31,17 +31,17 @@ fn init_entity(pos: Vec2, tag: StuffTag, world: &mut Db, grid: &mut Grid<Stuff>)
             unreachable!()
         }
         StuffTag::Wall => {
-            world.insert(id, Icon::ICONS[0]);
+            world.insert(id, ICONS["wall"]);
         }
         StuffTag::Troll => {
             world.insert(id, Hp::new(8));
-            world.insert(id, Icon::ICONS[1]);
+            world.insert(id, ICONS["troll"]);
             world.insert(id, Ai);
             world.insert(id, MeleeAi { power: 3 });
         }
         StuffTag::Orc => {
             world.insert(id, Hp::new(4));
-            world.insert(id, Icon::ICONS[2]);
+            world.insert(id, ICONS["orc-head"]);
             world.insert(id, Ai);
             world.insert(id, MeleeAi { power: 1 });
         }

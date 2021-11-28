@@ -1,5 +1,6 @@
 use crate::math::Vec2;
 use serde::Serialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct Pos(pub Vec2);
@@ -7,14 +8,19 @@ pub struct Pos(pub Vec2);
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct Icon(pub &'static str);
 
-impl Icon {
-    pub const ICONS: &'static [Icon] = &[
-        Icon("delapouite/brick-wall.svg"),
-        Icon("skoll/troll.svg"),
-        Icon("delapouite/orc-head.svg"),
-        Icon("delapouite/person.svg"),
-        Icon("lorc/tombstone.svg"),
-    ];
+lazy_static::lazy_static! {
+    pub static ref ICONS: HashMap<&'static str, Icon> = {
+        [
+            ("wall", Icon("delapouite/brick-wall.svg")),
+            ("troll", Icon("skoll/troll.svg")),
+            ("orc-head", Icon("delapouite/orc-head.svg")),
+            ("person", Icon("delapouite/person.svg")),
+            ("tombstone", Icon("lorc/tombstone.svg")),
+        ]
+            .iter()
+            .map(|x|*x)
+            .collect()
+    };
 }
 
 #[derive(Debug, Clone, Copy)]

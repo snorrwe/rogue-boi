@@ -11,7 +11,7 @@ use components::*;
 use grid::Grid;
 use math::Vec2;
 
-use systems::{update_fov, update_grid, update_player};
+use systems::{init_player, update_fov, update_grid, update_player};
 use wasm_bindgen::prelude::*;
 
 use rogue_db::{Db as World, Query};
@@ -51,17 +51,6 @@ pub struct Core {
     output_cache: JsValue,
     viewport: Vec2,
     time: i32,
-}
-
-fn init_player(world: &mut World) -> EntityId {
-    let player = world.spawn_entity();
-    world.insert(player, StuffTag::Player);
-    world.insert(player, Pos(Vec2::new(16, 16)));
-    world.insert(player, Icon::ICONS[3]);
-    world.insert(player, Hp::new(10));
-    world.insert(player, PlayerTag);
-
-    player
 }
 
 #[wasm_bindgen(start)]
@@ -199,7 +188,7 @@ impl Core {
     }
 
     pub fn icons(&self) -> JsValue {
-        let entries: Vec<_> = Icon::ICONS.iter().map(|Icon(x)| x.to_string()).collect();
+        let entries: Vec<_> = ICONS.iter().map(|(_k, Icon(x))| x.to_string()).collect();
         JsValue::from_serde(&entries).unwrap()
     }
 
