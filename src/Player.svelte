@@ -1,19 +1,29 @@
 <script>
+    export let alive;
     export let hp;
     export let pos;
 </script>
 
 <div>
-{#if hp != null}
-    <p id="player-hp">
-        Health: {hp.current} / {hp.max}
+{#if alive}
+    {#if hp != null}
+        <p id="player-hp">
+            Health: {hp.current} / {hp.max}
+        </p>
+    {/if}
+    {#if pos != null}
+        <p id="player-pos">
+            Position: {pos.x}, {pos.y}
+        </p>
+    {/if}
+{/if}
+
+{#if !alive}
+    <p>
+        You died!
     </p>
 {/if}
-{#if pos != null}
-    <p id="player-pos">
-        Position: {pos.x}, {pos.y}
-    </p>
-{/if}
+
 </div>
 
 <style>

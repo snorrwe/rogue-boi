@@ -40,7 +40,7 @@
         {#if core != null && $grid != null}
             <Grid grid={$grid} {core} />
         {/if}
-        <Player hp={$grid.playerHp} pos={$grid.playerPos} />
+        <Player alive={$grid.playerAlive} hp={$grid.playerHp} pos={$grid.playerPos} />
     </div>
 </main>
 

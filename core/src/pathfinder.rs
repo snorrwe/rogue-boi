@@ -53,7 +53,7 @@ pub fn find_path(
     from: Vec2,
     to: Vec2,
     grid: &Grid<Stuff>,
-    walkies: ComponentFrag<Walkable>,
+    walkies: &ComponentFrag<Walkable>,
     path: &mut SmallVec<[Vec2; 32]>,
 ) -> bool {
     let mut open_set = BinaryHeap::with_capacity(from.manhatten(to) as usize);

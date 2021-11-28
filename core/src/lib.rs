@@ -29,6 +29,7 @@ db!(
         Ai,
         MeleeAi,
         Walkable,
+        PlayerTag,
     ]
 );
 
@@ -58,6 +59,7 @@ fn init_player(world: &mut World) -> EntityId {
     world.insert(player, Pos(Vec2::new(16, 16)));
     world.insert(player, Icon::ICONS[3]);
     world.insert(player, Hp::new(10));
+    world.insert(player, PlayerTag);
 
     player
 }
@@ -170,6 +172,8 @@ pub enum InputEvent {
 
 #[derive(serde::Serialize)]
 pub struct RenderedOutput {
+    #[serde(rename = "playerAlive")]
+    pub player_alive: bool,
     #[serde(rename = "playerPos")]
     pub player_pos: Pos,
     #[serde(rename = "playerHp")]
@@ -210,11 +214,10 @@ impl Core {
         // logic update
         update_player(
             self.inputs.as_slice(),
-            self.player,
             Query::new(&self.world),
             &mut self.grid,
         );
-        update_melee_ai(self.player, Query::new(&self.world), &mut self.grid);
+        update_melee_ai(Query::new(&self.world), &mut self.grid);
         update_hp(&mut self.world);
 
         self.time = 0;
@@ -277,6 +280,7 @@ impl Core {
             }
         }
         let result = RenderedOutput {
+            player_alive: player_hp.current > 0,
             player_pos,
             player_hp,
             grid: result,

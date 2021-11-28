@@ -1,5 +1,5 @@
 use crate::{
-    components::{Ai, Hp, MeleeAi, Pos, StuffTag, Walkable},
+    components::{Ai, Hp, Icon, MeleeAi, PlayerTag, Pos, StuffTag, Walkable},
     grid::Grid,
     math::Vec2,
     pathfinder::find_path,
@@ -8,57 +8,56 @@ use crate::{
 };
 use cao_db::prelude::*;
 use smallvec::SmallVec;
-use tracing::{debug, trace};
+use tracing::{debug, info, trace};
 
 pub fn update_player(
     inputs: &[InputEvent],
-    player: EntityId,
-    q: Query<(Pos, StuffTag, Hp)>,
+    query: Query<(Pos, StuffTag, Hp, PlayerTag)>,
     grid: &mut Grid<Stuff>,
 ) {
-    let mut delta = Vec2::new(0, 0);
+    let (mut pos, stuff_tags, mut hp, player_tag) = query.into_inner();
+    for (_idx, (Pos(ref mut pos), _tag)) in join!(pos.iter_mut(), player_tag.iter()) {
+        let mut delta = Vec2::new(0, 0);
 
-    for event in inputs {
-        match event {
-            InputEvent::KeyDown { key } if key == "w" || key == "ArrowUp" => delta.y = -1,
-            InputEvent::KeyDown { key } if key == "s" || key == "ArrowDown" => delta.y = 1,
-            InputEvent::KeyDown { key } if key == "a" || key == "ArrowLeft" => delta.x = -1,
-            InputEvent::KeyDown { key } if key == "d" || key == "ArrowRight" => delta.x = 1,
-            _ => {}
+        for event in inputs {
+            match event {
+                InputEvent::KeyDown { key } if key == "w" || key == "ArrowUp" => delta.y = -1,
+                InputEvent::KeyDown { key } if key == "s" || key == "ArrowDown" => delta.y = 1,
+                InputEvent::KeyDown { key } if key == "a" || key == "ArrowLeft" => delta.x = -1,
+                InputEvent::KeyDown { key } if key == "d" || key == "ArrowRight" => delta.x = 1,
+                _ => {}
+            }
         }
-    }
 
-    if delta.x != 0 && delta.y != 0 {
-        delta.x = 0;
-    }
-    if delta.x != 0 || delta.y != 0 {
-        let q = q.into_inner();
-        let pos = &mut q.0.get_mut(player).expect("Failed to get player pos").0;
-
-        let new_pos = *pos + delta;
-        match grid.at(new_pos.x, new_pos.y) {
-            Some(Some(id)) => {
-                let id = id.into();
-                match q.1.get(id).unwrap() {
-                    StuffTag::Player => unreachable!(),
-                    StuffTag::Wall => { /* don't step */ }
-                    StuffTag::Troll | StuffTag::Orc => {
-                        let hp = q.2.get_mut(id).expect("Enemy has no hp");
-                        hp.current -= 1;
-                        debug!("kick enemy {}: {:?}", id, hp)
+        if delta.x != 0 && delta.y != 0 {
+            delta.x = 0;
+        }
+        if delta.x != 0 || delta.y != 0 {
+            let new_pos = *pos + delta;
+            match grid.at(new_pos.x, new_pos.y) {
+                Some(Some(id)) => {
+                    let id = id.into();
+                    match stuff_tags.get(id).unwrap() {
+                        StuffTag::Player => unreachable!(),
+                        StuffTag::Wall => { /* don't step */ }
+                        StuffTag::Troll | StuffTag::Orc => {
+                            let hp = hp.get_mut(id).expect("Enemy has no hp");
+                            hp.current -= 1;
+                            debug!("kick enemy {}: {:?}", id, hp)
+                        }
                     }
                 }
-            }
-            Some(None) => {
-                // empty position
+                Some(None) => {
+                    // empty position
 
-                // update the grid asap so the monsters will see the updated player position
-                let old_stuff = std::mem::take(&mut grid[*pos]);
-                grid[new_pos] = old_stuff;
+                    // update the grid asap so the monsters will see the updated player position
+                    let old_stuff = std::mem::take(&mut grid[*pos]);
+                    grid[new_pos] = old_stuff;
 
-                *pos = new_pos;
+                    *pos = new_pos;
+                }
+                None => {}
             }
-            None => {}
         }
     }
 }
@@ -68,7 +67,7 @@ fn walk_grid_on_segment(
     from: Vec2,
     to: Vec2,
     grid: &Grid<Stuff>,
-    tags: ComponentFrag<StuffTag>,
+    tags: &ComponentFrag<StuffTag>,
 ) -> Option<Vec2> {
     let dx = to.x - from.x;
     let dy = to.y - from.y;
@@ -123,7 +122,7 @@ fn set_visible(
     for y in -radius..=radius {
         for x in -radius..=radius {
             let limit = player_pos + Vec2::new(x, y);
-            if walk_grid_on_segment(player_pos, limit, grid, tags).is_none() {
+            if walk_grid_on_segment(player_pos, limit, grid, &tags).is_none() {
                 if let Some(visible) = visible.at_mut(limit.x, limit.y) {
                     *visible = true;
                 }
@@ -195,11 +194,21 @@ pub fn update_grid(q: Query<(EntityId, Pos)>, grid: &mut Grid<Stuff>) {
 }
 
 pub fn update_melee_ai(
-    player_id: EntityId,
-    q: Query<(EntityId, Pos, MeleeAi, StuffTag, Hp, Walkable)>,
+    q: Query<(EntityId, Pos, MeleeAi, StuffTag, Hp, Walkable, PlayerTag)>,
     grid: &mut Grid<Stuff>,
 ) {
-    let (ids, pos, ai, tags, hp, walkable) = q.into_inner();
+    let (ids, mut pos, ai, tags, mut hp, walkable, player_tag) = q.into_inner();
+    let player_id = match player_tag
+        .iter()
+        .next()
+        .map(|(idx, _tag)| ids.id_at_index(idx))
+    {
+        Some(id) => id,
+        None => {
+            debug!("No player on the map! Skipping melee update");
+            return;
+        }
+    };
     let player_hp = hp.get_mut(player_id).expect("Failed to get player hp");
 
     let Pos(player_pos) = *pos.get(player_id).expect("Failed to get player pos");
@@ -214,10 +223,10 @@ pub fn update_melee_ai(
                 "bonk the player with power {}. Player hp: {:?}",
                 power, player_hp
             );
-        } else if walk_grid_on_segment(*pos, player_pos, grid, tags).is_none() {
+        } else if walk_grid_on_segment(*pos, player_pos, grid, &tags).is_none() {
             // TODO: pathfinder
             let mut path = SmallVec::new(); // TODO: cache paths?
-            find_path(*pos, player_pos, grid, walkable, &mut path);
+            find_path(*pos, player_pos, grid, &walkable, &mut path);
             trace!("walk towards player {:?}", path);
 
             path.pop(); // the first position is the monster itself
@@ -246,4 +255,17 @@ pub fn update_hp(world: &mut Db) {
         debug!("Entity {} died", id);
         world.delete_entity(id);
     });
+
+    // update Player hp
+    //
+    let query = Query::<(EntityId, Hp, PlayerTag, Icon)>::new(&world);
+    let (ids, hps, mut tags, mut icons) = query.into_inner();
+    for (idx, (hp, (_tag, icon))) in join!(hps.iter(), tags.iter(), icons.iter_mut()) {
+        let player_id = ids.id_at_index(idx);
+        if hp.current <= 0 {
+            info!("Player died");
+            tags.remove(player_id);
+            *icon = Icon::ICONS[4];
+        }
+    }
 }

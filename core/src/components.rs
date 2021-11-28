@@ -13,8 +13,12 @@ impl Icon {
         Icon("skoll/troll.svg"),
         Icon("delapouite/orc-head.svg"),
         Icon("delapouite/person.svg"),
+        Icon("lorc/tombstone.svg"),
     ];
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct PlayerTag;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ai;
