@@ -20,8 +20,8 @@
 <style>
     .grid {
         display: grid;
-        grid-template-columns: repeat(var(--cols), 1.8em);
-        grid-auto-rows: 1.8em;
+        grid-template-columns: repeat(var(--cols), 2.2em);
+        grid-auto-rows: 2.2em;
     }
 
     .grid-item {
@@ -36,7 +36,7 @@
     }
 
     .floor {
-        height: 1.8rem;
-        width: 1.8rem;
+        height: 2.2rem;
+        width: 2.2rem;
     }
 </style>

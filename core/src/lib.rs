@@ -68,7 +68,7 @@ pub fn init_core() -> Core {
 
     let player = init_player(&mut world);
 
-    let dims = Vec2 { x: 64, y: 64 };
+    let dims = Vec2 { x: 128, y: 128 };
     let mut grid = Grid::new(dims);
     map_gen::generate_map(
         player,
@@ -90,7 +90,7 @@ pub fn init_core() -> Core {
         explored: Grid::new(dims),
         inputs: Vec::with_capacity(512),
         output_cache: JsValue::null(),
-        viewport: Vec2::new(15, 15),
+        viewport: Vec2::new(10, 10),
         time: 0,
     };
     core.init();
