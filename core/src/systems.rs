@@ -8,7 +8,7 @@ use crate::{
 };
 use cao_db::prelude::*;
 use smallvec::SmallVec;
-use tracing::debug;
+use tracing::{debug, trace};
 
 pub fn update_player(
     inputs: &[InputEvent],
@@ -218,7 +218,7 @@ pub fn update_melee_ai(
             // TODO: pathfinder
             let mut path = SmallVec::new(); // TODO: cache paths?
             find_path(*pos, player_pos, grid, walkable, &mut path);
-            debug!("walk towards player {:?}", path);
+            trace!("walk towards player {:?}", path);
 
             path.pop(); // the first position is the monster itself
             if let Some(new_pos) = path.pop() {
