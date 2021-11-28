@@ -5,7 +5,7 @@
 
     export let core;
 
-    const grid = writable(core?.getGrid());
+    const grid = writable(core.getGrid());
     let last = new Date().getTime();
 
     document.addEventListener('keydown', (event) => {
@@ -38,7 +38,7 @@
 <main>
     <div class="content">
         {#if core != null && $grid != null}
-            <Grid grid={$grid} {core} />
+            <Grid grid={$grid} />
         {/if}
         <Player alive={$grid.playerAlive} hp={$grid.playerHp} pos={$grid.playerPos} />
     </div>
