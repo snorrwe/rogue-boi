@@ -240,11 +240,13 @@ pub fn update_melee_ai(
             find_path(*pos, player_pos, grid, &walkable, &mut path);
             trace!("walk towards player {:?}", path);
 
-            path.pop(); // the first position is the monster itself
-            if let Some(new_pos) = path.pop() {
-                grid[*pos] = None;
-                grid[new_pos] = Some(id.into());
-                *pos = new_pos;
+            while let Some(new_pos) = path.pop() {
+                if new_pos != *pos {
+                    grid[*pos] = None;
+                    grid[new_pos] = Some(id.into());
+                    *pos = new_pos;
+                    break;
+                }
             }
         }
     }

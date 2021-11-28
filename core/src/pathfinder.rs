@@ -16,9 +16,9 @@ struct Node {
 }
 
 impl Node {
-    pub fn fcost(self) -> f32 {
+    pub fn fcost(self) -> i32 {
         // it's used in a max-heap so use the reciprocal of the cost
-        1.0 / ((self.hcost + self.gcost) as f32).min(0.1)
+        -(self.hcost + self.gcost)
     }
 }
 
