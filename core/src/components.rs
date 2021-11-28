@@ -4,7 +4,17 @@ use serde::Serialize;
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct Pos(pub Vec2);
 
+#[derive(Debug, Clone, Copy, Serialize)]
 pub struct Icon(pub &'static str);
+
+impl Icon {
+    pub const ICONS: &'static [Icon] = &[
+        Icon("delapouite/brick-wall.svg"),
+        Icon("skoll/troll.svg"),
+        Icon("delapouite/orc-head.svg"),
+        Icon("delapouite/person.svg"),
+    ];
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ai;

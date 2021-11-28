@@ -56,7 +56,7 @@ fn init_player(world: &mut World) -> EntityId {
     let player = world.spawn_entity();
     world.insert(player, StuffTag::Player);
     world.insert(player, Pos(Vec2::new(16, 16)));
-    world.insert(player, Icon("delapouite/person.svg"));
+    world.insert(player, Icon::ICONS[3]);
     world.insert(player, Hp::new(10));
 
     player
@@ -192,6 +192,11 @@ impl Core {
     pub fn init(&mut self) {
         self.tick(0);
         self.update_output();
+    }
+
+    pub fn icons(&self) -> JsValue {
+        let entries: Vec<_> = Icon::ICONS.iter().map(|Icon(x)| x.to_string()).collect();
+        JsValue::from_serde(&entries).unwrap()
     }
 
     pub fn tick(&mut self, dt_ms: i32) {

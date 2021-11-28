@@ -28,6 +28,13 @@
     requestAnimationFrame(gameLoop);
 </script>
 
+<head>
+{#if core != null}
+{#each core.icons() as icon}
+    <link rel="prefetch" href="/icons/ffffff/transparent/1x1/{icon}" />
+{/each}
+{/if}
+</head>
 <main>
     <div class="content">
         {#if core != null && $grid != null}

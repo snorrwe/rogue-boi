@@ -31,17 +31,17 @@ fn init_entity(pos: Vec2, tag: StuffTag, world: &mut Db, grid: &mut Grid<Stuff>)
             unreachable!()
         }
         StuffTag::Wall => {
-            world.insert(id, Icon("delapouite/brick-wall.svg"));
+            world.insert(id, Icon::ICONS[0]);
         }
         StuffTag::Troll => {
             world.insert(id, Hp::new(8));
-            world.insert(id, Icon("skoll/troll.svg"));
+            world.insert(id, Icon::ICONS[1]);
             world.insert(id, Ai);
             world.insert(id, MeleeAi { power: 3 });
         }
         StuffTag::Orc => {
             world.insert(id, Hp::new(4));
-            world.insert(id, Icon("delapouite/orc-head.svg"));
+            world.insert(id, Icon::ICONS[2]);
             world.insert(id, Ai);
             world.insert(id, MeleeAi { power: 1 });
         }
