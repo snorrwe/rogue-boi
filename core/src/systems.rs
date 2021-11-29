@@ -4,13 +4,13 @@ use crate::{
     math::Vec2,
     pathfinder::find_path,
     rogue_db::*,
-    InputEvent, Stuff,
+    InputEvent, PlayerActions, Stuff,
 };
 use cao_db::prelude::*;
 use smallvec::SmallVec;
 use tracing::{debug, info, trace};
 
-pub fn init_player(world: &mut Db) -> EntityId {
+pub(crate) fn init_player(world: &mut Db) -> EntityId {
     let player = world.spawn_entity();
     world.insert(player, StuffTag::Player);
     world.insert(player, Pos(Vec2::new(16, 16)));
@@ -21,54 +21,70 @@ pub fn init_player(world: &mut Db) -> EntityId {
     player
 }
 
-pub fn update_player(
-    inputs: &[InputEvent],
+pub(crate) fn update_input_events(inputs: &[InputEvent], actions: &mut PlayerActions) {
+    let mut delta = Vec2::new(0, 0);
+    for event in inputs {
+        match event {
+            InputEvent::KeyDown { key } if key == "w" || key == "ArrowUp" => delta.y = -1,
+            InputEvent::KeyDown { key } if key == "s" || key == "ArrowDown" => delta.y = 1,
+            InputEvent::KeyDown { key } if key == "a" || key == "ArrowLeft" => delta.x = -1,
+            InputEvent::KeyDown { key } if key == "d" || key == "ArrowRight" => delta.x = 1,
+            _ => {}
+        }
+    }
+    if delta.x != 0 && delta.y != 0 {
+        delta.x = 0;
+    }
+    if delta != Vec2::ZERO {
+        actions.insert_move(delta)
+    }
+}
+
+pub(crate) fn update_player(
+    actions: &PlayerActions,
     query: Query<(Pos, StuffTag, Hp, PlayerTag)>,
     grid: &mut Grid<Stuff>,
 ) {
     let (mut pos, stuff_tags, mut hp, player_tag) = query.into_inner();
     for (_idx, (Pos(ref mut pos), _tag)) in join!(pos.iter_mut(), player_tag.iter()) {
-        let mut delta = Vec2::new(0, 0);
+        if let Some(delta) = actions.move_action() {
+            handle_player_move(pos, delta, &stuff_tags, &mut hp, grid);
+        }
+    }
+}
 
-        for event in inputs {
-            match event {
-                InputEvent::KeyDown { key } if key == "w" || key == "ArrowUp" => delta.y = -1,
-                InputEvent::KeyDown { key } if key == "s" || key == "ArrowDown" => delta.y = 1,
-                InputEvent::KeyDown { key } if key == "a" || key == "ArrowLeft" => delta.x = -1,
-                InputEvent::KeyDown { key } if key == "d" || key == "ArrowRight" => delta.x = 1,
-                _ => {}
+fn handle_player_move(
+    pos: &mut Vec2,
+    delta: Vec2,
+    stuff_tags: &ComponentFrag<StuffTag>,
+    hp: &mut ComponentFrag<Hp>,
+    grid: &mut Grid<Stuff>,
+) {
+    let new_pos = *pos + delta;
+    match grid.at(new_pos.x, new_pos.y) {
+        Some(Some(id)) => {
+            let id = id.into();
+            match stuff_tags.get(id).unwrap() {
+                StuffTag::Player => unreachable!(),
+                StuffTag::Wall => { /* don't step */ }
+                StuffTag::Troll | StuffTag::Orc => {
+                    let hp = hp.get_mut(id).expect("Enemy has no hp");
+                    hp.current -= 1;
+                    debug!("kick enemy {}: {:?}", id, hp)
+                }
             }
         }
+        Some(None) => {
+            // empty position
+            // update the grid asap so the monsters will see the updated player position
+            let old_stuff = std::mem::take(&mut grid[*pos]);
+            grid[new_pos] = old_stuff;
 
-        if delta.x != 0 && delta.y != 0 {
-            delta.x = 0;
+            *pos = new_pos;
         }
-        if delta.x != 0 || delta.y != 0 {
-            let new_pos = *pos + delta;
-            match grid.at(new_pos.x, new_pos.y) {
-                Some(Some(id)) => {
-                    let id = id.into();
-                    match stuff_tags.get(id).unwrap() {
-                        StuffTag::Player => unreachable!(),
-                        StuffTag::Wall => { /* don't step */ }
-                        StuffTag::Troll | StuffTag::Orc => {
-                            let hp = hp.get_mut(id).expect("Enemy has no hp");
-                            hp.current -= 1;
-                            debug!("kick enemy {}: {:?}", id, hp)
-                        }
-                    }
-                }
-                Some(None) => {
-                    // empty position
-
-                    // update the grid asap so the monsters will see the updated player position
-                    let old_stuff = std::mem::take(&mut grid[*pos]);
-                    grid[new_pos] = old_stuff;
-
-                    *pos = new_pos;
-                }
-                None => {}
-            }
+        None => {
+            // position is outside the grid
+            unreachable!();
         }
     }
 }
@@ -171,7 +187,7 @@ fn flood_vizibility(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Ve
 }
 
 /// recompute visible area
-pub fn update_fov(
+pub(crate) fn update_fov(
     player: EntityId,
     q: Query<(StuffTag, Pos)>,
     grid: &Grid<Stuff>,
@@ -188,7 +204,7 @@ pub fn update_fov(
     explored.or_eq(&visible);
 }
 
-pub fn update_grid(q: Query<(EntityId, Pos)>, grid: &mut Grid<Stuff>) {
+pub(crate) fn update_grid(q: Query<(EntityId, Pos)>, grid: &mut Grid<Stuff>) {
     let w = grid.width();
     let h = grid.height();
     assert!(w > 0 && h > 0);
@@ -204,7 +220,7 @@ pub fn update_grid(q: Query<(EntityId, Pos)>, grid: &mut Grid<Stuff>) {
     }
 }
 
-pub fn update_melee_ai(
+pub(crate) fn update_melee_ai(
     q: Query<(EntityId, Pos, MeleeAi, StuffTag, Hp, Walkable, PlayerTag)>,
     grid: &mut Grid<Stuff>,
 ) {
@@ -252,7 +268,7 @@ pub fn update_melee_ai(
     }
 }
 
-pub fn update_hp(world: &mut Db) {
+pub(crate) fn update_hp(world: &mut Db) {
     // update AI hps
     //
     let mut delete_list = smallvec::SmallVec::<[_; 4]>::new();

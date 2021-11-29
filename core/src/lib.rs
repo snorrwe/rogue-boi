@@ -16,7 +16,7 @@ use wasm_bindgen::prelude::*;
 
 use rogue_db::{Db as World, Query};
 
-use crate::systems::{update_hp, update_melee_ai};
+use crate::systems::{update_hp, update_input_events, update_melee_ai};
 
 db!(
     module rogue_db
@@ -48,6 +48,7 @@ pub struct Core {
     visible: Grid<bool>,
     explored: Grid<bool>,
     inputs: Vec<InputEvent>,
+    actions: PlayerActions,
     output_cache: JsValue,
     viewport: Vec2,
     time: i32,
@@ -88,7 +89,8 @@ pub fn init_core() -> Core {
         grid,
         visible: Grid::new(dims),
         explored: Grid::new(dims),
-        inputs: Vec::with_capacity(512),
+        inputs: Vec::with_capacity(16),
+        actions: PlayerActions::new(),
         output_cache: JsValue::null(),
         viewport: Vec2::new(10, 10),
         time: 0,
@@ -180,6 +182,44 @@ pub struct OutputStuff {
     pub payload: StuffPayload,
 }
 
+pub(crate) struct PlayerActions {
+    len: usize,
+    move_action: Option<Vec2>,
+}
+
+impl PlayerActions {
+    pub fn new() -> Self {
+        Self {
+            len: 0,
+            move_action: None,
+        }
+    }
+}
+
+impl PlayerActions {
+    pub fn len(&self) -> usize {
+        self.len
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn clear(&mut self) {
+        self.move_action = None;
+        self.len = 0;
+    }
+
+    pub fn insert_move(&mut self, delta: Vec2) {
+        let old = self.move_action.replace(delta);
+        if old.is_none() {
+            self.len += 1;
+        }
+    }
+
+    pub fn move_action(&self) -> Option<Vec2> {
+        self.move_action
+    }
+}
+
 #[wasm_bindgen]
 impl Core {
     pub fn init(&mut self) {
@@ -194,23 +234,19 @@ impl Core {
 
     pub fn tick(&mut self, dt_ms: i32) {
         self.time += dt_ms;
+        update_input_events(self.inputs.as_slice(), &mut self.actions);
+
         // min cooldown
-        if self.inputs.is_empty() || self.time < 120 {
+        if self.actions.is_empty() || self.time < 120 {
             return;
         }
         let _span = tracing::span!(tracing::Level::DEBUG, "game_update").entered();
 
         // logic update
-        update_player(
-            self.inputs.as_slice(),
-            Query::new(&self.world),
-            &mut self.grid,
-        );
+        update_player(&self.actions, Query::new(&self.world), &mut self.grid);
         update_melee_ai(Query::new(&self.world), &mut self.grid);
         update_hp(&mut self.world);
 
-        self.time = 0;
-        self.inputs.clear();
         update_grid(Query::new(&self.world), &mut self.grid);
         update_fov(
             self.player,
@@ -221,6 +257,11 @@ impl Core {
         );
 
         self.update_output();
+
+        // cleanup
+        self.time = 0;
+        self.inputs.clear();
+        self.actions.clear();
     }
 
     #[wasm_bindgen(js_name = "pushEvent")]
