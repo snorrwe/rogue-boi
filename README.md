@@ -2,8 +2,8 @@
 
 ### Install deps
 
-- [rust](TBA)
-- [wasm-pack](TBA)
+- [rust](https://www.rust-lang.org/tools/install)
+- [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)
 - Run `yarn`
 
 ### Run
