@@ -203,9 +203,6 @@ pub(crate) fn update_fov(
 }
 
 pub(crate) fn update_grid(q: Query<(EntityId, Pos)>, grid: &mut Grid<Stuff>) {
-    let w = grid.width();
-    let h = grid.height();
-    assert!(w > 0 && h > 0);
     // zero out the map
     grid.fill(Default::default());
 
