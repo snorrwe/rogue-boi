@@ -249,7 +249,6 @@ pub(crate) fn update_melee_ai(
                 power, player_hp
             );
         } else if walk_grid_on_segment(*pos, player_pos, grid, &tags).is_none() {
-            // TODO: pathfinder
             let mut path = SmallVec::new(); // TODO: cache paths?
             find_path(*pos, player_pos, grid, &walkable, &mut path);
             trace!("walk towards player {:?}", path);
