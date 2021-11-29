@@ -41,6 +41,7 @@ export default [
 			}),
 			commonjs(),
 			rust({
+				debug: !production,
 				verbose: true,
 				serverPath: '/build/'
 			}),
