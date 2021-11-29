@@ -26,7 +26,7 @@ impl Vec2 {
     pub const X: Vec2 = Vec2 { x: 1, y: 0 };
     pub const Y: Vec2 = Vec2 { x: 0, y: 1 };
 
-    pub fn new(x: i32, y: i32) -> Self {
+    pub const fn new(x: i32, y: i32) -> Self {
         Self { x, y }
     }
 
@@ -58,7 +58,7 @@ impl Vec2 {
         (self.x - rhs.x).abs() + (self.y - rhs.y).abs()
     }
 
-    pub fn splat(val: i32) -> Self {
+    pub const fn splat(val: i32) -> Self {
         Self::new(val, val)
     }
 }
@@ -137,4 +137,13 @@ impl Neg for Vec2 {
             y: -self.y,
         }
     }
+}
+
+pub fn walk_square(from: Vec2, to: Vec2) -> impl Iterator<Item = Vec2> {
+    debug_assert!(from.x <= to.x);
+    debug_assert!(from.y <= to.y);
+
+    let fx = from.x;
+    let tx = to.x;
+    (from.y..=to.y).flat_map(move |y| (fx..=tx).map(move |x| Vec2::new(x, y)))
 }

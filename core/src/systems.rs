@@ -1,7 +1,7 @@
 use crate::{
     components::{Ai, Hp, Icon, MeleeAi, PlayerTag, Pos, StuffTag, Walkable, ICONS},
     grid::Grid,
-    math::Vec2,
+    math::{walk_square, Vec2},
     pathfinder::find_path,
     rogue_db::*,
     InputEvent, PlayerActions, Stuff,
@@ -146,16 +146,15 @@ fn set_visible(
 ) {
     visible.splat_set([Vec2::ZERO, visible.dims()], false);
     // walk the visible range
-    for y in -radius..=radius {
-        for x in -radius..=radius {
-            let limit = player_pos + Vec2::new(x, y);
+    walk_square(-Vec2::splat(radius), Vec2::splat(radius))
+        .map(|d| player_pos + d)
+        .for_each(|limit| {
             if walk_grid_on_segment(player_pos, limit, grid, &tags).is_none() {
                 if let Some(visible) = visible.at_mut(limit.x, limit.y) {
                     *visible = true;
                 }
             }
-        }
-    }
+        });
 }
 
 /// go over the visible range and if an item is adjacent to a visible empty tile, then set that to
@@ -164,23 +163,22 @@ fn flood_vizibility(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Ve
     let _s = tracing::debug_span!("flood").entered();
 
     let mut to_update = smallvec::SmallVec::<[_; 64]>::new();
-    for y in -radius..=radius {
-        for x in -radius..=radius {
-            let pos = player_pos + Vec2::new(x, y);
+    walk_square(-Vec2::splat(radius), Vec2::splat(radius))
+        .map(|d| player_pos + d)
+        .for_each(|pos| {
             if visible.at(pos.x, pos.y).copied().unwrap_or(false) {
-                continue;
+                return;
             }
-            for y in -1..=1 {
-                for x in -1..=1 {
-                    if visible.at(pos.x + x, pos.y + y).copied().unwrap_or(false)
-                        && grid[pos + Vec2::new(x, y)].is_none()
+            walk_square(-Vec2::ONE, Vec2::ONE)
+                .map(|d| pos + d)
+                .for_each(|new_pos| {
+                    if visible.at(new_pos.x, new_pos.y).copied().unwrap_or(false)
+                        && grid[new_pos].is_none()
                     {
                         to_update.push(pos);
                     }
-                }
-            }
-        }
-    }
+                });
+        });
     for pos in to_update {
         visible[pos] = true;
     }
