@@ -268,19 +268,16 @@ pub(crate) fn update_melee_ai(
 pub(crate) fn update_hp(world: &mut Db) {
     // update AI hps
     //
-    let mut delete_list = smallvec::SmallVec::<[_; 4]>::new();
     let query = Query::<(EntityId, Hp, Ai)>::new(&world);
     let (ids, hps, ai) = query.into_inner();
-    join!(hps.iter(), ai.iter())
+    let delete_list: SmallVec<[EntityId; 4]> = join!(hps.iter(), ai.iter())
         .filter(|(_, (hp, _ai))| hp.current <= 0)
-        .into_iter()
-        .for_each(|(idx, _)| {
-            delete_list.push(ids.id_at_index(idx));
-        });
-    delete_list.into_iter().for_each(|id| {
+        .map(|(idx, _)| ids.id_at_index(idx))
+        .collect();
+    for id in delete_list.into_iter() {
         debug!("Entity {} died", id);
         world.delete_entity(id);
-    });
+    }
 
     // update Player hp
     //
