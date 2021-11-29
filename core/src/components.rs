@@ -46,6 +46,7 @@ pub enum StuffTag {
 }
 
 pub const ENEMY_TAGS: &[StuffTag] = &[StuffTag::Troll, StuffTag::Orc];
+pub const ENEMY_WEIGHTS: &[i32] = &[1, 10];
 
 impl StuffTag {
     pub fn is_opaque(self) -> bool {

@@ -4,10 +4,13 @@ mod tunnel_iter;
 use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
 use cao_db::prelude::*;
-use rand::{prelude::SliceRandom, Rng};
+use rand::{
+    prelude::{Distribution, SliceRandom},
+    Rng,
+};
 
 use crate::{
-    components::{Ai, Hp, MeleeAi, Pos, StuffTag, ENEMY_TAGS, ICONS},
+    components::{Ai, Hp, MeleeAi, Pos, StuffTag, ENEMY_TAGS, ENEMY_WEIGHTS, ICONS},
     grid::Grid,
     math::Vec2,
     rogue_db::*,
@@ -56,14 +59,16 @@ fn place_entities(
 ) {
     let n_monsters = rng.gen_range(0, max_monsters + 1);
 
+    let dist = rand::distributions::WeightedIndex::new(ENEMY_WEIGHTS).unwrap();
+
     for _ in 0..n_monsters {
         let x = rng.gen_range(room.min.x + 1, room.max.x + 1);
         let y = rng.gen_range(room.min.y + 1, room.max.y + 1);
 
         let pos = Vec2::new(x, y);
         if grid[pos].is_none() {
-            let tag = ENEMY_TAGS.choose(rng).unwrap();
-            grid[pos] = Some(*tag);
+            let tag = ENEMY_TAGS[dist.sample(rng)];
+            grid[pos] = Some(tag);
         }
     }
 }
