@@ -219,6 +219,7 @@ impl PlayerActions {
 #[wasm_bindgen]
 impl Core {
     pub fn init(&mut self) {
+        game_log!("Hello wanderer!");
         self.tick(0);
         self.update_output();
     }
