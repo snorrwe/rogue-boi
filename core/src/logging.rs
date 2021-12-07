@@ -11,16 +11,7 @@ const HISTORY_LEN: usize = 8;
 
 static CURRENT_IND: AtomicUsize = AtomicUsize::new(0);
 lazy_static::lazy_static! {
-    static ref LOG_BUFFER: [Mutex<String>; HISTORY_LEN] = [
-        Mutex::new(String::with_capacity(1024)),
-        Mutex::new(String::with_capacity(1024)),
-        Mutex::new(String::with_capacity(1024)),
-        Mutex::new(String::with_capacity(1024)),
-        Mutex::new(String::with_capacity(1024)),
-        Mutex::new(String::with_capacity(1024)),
-        Mutex::new(String::with_capacity(1024)),
-        Mutex::new(String::with_capacity(1024)),
-    ];
+    static ref LOG_BUFFER: [Mutex<String>; HISTORY_LEN] = Default::default();
 }
 
 pub(crate) fn rotate_log() {
