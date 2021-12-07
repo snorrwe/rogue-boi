@@ -1,5 +1,6 @@
 use crate::{
     components::{Ai, Hp, Icon, MeleeAi, PlayerTag, Pos, StuffTag, Walkable, ICONS},
+    game_log,
     grid::Grid,
     math::{walk_square, Vec2},
     pathfinder::find_path,
@@ -70,7 +71,8 @@ fn handle_player_move(
                 StuffTag::Troll | StuffTag::Orc => {
                     let hp = hp.get_mut(id).expect("Enemy has no hp");
                     hp.current -= 1;
-                    debug!("kick enemy {}: {:?}", id, hp)
+                    debug!("kick enemy {}: {:?}", id, hp);
+                    game_log!("Kick enemy {} for {} damage", id, 1);
                 }
             }
         }
@@ -81,6 +83,7 @@ fn handle_player_move(
             grid[new_pos] = old_stuff;
 
             *pos = new_pos;
+            game_log!("Step on tile: {}", new_pos);
         }
         None => {
             // position is outside the grid
@@ -245,6 +248,7 @@ pub(crate) fn update_melee_ai(
                 "bonk the player with power {}. Player hp: {:?}",
                 power, player_hp
             );
+            game_log!("{} hits the player for {} damage", id, power);
         } else if walk_grid_on_segment(*pos, player_pos, grid, &tags).is_none() {
             let mut path = SmallVec::new(); // TODO: cache paths?
             find_path(*pos, player_pos, grid, &walkable, &mut path);
@@ -273,6 +277,7 @@ pub(crate) fn update_hp(world: &mut Db) {
         .collect();
     for id in delete_list.into_iter() {
         debug!("Entity {} died", id);
+        game_log!("{} died", id);
         world.delete_entity(id);
     }
 
@@ -284,6 +289,7 @@ pub(crate) fn update_hp(world: &mut Db) {
         let player_id = ids.id_at_index(idx);
         if hp.current <= 0 {
             info!("Player died");
+            game_log!("Player died");
             tags.remove(player_id);
             *icon = ICONS["tombstone"];
         }

@@ -1,5 +1,6 @@
 mod components;
 mod grid;
+mod logging;
 mod map_gen;
 mod math;
 mod pathfinder;
@@ -46,6 +47,7 @@ pub struct Core {
     output_cache: JsValue,
     viewport: Vec2,
     time: i32,
+    game_tick: usize,
 }
 
 #[wasm_bindgen(start)]
@@ -88,6 +90,7 @@ pub fn init_core() -> Core {
         output_cache: JsValue::null(),
         viewport: Vec2::new(10, 10),
         time: 0,
+        game_tick: 0,
     };
     core.init();
     core
@@ -159,10 +162,9 @@ pub enum InputEvent {
 pub struct RenderedOutput {
     #[serde(rename = "playerAlive")]
     pub player_alive: bool,
-    #[serde(rename = "playerPos")]
-    pub player_pos: Pos,
     #[serde(rename = "playerHp")]
     pub player_hp: Hp,
+    pub log: String,
     pub grid: Grid<OutputStuff>,
     pub offset: Vec2,
 }
@@ -236,6 +238,8 @@ impl Core {
         }
         let _span = tracing::span!(tracing::Level::DEBUG, "game_update").entered();
 
+        self.game_tick += 1;
+
         // logic update
         update_player(&self.actions, Query::new(&self.world), &mut self.grid);
         update_melee_ai(Query::new(&self.world), &mut self.grid);
@@ -256,6 +260,7 @@ impl Core {
         self.time = 0;
         self.inputs.clear();
         self.actions.clear();
+        crate::logging::rotate_log();
     }
 
     #[wasm_bindgen(js_name = "pushEvent")]
@@ -303,10 +308,11 @@ impl Core {
                 result[pos - min] = output;
             }
         }
+        let log = crate::logging::compute_log(self.game_tick);
         let result = RenderedOutput {
             player_alive: player_hp.current > 0,
-            player_pos,
             player_hp,
+            log,
             grid: result,
             offset: min,
         };

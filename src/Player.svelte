@@ -2,6 +2,7 @@
 	export let alive;
 	export let hp;
 	export let pos;
+    export let log;
 </script>
 
 <div>
@@ -21,6 +22,10 @@
 	{#if !alive}
 		<p>You died!</p>
 	{/if}
+
+    {#if log}
+        <pre>{log}</pre>
+    {/if}
 </div>
 
 <style>
