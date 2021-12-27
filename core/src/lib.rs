@@ -87,8 +87,8 @@ pub type Stuff = Option<Id>;
 #[serde(tag = "ty")]
 pub enum StuffPayload {
     Empty,
-    Player { id: Id },
     Wall,
+    Player { id: Id },
     Troll { id: Id },
     Orc { id: Id },
 }

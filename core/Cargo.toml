@@ -26,6 +26,7 @@ smallvec = "1.9.0"
 arrayvec = "0.7.2"
 lazy_static = "1.4.0"
 getrandom = { version = "0.2.7", features = ["js"] }
+thiserror = "1.0.30"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.31"

@@ -38,6 +38,33 @@ pub struct MeleeAi {
     pub power: i32,
 }
 
+#[derive(Debug, Clone)]
+pub struct Inventory {
+    pub capacity: usize,
+    pub items: smallvec::SmallVec<[EntityId; 32]>,
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum InventoryError {
+    #[error("Inventory is full")]
+    Full,
+}
+
+impl Inventory {
+    pub fn add(&mut self, item: EntityId) -> Result<(), InventoryError> {
+        if self.items.len() >= self.capacity {
+            return Err(InventoryError::Full);
+        }
+        self.items.push(item);
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct OwnedItem {
+    pub owner: EntityId,
+}
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize)]
 pub enum StuffTag {
     Player,
