@@ -6,21 +6,19 @@ use crate::{
     pathfinder::find_path,
     InputEvent, PlayerActions, Stuff,
 };
-use cao_db::{commands::Commands, entity_id::EntityId, query::Query, World};
+use cao_db::{commands::Commands, entity_id::EntityId, query::Query};
 use smallvec::SmallVec;
 use tracing::{debug, info, trace};
 
-pub(crate) fn init_player(world: &mut World) -> EntityId {
-    let player = world.insert_entity().unwrap();
-    world.set_component(player, StuffTag::Player).unwrap();
-    world.set_component(player, Pos(Vec2::new(16, 16))).unwrap();
-    world.set_component(player, ICONS["person"]).unwrap();
-    world.set_component(player, Hp::new(10)).unwrap();
-    world.set_component(player, PlayerTag).unwrap();
-    world.set_component(player, Inventory::new(16)).unwrap();
-    world.set_component(player, Melee { power: 1 }).unwrap();
-
-    player
+pub(crate) fn init_player(mut cmd: Commands) {
+    cmd.spawn()
+        .insert(StuffTag::Player)
+        .insert(Pos(Vec2::new(16, 16)))
+        .insert(ICONS["person"])
+        .insert(Hp::new(10))
+        .insert(PlayerTag)
+        .insert(Inventory::new(16))
+        .insert(Melee { power: 1 });
 }
 
 pub(crate) fn update_input_events(inputs: &[InputEvent], actions: &mut PlayerActions) {

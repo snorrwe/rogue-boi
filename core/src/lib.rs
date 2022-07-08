@@ -50,7 +50,10 @@ pub fn init_core() -> Core {
     let dims = Vec2 { x: 128, y: 128 };
     let mut world = World::new(dims.x as u32 * dims.y as u32 * 4);
 
-    let player = init_player(&mut world);
+    init_player(Commands::new(&mut world));
+    world.apply_commands().unwrap();
+
+    let (player, _) = Query::<(EntityId, &PlayerTag)>::new(&mut world).one();
 
     let mut grid = Grid::new(dims);
     map_gen::generate_map(
