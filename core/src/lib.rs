@@ -48,7 +48,7 @@ pub fn start() {
 #[wasm_bindgen(js_name = "initCore")]
 pub fn init_core() -> Core {
     let dims = Vec2 { x: 64, y: 64 };
-    let mut world = World::new(dims.x as u32 * dims.y as u32 * 4);
+    let mut world = World::new(dims.x as u32 * dims.y as u32);
 
     init_player(Commands::new(&mut world));
     world.apply_commands().unwrap();
