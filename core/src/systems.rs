@@ -6,7 +6,7 @@ use crate::{
     pathfinder::find_path,
     InputEvent, PlayerActions, Stuff,
 };
-use cao_db::{entity_id::EntityId, query::Query, World};
+use cao_db::{commands::Commands, entity_id::EntityId, query::Query, World};
 use smallvec::SmallVec;
 use tracing::{debug, info, trace};
 
@@ -43,19 +43,30 @@ pub(crate) fn update_input_events(inputs: &[InputEvent], actions: &mut PlayerAct
 
 pub(crate) fn update_player(
     actions: &PlayerActions,
-    player_query: Query<(&mut Pos, &PlayerTag)>,
+    mut cmd: Commands,
+    player_query: Query<(EntityId, &mut Pos, &PlayerTag, &mut Inventory)>,
     stuff_tags: Query<&StuffTag>,
     hp_query: Query<&mut Hp>,
     grid: &mut Grid<Stuff>,
 ) {
-    for (pos, _tag) in player_query.iter() {
+    for (_id, pos, _tag, inventory) in player_query.iter() {
         if let Some(delta) = actions.move_action() {
-            handle_player_move(&mut pos.0, delta, &stuff_tags, &hp_query, grid);
+            handle_player_move(
+                &mut cmd,
+                inventory,
+                &mut pos.0,
+                delta,
+                &stuff_tags,
+                &hp_query,
+                grid,
+            );
         }
     }
 }
 
 fn handle_player_move(
+    cmd: &mut Commands,
+    inventory: &mut Inventory,
     pos: &mut Vec2,
     delta: Vec2,
     stuff_tags: &Query<&StuffTag>,
@@ -63,34 +74,52 @@ fn handle_player_move(
     grid: &mut Grid<Stuff>,
 ) {
     let new_pos = *pos + delta;
-    match grid.at(new_pos.x, new_pos.y) {
-        Some(Some(id)) => {
-            let id = id.into();
-            match stuff_tags.fetch(id).unwrap() {
+    match grid.at(new_pos.x, new_pos.y).unwrap() {
+        Some(id) => {
+            let stuff_id = id.into();
+            let tag = stuff_tags.fetch(stuff_id).unwrap();
+            match tag {
                 StuffTag::Player => unreachable!(),
-                StuffTag::Wall => { /* don't step */ }
+                StuffTag::Wall => {
+                    // TODO: fail the move
+                    /* don't step */
+                }
                 StuffTag::Troll | StuffTag::Orc => {
-                    let hp = hp.fetch(id).expect("Enemy has no hp");
+                    let hp = hp.fetch(stuff_id).expect("Enemy has no hp");
                     hp.current -= 1;
-                    debug!("kick enemy {}: {:?}", id, hp);
-                    game_log!("Kick enemy {} for {} damage", id, 1);
+                    debug!("kick enemy {}: {:?}", stuff_id, hp);
+                    game_log!("Kick enemy {} for {} damage", stuff_id, 1);
+                }
+                StuffTag::Sword => {
+                    // pick up item
+                    if let Err(err) = inventory.add(stuff_id) {
+                        match err {
+                            crate::components::InventoryError::Full => {
+                                game_log!("Inventory is full");
+                                todo!("should fail");
+                            }
+                        }
+                    }
+                    grid_step(pos, new_pos, grid);
+                    // remove the position component of the item
+                    cmd.entity(stuff_id).remove::<Pos>();
+                    game_log!("Picked up a {:?}", tag);
                 }
             }
         }
-        Some(None) => {
+        None => {
             // empty position
             // update the grid asap so the monsters will see the updated player position
-            let old_stuff = std::mem::take(&mut grid[*pos]);
-            grid[new_pos] = old_stuff;
-
-            *pos = new_pos;
-            game_log!("Step on tile: {}", new_pos);
-        }
-        None => {
-            // position is outside the grid
-            unreachable!();
+            grid_step(pos, new_pos, grid);
         }
     }
+}
+
+fn grid_step(pos: &mut Vec2, new_pos: Vec2, grid: &mut Grid<Stuff>) {
+    let old_stuff = std::mem::take(&mut grid[*pos]);
+    grid[new_pos] = old_stuff;
+    *pos = new_pos;
+    game_log!("Step on tile: {}", new_pos);
 }
 
 /// return wether the segment hits something and where

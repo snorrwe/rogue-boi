@@ -9,7 +9,7 @@ mod utils;
 
 use std::pin::Pin;
 
-use cao_db::{entity_id::EntityId, query::Query, World};
+use cao_db::{commands::Commands, entity_id::EntityId, query::Query, World};
 use components::*;
 use grid::Grid;
 use math::Vec2;
@@ -61,6 +61,7 @@ pub fn init_core() -> Core {
             room_max_size: 10,
             max_rooms: 50,
             max_monsters_per_room: 2,
+            max_items_per_room: 2,
         },
     );
 
@@ -91,6 +92,7 @@ pub enum StuffPayload {
     Player { id: Id },
     Troll { id: Id },
     Orc { id: Id },
+    Item { id: Id },
 }
 
 impl StuffPayload {
@@ -102,6 +104,7 @@ impl StuffPayload {
             Some(StuffTag::Player) => Self::Player { id: id.into() },
             Some(StuffTag::Troll) => Self::Troll { id: id.into() },
             Some(StuffTag::Orc) => Self::Orc { id: id.into() },
+            Some(StuffTag::Sword) => Self::Item { id: id.into() },
         }
     }
 }
@@ -229,6 +232,7 @@ impl Core {
         // logic update
         update_player(
             &self.actions,
+            Commands::new(&mut self.world),
             Query::new(&self.world),
             Query::new(&self.world),
             Query::new(&self.world),
@@ -253,6 +257,7 @@ impl Core {
             &mut self.visible,
         );
 
+        self.world.apply_commands().unwrap();
         self.update_output();
 
         // cleanup

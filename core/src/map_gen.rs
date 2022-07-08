@@ -10,7 +10,10 @@ use rand::{
 };
 
 use crate::{
-    components::{Ai, Hp, MeleeAi, Pos, StuffTag, ENEMY_TAGS, ENEMY_WEIGHTS, ICONS},
+    components::{
+        Ai, Hp, Item, MeleeAi, Pos, StuffTag, Sword, ENEMY_TAGS, ENEMY_WEIGHTS, ICONS, ITEM_TAGS,
+        ITEM_WEIGHTS,
+    },
     grid::Grid,
     math::Vec2,
     Stuff,
@@ -21,6 +24,7 @@ pub struct MapGenProps {
     pub room_max_size: u32,
     pub max_rooms: u32,
     pub max_monsters_per_room: u32,
+    pub max_items_per_room: u32,
 }
 
 fn init_entity(pos: Vec2, tag: StuffTag, world: &mut World, grid: &mut Grid<Stuff>) {
@@ -47,6 +51,11 @@ fn init_entity(pos: Vec2, tag: StuffTag, world: &mut World, grid: &mut Grid<Stuf
             world.set_component(id, Ai).unwrap();
             world.set_component(id, MeleeAi { power: 1 }).unwrap();
         }
+        StuffTag::Sword => {
+            world.set_component(id, ICONS["sword"]).unwrap();
+            world.set_component(id, Sword { power: 1 }).unwrap();
+            world.set_component(id, Item).unwrap();
+        }
     }
 }
 
@@ -67,6 +76,28 @@ fn place_entities(
         let pos = Vec2::new(x, y);
         if grid[pos].is_none() {
             let tag = ENEMY_TAGS[dist.sample(rng)];
+            grid[pos] = Some(tag);
+        }
+    }
+}
+
+fn place_items(
+    rng: &mut impl Rng,
+    grid: &mut Grid<Option<StuffTag>>,
+    room: &RectRoom,
+    max_items: u32,
+) {
+    let n_items = rng.gen_range(0..max_items);
+
+    let dist = rand::distributions::WeightedIndex::new(ITEM_WEIGHTS).unwrap();
+
+    for _ in 0..n_items {
+        let x = rng.gen_range(room.min.x + 1..room.max.x + 1);
+        let y = rng.gen_range(room.min.y + 1..room.max.y + 1);
+
+        let pos = Vec2::new(x, y);
+        if grid[pos].is_none() {
+            let tag = ITEM_TAGS[dist.sample(rng)];
             grid[pos] = Some(tag);
         }
     }
@@ -116,13 +147,13 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps) {
     let mut rooms = Vec::<RectRoom>::with_capacity(props.max_rooms as usize);
 
     'outer: for _ in 0..props.max_rooms {
-        let w = rng.gen_range(props.room_min_size..props.room_max_size) as i32;
-        let h = rng.gen_range(props.room_min_size..props.room_max_size) as i32;
+        let width = rng.gen_range(props.room_min_size..props.room_max_size) as i32;
+        let height = rng.gen_range(props.room_min_size..props.room_max_size) as i32;
 
-        let x = rng.gen_range(1..grid.width() - 1 - w);
-        let y = rng.gen_range(1..grid.height() - 1 - h);
+        let x = rng.gen_range(1..grid.width() - 1 - width);
+        let y = rng.gen_range(1..grid.height() - 1 - height);
 
-        let room = RectRoom::new(x, y, w, h);
+        let room = RectRoom::new(x, y, width, height);
         for r in rooms.iter() {
             if room.touches(&r) {
                 continue 'outer;
@@ -144,6 +175,7 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps) {
 
     for room in rooms.iter().skip(1) {
         place_entities(&mut rng, grid, room, props.max_monsters_per_room);
+        place_items(&mut rng, grid, room, props.max_items_per_room);
     }
 
     // spawn the player in the first room

@@ -17,6 +17,7 @@ lazy_static::lazy_static! {
             ("orc-head", Icon("delapouite/orc-head.svg")),
             ("person", Icon("delapouite/person.svg")),
             ("tombstone", Icon("lorc/tombstone.svg")),
+            ("sword", Icon("lorc/pointy-sword.svg")),
         ]
             .iter()
             .map(|x|*x)
@@ -32,6 +33,14 @@ pub struct Ai;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Walkable;
+
+#[derive(Debug, Clone, Copy)]
+pub struct Item;
+
+#[derive(Debug, Clone, Copy)]
+pub struct Sword {
+    pub power: i32,
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct MeleeAi {
@@ -74,6 +83,10 @@ impl Inventory {
     pub fn iter(&self) -> impl Iterator<Item = EntityId> + '_ {
         self.items.iter().copied()
     }
+
+    pub fn is_full(&self) -> bool {
+        self.items.len() >= self.capacity
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -87,23 +100,27 @@ pub enum StuffTag {
     Wall,
     Troll,
     Orc,
+    Sword,
 }
 
 pub const ENEMY_TAGS: &[StuffTag] = &[StuffTag::Troll, StuffTag::Orc];
 pub const ENEMY_WEIGHTS: &[i32] = &[1, 10];
 
+pub const ITEM_TAGS: &[StuffTag] = &[StuffTag::Sword];
+pub const ITEM_WEIGHTS: &[i32] = &[1];
+
 impl StuffTag {
     pub fn is_opaque(self) -> bool {
         match self {
             StuffTag::Wall => true,
-            StuffTag::Player | StuffTag::Troll | StuffTag::Orc => false,
+            StuffTag::Player | StuffTag::Troll | StuffTag::Orc | StuffTag::Sword => false,
         }
     }
 
     /// once explored, these stuff remain visible on the screen, even when visibility is obstructed
     pub fn static_visiblity(self) -> bool {
         match self {
-            StuffTag::Wall => true,
+            StuffTag::Wall | StuffTag::Sword => true,
             StuffTag::Player | StuffTag::Troll | StuffTag::Orc => false,
         }
     }
