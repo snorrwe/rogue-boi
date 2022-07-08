@@ -3,7 +3,7 @@ mod tunnel_iter;
 
 use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
-use cao_db::{entity_id::EntityId, World};
+use cao_db::{commands::Commands, entity_id::EntityId, World};
 use rand::{
     prelude::{Distribution, SliceRandom},
     Rng,
@@ -11,8 +11,8 @@ use rand::{
 
 use crate::{
     components::{
-        Ai, Hp, Item, MeleeAi, Pos, StuffTag, Sword, ENEMY_TAGS, ENEMY_WEIGHTS, ICONS, ITEM_TAGS,
-        ITEM_WEIGHTS,
+        Ai, Description, Hp, Item, MeleeAi, Pos, StuffTag, Sword, ENEMY_TAGS, ENEMY_WEIGHTS, ICONS,
+        ITEM_TAGS, ITEM_WEIGHTS,
     },
     grid::Grid,
     math::Vec2,
@@ -27,34 +27,35 @@ pub struct MapGenProps {
     pub max_items_per_room: u32,
 }
 
-fn init_entity(pos: Vec2, tag: StuffTag, world: &mut World, grid: &mut Grid<Stuff>) {
-    let id = world.insert_entity().unwrap();
-    grid[pos] = Some(id.into());
-    world.set_component(id, tag).unwrap();
-    world.set_component(id, Pos(pos)).unwrap();
+fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid<Stuff>) {
+    let cmd = cmd.spawn();
+    grid[pos] = Some(Default::default());
+    cmd.insert(tag).insert(Pos(pos));
     match tag {
         StuffTag::Player => {
             unreachable!()
         }
         StuffTag::Wall => {
-            world.set_component(id, ICONS["wall"]).unwrap();
+            cmd.insert(ICONS["wall"]);
         }
         StuffTag::Troll => {
-            world.set_component(id, Hp::new(8)).unwrap();
-            world.set_component(id, ICONS["troll"]).unwrap();
-            world.set_component(id, Ai).unwrap();
-            world.set_component(id, MeleeAi { power: 3 }).unwrap();
+            cmd.insert(Hp::new(8))
+                .insert(ICONS["troll"])
+                .insert(Ai)
+                .insert(MeleeAi { power: 3 });
         }
         StuffTag::Orc => {
-            world.set_component(id, Hp::new(4)).unwrap();
-            world.set_component(id, ICONS["orc-head"]).unwrap();
-            world.set_component(id, Ai).unwrap();
-            world.set_component(id, MeleeAi { power: 1 }).unwrap();
+            cmd.insert(Hp::new(4))
+                .insert(ICONS["orc-head"])
+                .insert(Ai)
+                .insert(MeleeAi { power: 1 });
         }
+
         StuffTag::Sword => {
-            world.set_component(id, ICONS["sword"]).unwrap();
-            world.set_component(id, Sword { power: 1 }).unwrap();
-            world.set_component(id, Item).unwrap();
+            cmd.insert(ICONS["sword"])
+                .insert(Sword { power: 1 })
+                .insert(Item)
+                .insert(Description("Simple sword. Power 1".to_string()));
         }
     }
 }
@@ -105,7 +106,7 @@ fn place_items(
 
 pub fn generate_map(
     player_id: EntityId,
-    world: &mut World,
+    mut cmd: Commands,
     grid: &mut Grid<Stuff>,
     props: MapGenProps,
 ) {
@@ -117,7 +118,7 @@ pub fn generate_map(
             // delete all but player entities from the database
             let id: EntityId = (*id).into();
             if id != player_id {
-                world.delete_entity(id).unwrap();
+                cmd.delete(id);
             }
         }
         working_set[p] = Some(StuffTag::Wall);
@@ -132,11 +133,11 @@ pub fn generate_map(
         match tag {
             StuffTag::Player => {
                 // update player pos
-                world.set_component(player_id, Pos(pos)).unwrap();
+                cmd.entity(player_id).insert(Pos(pos));
                 grid[pos] = Some(player_id.into());
             }
             _ => {
-                init_entity(pos, tag, world, grid);
+                init_entity(pos, tag, &mut cmd, grid);
             }
         }
     }

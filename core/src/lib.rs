@@ -55,7 +55,7 @@ pub fn init_core() -> Core {
     let mut grid = Grid::new(dims);
     map_gen::generate_map(
         player,
-        &mut world,
+        Commands::new(&mut world),
         &mut grid,
         map_gen::MapGenProps {
             room_min_size: 6,
@@ -117,7 +117,7 @@ impl Default for StuffPayload {
 }
 
 /// Id sent to JS
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
+#[derive(Default, Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
 pub struct Id {
     pub val: u32,
 }
@@ -262,6 +262,7 @@ impl Core {
             Query::new(&self.world),
             Query::new(&self.world),
         );
+        self.world.apply_commands().unwrap();
 
         self.update_output();
 
@@ -275,17 +276,15 @@ impl Core {
             &mut self.explored,
             &mut self.visible,
         );
-
         self.world.apply_commands().unwrap();
 
-        // cleanup
         self.cleanup();
+        crate::logging::rotate_log();
     }
 
     fn cleanup(&mut self) {
         self.inputs.clear();
         self.actions.clear();
-        crate::logging::rotate_log();
     }
 
     #[wasm_bindgen(js_name = "pushEvent")]
@@ -357,12 +356,12 @@ impl Core {
 
     #[wasm_bindgen(js_name = "getInventory")]
     pub fn get_inventory(&self) -> JsValue {
-        let icons = Query::<&Icon>::new(&self.world);
+        let item_props = Query::<(&Icon, &Description)>::new(&self.world);
         let inventory = Query::<&Inventory>::new(&self.world)
             .fetch(self.player)
             .map(|inv| {
                 inv.iter()
-                    .map(|id| (Id::from(id), icons.fetch(id)))
+                    .map(|id| (Id::from(id), item_props.fetch(id)))
                     .collect::<Vec<_>>()
             });
 

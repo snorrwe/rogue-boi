@@ -47,6 +47,9 @@ pub struct MeleeAi {
     pub power: i32,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct Description(pub String);
+
 #[derive(Debug, Clone)]
 pub struct Inventory {
     pub capacity: usize,

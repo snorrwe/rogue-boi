@@ -6,7 +6,9 @@
 	<ul>
 		{#each inventory ?? [] as item}
 			<li class="item">
-				<img src="/icons/ffffff/transparent/1x1/{item[1]}" />
+				<div title={item[1][1]}>
+					<img src="/icons/ffffff/transparent/1x1/{item[1][0]}" />
+				</div>
 			</li>
 		{/each}
 	</ul>
