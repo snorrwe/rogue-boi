@@ -7,6 +7,8 @@ use std::{
     },
 };
 
+use arrayvec::ArrayVec;
+
 const HISTORY_LEN: usize = 8;
 
 static CURRENT_IND: AtomicUsize = AtomicUsize::new(0);
@@ -29,12 +31,19 @@ pub(crate) fn compute_log(current_tick: usize) -> String {
     let from = current_tick.checked_sub(HISTORY_LEN).unwrap_or(0);
 
     let mut j = CURRENT_IND.load(Ordering::Relaxed);
-    for i in (from..current_tick).rev() {
+    let indices = (from..current_tick)
+        .rev()
+        .map(|i| {
+            let res = (i, j);
+            j = j.checked_sub(1).unwrap_or(HISTORY_LEN - 1);
+            res
+        })
+        .collect::<ArrayVec<_, HISTORY_LEN>>();
+    for (i, j) in indices.into_iter().rev() {
         writeln!(output, "---------------- tick {} ----------------", i)
             .expect("Failed to write header");
         writeln!(output, "{}", LOG_BUFFER[j].lock().unwrap().as_str())
             .expect("Failed to write log");
-        j = j.checked_sub(1).unwrap_or(HISTORY_LEN - 1);
     }
 
     output
