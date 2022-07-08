@@ -2,7 +2,15 @@
 	export let inventory;
 </script>
 
-<div><pre>{JSON.stringify(inventory, null, 4)}</pre></div>
+<div>
+	<ul>
+		{#each inventory ?? [] as item}
+			<li>
+				<img src="/icons/ffffff/transparent/1x1/{item[1]}" />
+			</li>
+		{/each}
+	</ul>
+</div>
 
 <style>
 	div {
