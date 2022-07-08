@@ -262,9 +262,8 @@ impl Core {
             Query::new(&self.world),
             Query::new(&self.world),
         );
+        // apply logic update commands
         self.world.apply_commands().unwrap();
-
-        self.update_output();
 
         // post processing
         update_grid(Query::new(&self.world), &mut self.grid);
@@ -276,6 +275,9 @@ impl Core {
             &mut self.explored,
             &mut self.visible,
         );
+        self.update_output();
+
+        // commands should be empty, but let's apply these just to be sure
         self.world.apply_commands().unwrap();
 
         self.cleanup();
