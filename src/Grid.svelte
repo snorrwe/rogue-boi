@@ -3,7 +3,7 @@
 </script>
 
 <div class="grid" style="--cols: {grid.grid.dims.x}; --rows: {grid.grid.dims.y}">
-	{#each grid.grid.data as item, i}
+	{#each grid.grid.data as item}
 		<div class="grid-item">
 			<div class:grid_visible={item.visible}>
 				{#if item.icon && item.explored}
