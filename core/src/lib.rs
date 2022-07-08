@@ -25,6 +25,7 @@ use crate::systems::{update_hp, update_input_events, update_melee_ai};
 pub struct Core {
     world: Pin<Box<World>>,
     player: EntityId,
+    camera_pos: Vec2,
     grid: Grid<Stuff>,
     visible: Grid<bool>,
     explored: Grid<bool>,
@@ -69,6 +70,9 @@ pub fn init_core() -> Core {
         },
     );
 
+    let (_t, Pos(camera_pos)) = Query::<(&PlayerTag, &Pos)>::new(&world).one();
+    let camera_pos = *camera_pos;
+
     let mut core = Core {
         world,
         player,
@@ -81,6 +85,7 @@ pub fn init_core() -> Core {
         viewport: Vec2::new(10, 10),
         time: 0,
         game_tick: 0,
+        camera_pos,
     };
     core.init();
     core
@@ -152,17 +157,19 @@ pub enum InputEvent {
 
 #[derive(serde::Serialize)]
 pub struct RenderedOutput {
-    #[serde(rename = "playerAlive")]
-    pub player_alive: bool,
+    pub player: Option<PlayerOutput>,
+    pub log: String,
+    pub grid: Grid<OutputStuff>,
+    pub offset: Vec2,
+}
+#[derive(serde::Serialize)]
+pub struct PlayerOutput {
     #[serde(rename = "playerHp")]
     pub player_hp: Hp,
     #[serde(rename = "playerAttack")]
     pub player_attack: i32,
     #[serde(rename = "playerPosition")]
     pub player_pos: Vec2,
-    pub log: String,
-    pub grid: Grid<OutputStuff>,
-    pub offset: Vec2,
 }
 
 #[derive(serde::Serialize, Default, Clone)]
@@ -294,6 +301,13 @@ impl Core {
             &mut self.explored,
             &mut self.visible,
         );
+
+        if let Some((_t, Pos(camera_pos))) =
+            Query::<(&PlayerTag, &Pos)>::new(&self.world).iter().next()
+        {
+            self.camera_pos = *camera_pos;
+        }
+
         self.update_output();
 
         // commands should be empty, but let's apply these just to be sure
@@ -318,10 +332,8 @@ impl Core {
         let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
 
         let mut result = Grid::new(self.viewport * 2);
-        let (player_pos, player_hp, attack, _tag) =
-            Query::<(&Pos, &Hp, &Melee, &PlayerTag)>::new(&self.world).one();
-        let min = player_pos.0 - self.viewport;
-        let max = player_pos.0 + self.viewport;
+        let min = self.camera_pos - self.viewport;
+        let max = self.camera_pos + self.viewport;
         for y in min.y.max(0)..max.y.min(self.grid.height()) {
             for x in min.x.max(0)..max.x.min(self.grid.width()) {
                 let pos = Vec2::new(x, y);
@@ -346,12 +358,17 @@ impl Core {
                 result[pos - min] = output;
             }
         }
+        let player = Query::<(&Pos, &Hp, &Melee, &PlayerTag)>::new(&self.world)
+            .iter()
+            .next()
+            .map(|(pos, hp, attack, _tag)| PlayerOutput {
+                player_hp: *hp,
+                player_attack: attack.power,
+                player_pos: pos.0,
+            });
         let log = crate::logging::compute_log(self.game_tick);
         let result = RenderedOutput {
-            player_alive: player_hp.current > 0,
-            player_hp: *player_hp,
-            player_attack: attack.power,
-            player_pos: player_pos.0,
+            player,
             log,
             grid: result,
             offset: min,

@@ -47,10 +47,10 @@
 			<Inventory inventory={$inventory} {core} />
 			<Player
 				log={$grid.log}
-				alive={$grid.playerAlive}
-				hp={$grid.playerHp}
-				pos={$grid.playerPosition}
-				attack={$grid.playerAttack}
+				alive={$grid.player != null}
+				hp={$grid.player?.playerHp}
+				pos={$grid.player?.playerPosition}
+				attack={$grid.player?.playerAttack}
 			/>
 		</div>
 	</div>
