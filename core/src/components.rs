@@ -140,6 +140,10 @@ impl Hp {
     pub fn new(max: i32) -> Self {
         Self { current: max, max }
     }
+
+    pub fn full(self) -> bool {
+        self.current >= self.max
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]

@@ -62,12 +62,15 @@ pub(crate) fn update_player(
         let tag = stuff_tags.fetch(id);
         match tag {
             Some(StuffTag::HpPotion) => {
+                game_log!("Drank a health potion.");
                 inventory.remove(id);
-                let heal = heal_query.fetch(id).unwrap();
                 let hp = hp_query.fetch(player_id).unwrap();
+                if hp.full() {
+                    game_log!("The potion has no effect");
+                }
+                let heal = heal_query.fetch(id).unwrap();
                 hp.current = (hp.current + heal.hp).min(hp.max);
                 cmd.delete(id);
-                game_log!("Drank potion.");
             }
             None => {
                 inventory.remove(id);

@@ -10,7 +10,7 @@
 <div>
 	<ul>
 		{#each inventory ?? [] as item}
-			<li class="item" on:click={() => item.usable && useItem(item.id)}>
+			<li class="item" class:usable={item.usable} on:click={() => item.usable && useItem(item.id)}>
 				<div title={item.description}>
 					<img src="/icons/ffffff/transparent/1x1/{item.icon}" />
 				</div>
@@ -27,5 +27,9 @@
 	.item {
 		height: 2.2rem;
 		width: 2.2rem;
+	}
+
+	.usable {
+		cursor: pointer;
 	}
 </style>
