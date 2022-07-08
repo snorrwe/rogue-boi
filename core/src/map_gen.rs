@@ -94,7 +94,9 @@ fn place_items(
     room: &RectRoom,
     max_items: u32,
 ) {
-    let n_items = rng.gen_range(0..max_items);
+    let n_items_a = rng.gen_range(0..=max_items);
+    let n_items_b = rng.gen_range(0..=max_items);
+    let n_items = n_items_a.max(n_items_b); // bias towards more items
 
     let dist = rand::distributions::WeightedIndex::new(ITEM_WEIGHTS).unwrap();
 
