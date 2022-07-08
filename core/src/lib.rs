@@ -192,6 +192,7 @@ impl PlayerActions {
     }
     pub fn clear(&mut self) {
         self.move_action = None;
+        self.use_item_action = None;
         self.len = 0;
     }
 
