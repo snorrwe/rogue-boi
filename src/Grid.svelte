@@ -7,7 +7,7 @@
 		<div class="grid-item">
 			<div class:grid_visible={item.visible}>
 				{#if item.icon && item.explored}
-					<img src="/icons/ffffff/transparent/1x1/{item.icon}" />
+					<img src="/icons/ffffff/transparent/1x1/{item.icon}" alt={item.type} />
 				{:else}
 					<div class="floor" />
 				{/if}
