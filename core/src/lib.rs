@@ -342,9 +342,14 @@ impl Core {
 
     #[wasm_bindgen(js_name = "getInventory")]
     pub fn get_inventory(&self) -> JsValue {
+        let icons = Query::<&Icon>::new(&self.world);
         let inventory = Query::<&Inventory>::new(&self.world)
             .fetch(self.player)
-            .map(|inv| inv.iter().map(Id::from).collect::<Vec<_>>());
+            .map(|inv| {
+                inv.iter()
+                    .map(|id| (Id::from(id), icons.fetch(id)))
+                    .collect::<Vec<_>>()
+            });
 
         JsValue::from_serde(&inventory).unwrap()
     }
