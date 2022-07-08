@@ -15,6 +15,7 @@ use grid::Grid;
 use math::Vec2;
 
 use systems::{init_player, update_fov, update_grid, update_player};
+use tracing::debug;
 use wasm_bindgen::prelude::*;
 
 use crate::systems::{update_hp, update_input_events, update_melee_ai};
@@ -227,17 +228,28 @@ impl Core {
         }
         let _span = tracing::span!(tracing::Level::DEBUG, "game_update").entered();
 
+        self.time = 0;
         self.game_tick += 1;
 
         // logic update
-        update_player(
+        if let Err(err) = update_player(
             &self.actions,
             Commands::new(&mut self.world),
             Query::new(&self.world),
             Query::new(&self.world),
             Query::new(&self.world),
             &mut self.grid,
-        );
+        ) {
+            debug!("player update failed {:?}", err);
+            match err {
+                systems::PlayerError::CantMove => {
+                    // undo tick
+                    self.game_tick -= 1;
+                    self.cleanup();
+                    return;
+                }
+            }
+        }
         update_melee_ai(
             Query::new(&self.world),
             Query::new(&self.world),
@@ -267,7 +279,10 @@ impl Core {
         self.world.apply_commands().unwrap();
 
         // cleanup
-        self.time = 0;
+        self.cleanup();
+    }
+
+    fn cleanup(&mut self) {
         self.inputs.clear();
         self.actions.clear();
         crate::logging::rotate_log();

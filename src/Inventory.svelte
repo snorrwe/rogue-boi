@@ -5,7 +5,7 @@
 <div>
 	<ul>
 		{#each inventory ?? [] as item}
-			<li>
+			<li class="item">
 				<img src="/icons/ffffff/transparent/1x1/{item[1]}" />
 			</li>
 		{/each}
@@ -15,5 +15,10 @@
 <style>
 	div {
 		color: white;
+	}
+
+	.item {
+		height: 2.2rem;
+		width: 2.2rem;
 	}
 </style>

@@ -41,6 +41,11 @@ pub(crate) fn update_input_events(inputs: &[InputEvent], actions: &mut PlayerAct
     }
 }
 
+#[derive(Debug)]
+pub enum PlayerError {
+    CantMove,
+}
+
 pub(crate) fn update_player(
     actions: &PlayerActions,
     mut cmd: Commands,
@@ -48,7 +53,7 @@ pub(crate) fn update_player(
     stuff_tags: Query<&StuffTag>,
     hp_query: Query<&mut Hp>,
     grid: &mut Grid<Stuff>,
-) {
+) -> Result<(), PlayerError> {
     for (_id, pos, _tag, inventory) in player_query.iter() {
         if let Some(delta) = actions.move_action() {
             handle_player_move(
@@ -59,9 +64,10 @@ pub(crate) fn update_player(
                 &stuff_tags,
                 &hp_query,
                 grid,
-            );
+            )?;
         }
     }
+    Ok(())
 }
 
 fn handle_player_move(
@@ -72,7 +78,7 @@ fn handle_player_move(
     stuff_tags: &Query<&StuffTag>,
     hp: &Query<&mut Hp>,
     grid: &mut Grid<Stuff>,
-) {
+) -> Result<(), PlayerError> {
     let new_pos = *pos + delta;
     match grid.at(new_pos.x, new_pos.y).unwrap().and_then(|id| {
         let stuff_id = id.into();
@@ -82,8 +88,7 @@ fn handle_player_move(
             match tag {
                 StuffTag::Player => unreachable!(),
                 StuffTag::Wall => {
-                    // TODO: fail the move
-                    /* don't step */
+                    return Err(PlayerError::CantMove);
                 }
                 StuffTag::Troll | StuffTag::Orc => {
                     let hp = hp.fetch(stuff_id).expect("Enemy has no hp");
@@ -97,8 +102,7 @@ fn handle_player_move(
                         match err {
                             crate::components::InventoryError::Full => {
                                 game_log!("Inventory is full");
-                                todo!("should fail");
-                                // TODO: fail the move
+                                return Err(PlayerError::CantMove);
                             }
                         }
                     }
@@ -115,6 +119,7 @@ fn handle_player_move(
             grid_step(pos, new_pos, grid);
         }
     }
+    Ok(())
 }
 
 fn grid_step(pos: &mut Vec2, new_pos: Vec2, grid: &mut Grid<Stuff>) {
