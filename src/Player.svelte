@@ -2,7 +2,8 @@
 	export let alive;
 	export let hp;
 	export let pos;
-    export let log;
+	export let log;
+	export let attack;
 </script>
 
 <div>
@@ -10,6 +11,11 @@
 		{#if hp != null}
 			<p id="player-hp">
 				Health: {hp.current} / {hp.max}
+			</p>
+		{/if}
+		{#if attack != null}
+			<p id="player-attack">
+				Attack Power: {attack}
 			</p>
 		{/if}
 		{#if pos != null}
@@ -23,9 +29,9 @@
 		<p>You died!</p>
 	{/if}
 
-    {#if log}
-        <pre>{log}</pre>
-    {/if}
+	{#if log}
+		<pre>{log}</pre>
+	{/if}
 </div>
 
 <style>

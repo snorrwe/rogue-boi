@@ -156,6 +156,10 @@ pub struct RenderedOutput {
     pub player_alive: bool,
     #[serde(rename = "playerHp")]
     pub player_hp: Hp,
+    #[serde(rename = "playerAttack")]
+    pub player_attack: i32,
+    #[serde(rename = "playerPosition")]
+    pub player_pos: Vec2,
     pub log: String,
     pub grid: Grid<OutputStuff>,
     pub offset: Vec2,
@@ -310,17 +314,12 @@ impl Core {
         self.inputs.push(event);
     }
 
-    fn player_data(&self) -> (Pos, Hp) {
-        let q: Query<(&Pos, &Hp)> = Query::new(&self.world);
-        let (pos, hp) = q.fetch(self.player).unwrap();
-        (*pos, *hp)
-    }
-
     fn update_output(&mut self) {
         let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
 
         let mut result = Grid::new(self.viewport * 2);
-        let (player_pos, player_hp) = self.player_data();
+        let (player_pos, player_hp, attack, _tag) =
+            Query::<(&Pos, &Hp, &Melee, &PlayerTag)>::new(&self.world).one();
         let min = player_pos.0 - self.viewport;
         let max = player_pos.0 + self.viewport;
         for y in min.y.max(0)..max.y.min(self.grid.height()) {
@@ -350,7 +349,9 @@ impl Core {
         let log = crate::logging::compute_log(self.game_tick);
         let result = RenderedOutput {
             player_alive: player_hp.current > 0,
-            player_hp,
+            player_hp: *player_hp,
+            player_attack: attack.power,
+            player_pos: player_pos.0,
             log,
             grid: result,
             offset: min,
