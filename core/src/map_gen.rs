@@ -3,7 +3,7 @@ mod tunnel_iter;
 
 use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
-use cao_db::prelude::*;
+use cao_db::{entity_id::EntityId, World};
 use rand::{
     prelude::{Distribution, SliceRandom},
     Rng,
@@ -13,7 +13,6 @@ use crate::{
     components::{Ai, Hp, MeleeAi, Pos, StuffTag, ENEMY_TAGS, ENEMY_WEIGHTS, ICONS},
     grid::Grid,
     math::Vec2,
-    rogue_db::*,
     Stuff,
 };
 
@@ -24,29 +23,29 @@ pub struct MapGenProps {
     pub max_monsters_per_room: u32,
 }
 
-fn init_entity(pos: Vec2, tag: StuffTag, world: &mut Db, grid: &mut Grid<Stuff>) {
-    let id = world.spawn_entity();
+fn init_entity(pos: Vec2, tag: StuffTag, world: &mut World, grid: &mut Grid<Stuff>) {
+    let id = world.insert_entity().unwrap();
     grid[pos] = Some(id.into());
-    world.insert(id, tag);
-    world.insert(id, Pos(pos));
+    world.set_component(id, tag).unwrap();
+    world.set_component(id, Pos(pos)).unwrap();
     match tag {
         StuffTag::Player => {
             unreachable!()
         }
         StuffTag::Wall => {
-            world.insert(id, ICONS["wall"]);
+            world.set_component(id, ICONS["wall"]).unwrap();
         }
         StuffTag::Troll => {
-            world.insert(id, Hp::new(8));
-            world.insert(id, ICONS["troll"]);
-            world.insert(id, Ai);
-            world.insert(id, MeleeAi { power: 3 });
+            world.set_component(id, Hp::new(8)).unwrap();
+            world.set_component(id, ICONS["troll"]).unwrap();
+            world.set_component(id, Ai).unwrap();
+            world.set_component(id, MeleeAi { power: 3 }).unwrap();
         }
         StuffTag::Orc => {
-            world.insert(id, Hp::new(4));
-            world.insert(id, ICONS["orc-head"]);
-            world.insert(id, Ai);
-            world.insert(id, MeleeAi { power: 1 });
+            world.set_component(id, Hp::new(4)).unwrap();
+            world.set_component(id, ICONS["orc-head"]).unwrap();
+            world.set_component(id, Ai).unwrap();
+            world.set_component(id, MeleeAi { power: 1 }).unwrap();
         }
     }
 }
@@ -57,13 +56,13 @@ fn place_entities(
     room: &RectRoom,
     max_monsters: u32,
 ) {
-    let n_monsters = rng.gen_range(0, max_monsters + 1);
+    let n_monsters = rng.gen_range(0..max_monsters + 1);
 
     let dist = rand::distributions::WeightedIndex::new(ENEMY_WEIGHTS).unwrap();
 
     for _ in 0..n_monsters {
-        let x = rng.gen_range(room.min.x + 1, room.max.x + 1);
-        let y = rng.gen_range(room.min.y + 1, room.max.y + 1);
+        let x = rng.gen_range(room.min.x + 1..room.max.x + 1);
+        let y = rng.gen_range(room.min.y + 1..room.max.y + 1);
 
         let pos = Vec2::new(x, y);
         if grid[pos].is_none() {
@@ -75,7 +74,7 @@ fn place_entities(
 
 pub fn generate_map(
     player_id: EntityId,
-    world: &mut Db,
+    world: &mut World,
     grid: &mut Grid<Stuff>,
     props: MapGenProps,
 ) {
@@ -87,7 +86,7 @@ pub fn generate_map(
             // delete all but player entities from the database
             let id: EntityId = (*id).into();
             if id != player_id {
-                world.delete_entity(id);
+                world.delete_entity(id).unwrap();
             }
         }
         working_set[p] = Some(StuffTag::Wall);
@@ -102,7 +101,7 @@ pub fn generate_map(
         match tag {
             StuffTag::Player => {
                 // update player pos
-                world.insert(player_id, Pos(pos));
+                world.set_component(player_id, Pos(pos)).unwrap();
                 grid[pos] = Some(player_id.into());
             }
             _ => {
@@ -117,11 +116,11 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps) {
     let mut rooms = Vec::<RectRoom>::with_capacity(props.max_rooms as usize);
 
     'outer: for _ in 0..props.max_rooms {
-        let w = rng.gen_range(props.room_min_size, props.room_max_size) as i32;
-        let h = rng.gen_range(props.room_min_size, props.room_max_size) as i32;
+        let w = rng.gen_range(props.room_min_size..props.room_max_size) as i32;
+        let h = rng.gen_range(props.room_min_size..props.room_max_size) as i32;
 
-        let x = rng.gen_range(1, grid.width() - 1 - w);
-        let y = rng.gen_range(1, grid.height() - 1 - h);
+        let x = rng.gen_range(1..grid.width() - 1 - w);
+        let y = rng.gen_range(1..grid.height() - 1 - h);
 
         let room = RectRoom::new(x, y, w, h);
         for r in rooms.iter() {

@@ -4,20 +4,19 @@ use crate::{
     grid::Grid,
     math::{walk_square, Vec2},
     pathfinder::find_path,
-    rogue_db::*,
     InputEvent, PlayerActions, Stuff,
 };
-use cao_db::prelude::*;
+use cao_db::{entity_id::EntityId, query::Query, World};
 use smallvec::SmallVec;
 use tracing::{debug, info, trace};
 
-pub(crate) fn init_player(world: &mut Db) -> EntityId {
-    let player = world.spawn_entity();
-    world.insert(player, StuffTag::Player);
-    world.insert(player, Pos(Vec2::new(16, 16)));
-    world.insert(player, ICONS["person"]);
-    world.insert(player, Hp::new(10));
-    world.insert(player, PlayerTag);
+pub(crate) fn init_player(world: &mut World) -> EntityId {
+    let player = world.insert_entity().unwrap();
+    world.set_component(player, StuffTag::Player).unwrap();
+    world.set_component(player, Pos(Vec2::new(16, 16))).unwrap();
+    world.set_component(player, ICONS["person"]).unwrap();
+    world.set_component(player, Hp::new(10)).unwrap();
+    world.set_component(player, PlayerTag).unwrap();
 
     player
 }
@@ -43,13 +42,14 @@ pub(crate) fn update_input_events(inputs: &[InputEvent], actions: &mut PlayerAct
 
 pub(crate) fn update_player(
     actions: &PlayerActions,
-    query: Query<(Pos, StuffTag, Hp, PlayerTag)>,
+    player_query: Query<(&mut Pos, &PlayerTag)>,
+    stuff_tags: Query<&StuffTag>,
+    hp_query: Query<&mut Hp>,
     grid: &mut Grid<Stuff>,
 ) {
-    let (mut pos, stuff_tags, mut hp, player_tag) = query.into_inner();
-    for (_idx, (Pos(ref mut pos), _tag)) in join!(pos.iter_mut(), player_tag.iter()) {
+    for (pos, _tag) in player_query.iter() {
         if let Some(delta) = actions.move_action() {
-            handle_player_move(pos, delta, &stuff_tags, &mut hp, grid);
+            handle_player_move(&mut pos.0, delta, &stuff_tags, &hp_query, grid);
         }
     }
 }
@@ -57,19 +57,19 @@ pub(crate) fn update_player(
 fn handle_player_move(
     pos: &mut Vec2,
     delta: Vec2,
-    stuff_tags: &ComponentFrag<StuffTag>,
-    hp: &mut ComponentFrag<Hp>,
+    stuff_tags: &Query<&StuffTag>,
+    hp: &Query<&mut Hp>,
     grid: &mut Grid<Stuff>,
 ) {
     let new_pos = *pos + delta;
     match grid.at(new_pos.x, new_pos.y) {
         Some(Some(id)) => {
             let id = id.into();
-            match stuff_tags.get(id).unwrap() {
+            match stuff_tags.fetch(id).unwrap() {
                 StuffTag::Player => unreachable!(),
                 StuffTag::Wall => { /* don't step */ }
                 StuffTag::Troll | StuffTag::Orc => {
-                    let hp = hp.get_mut(id).expect("Enemy has no hp");
+                    let hp = hp.fetch(id).expect("Enemy has no hp");
                     hp.current -= 1;
                     debug!("kick enemy {}: {:?}", id, hp);
                     game_log!("Kick enemy {} for {} damage", id, 1);
@@ -97,7 +97,7 @@ fn walk_grid_on_segment(
     from: Vec2,
     to: Vec2,
     grid: &Grid<Stuff>,
-    tags: &ComponentFrag<StuffTag>,
+    tags: &Query<&StuffTag>,
 ) -> Option<Vec2> {
     let dx = to.x - from.x;
     let dy = to.y - from.y;
@@ -118,7 +118,7 @@ fn walk_grid_on_segment(
         if grid
             .at(p.x, p.y)
             .and_then(|x| x.as_ref())
-            .and_then(|id| tags.get(id.into()).filter(|tag| tag.is_opaque()))
+            .and_then(|id| tags.fetch(id.into()).filter(|tag| tag.is_opaque()))
             .is_some()
         {
             return Some(p);
@@ -143,7 +143,7 @@ fn step(p: &mut Vec2, ix: &mut f32, iy: &mut f32, nx: f32, ny: f32, sign_x: i32,
 fn set_visible(
     grid: &Grid<Stuff>,
     visible: &mut Grid<bool>,
-    tags: ComponentFrag<StuffTag>,
+    tags: &Query<&StuffTag>,
     player_pos: Vec2,
     radius: i32,
 ) {
@@ -190,43 +190,39 @@ fn flood_vizibility(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Ve
 /// recompute visible area
 pub(crate) fn update_fov(
     player: EntityId,
-    q: Query<(StuffTag, Pos)>,
+    q: Query<(&StuffTag, &Pos)>,
+    tags_q: Query<&StuffTag>,
     grid: &Grid<Stuff>,
     explored: &mut Grid<bool>,
     visible: &mut Grid<bool>,
 ) {
     const RADIUS: i32 = 8;
 
-    let q = q.into_inner();
-    let player_pos = q.1.get(player).unwrap();
-    set_visible(&grid, visible, q.0, player_pos.0, RADIUS);
+    let (_player_tag, player_pos) = q.fetch(player).unwrap();
+    set_visible(&grid, visible, &tags_q, player_pos.0, RADIUS);
     visible[player_pos.0] = true;
     flood_vizibility(&grid, visible, player_pos.0, RADIUS);
     explored.or_eq(&visible);
 }
 
-pub(crate) fn update_grid(q: Query<(EntityId, Pos)>, grid: &mut Grid<Stuff>) {
+pub(crate) fn update_grid(q: Query<(EntityId, &Pos)>, grid: &mut Grid<Stuff>) {
     // zero out the map
     grid.fill(Default::default());
 
-    let q = q.into_inner();
-    for (idx, pos) in q.1.iter() {
-        let id = q.0.id_at_index(idx);
+    for (id, pos) in q.iter() {
         let pos = pos.0;
-
-        grid[Vec2::new(pos.x, pos.y)] = Some(id.into());
+        grid[pos] = Some(id.into());
     }
 }
 
 pub(crate) fn update_melee_ai(
-    q: Query<(EntityId, Pos, MeleeAi, StuffTag, Hp, Walkable, PlayerTag)>,
+    q_player: Query<(&PlayerTag, &mut Hp, &Pos)>,
+    q_enemy: Query<(EntityId, &MeleeAi, &mut Pos)>,
+    q_tag: Query<&StuffTag>,
+    q_walk: Query<&Walkable>,
     grid: &mut Grid<Stuff>,
 ) {
-    let (ids, mut pos, ai, tags, mut hp, walkable, player_tag) = q.into_inner();
-    let player_id = match player_tag
-        .iter()
-        .next()
-        .map(|(idx, _tag)| ids.id_at_index(idx))
+    let (player_hp, Pos(player_pos)) = match q_player.iter().next().map(|(_tag, hp, pos)| (hp, pos))
     {
         Some(id) => id,
         None => {
@@ -234,24 +230,18 @@ pub(crate) fn update_melee_ai(
             return;
         }
     };
-    let player_hp = hp.get_mut(player_id).expect("Failed to get player hp");
 
-    let Pos(player_pos) = *pos.get(player_id).expect("Failed to get player pos");
-
-    for (idx, (MeleeAi { power }, (_tag, Pos(pos)))) in
-        join!(ai.iter(), tags.iter(), pos.iter_mut())
-    {
-        let id = ids.id_at_index(idx);
-        if pos.chebyshev(player_pos) <= 1 {
+    for (id, MeleeAi { power }, Pos(pos)) in q_enemy.iter() {
+        if pos.chebyshev(*player_pos) <= 1 {
             player_hp.current -= power;
             debug!(
                 "bonk the player with power {}. Player hp: {:?}",
                 power, player_hp
             );
             game_log!("{} hits the player for {} damage", id, power);
-        } else if walk_grid_on_segment(*pos, player_pos, grid, &tags).is_none() {
+        } else if walk_grid_on_segment(*pos, *player_pos, grid, &q_tag).is_none() {
             let mut path = SmallVec::new(); // TODO: cache paths?
-            find_path(*pos, player_pos, grid, &walkable, &mut path);
+            find_path(*pos, *player_pos, grid, &q_walk, &mut path);
             trace!("walk towards player {:?}", path);
 
             while let Some(new_pos) = path.pop() {
@@ -266,32 +256,33 @@ pub(crate) fn update_melee_ai(
     }
 }
 
-pub(crate) fn update_hp(world: &mut Db) {
+pub(crate) fn update_hp(world: &mut World) {
     // update AI hps
     //
-    let query = Query::<(EntityId, Hp, Ai)>::new(&world);
-    let (ids, hps, ai) = query.into_inner();
-    let delete_list: SmallVec<[EntityId; 4]> = join!(hps.iter(), ai.iter())
-        .filter(|(_, (hp, _ai))| hp.current <= 0)
-        .map(|(idx, _)| ids.id_at_index(idx))
+    let query = Query::<(EntityId, &Hp, &Ai)>::new(&world);
+    let delete_list: SmallVec<[EntityId; 4]> = query
+        .iter()
+        .filter_map(|(id, hp, _ai)| (hp.current <= 0).then_some(id))
         .collect();
     for id in delete_list.into_iter() {
         debug!("Entity {} died", id);
         game_log!("{} died", id);
-        world.delete_entity(id);
+        world.delete_entity(id).unwrap();
     }
 
     // update Player hp
     //
-    let query = Query::<(EntityId, Hp, PlayerTag, Icon)>::new(&world);
-    let (ids, hps, mut tags, mut icons) = query.into_inner();
-    for (idx, (hp, (_tag, icon))) in join!(hps.iter(), tags.iter(), icons.iter_mut()) {
-        let player_id = ids.id_at_index(idx);
+    let query = Query::<(EntityId, &Hp, &PlayerTag, &mut Icon)>::new(&world);
+    let mut died = None;
+    for (player_id, hp, _tag, icon) in query.iter() {
         if hp.current <= 0 {
             info!("Player died");
             game_log!("Player died");
-            tags.remove(player_id);
             *icon = ICONS["tombstone"];
+            died = Some(player_id);
         }
+    }
+    if let Some(player_id) = died {
+        world.remove_component::<PlayerTag>(player_id).unwrap();
     }
 }

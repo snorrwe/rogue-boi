@@ -7,7 +7,9 @@ mod pathfinder;
 mod systems;
 mod utils;
 
-use cao_db::prelude::*;
+use std::pin::Pin;
+
+use cao_db::{entity_id::EntityId, query::Query, World};
 use components::*;
 use grid::Grid;
 use math::Vec2;
@@ -15,29 +17,12 @@ use math::Vec2;
 use systems::{init_player, update_fov, update_grid, update_player};
 use wasm_bindgen::prelude::*;
 
-use rogue_db::{Db as World, Query};
-
 use crate::systems::{update_hp, update_input_events, update_melee_ai};
-
-db!(
-    module rogue_db
-    components
-    [
-        Pos,
-        Icon,
-        StuffTag,
-        Hp,
-        Ai,
-        MeleeAi,
-        Walkable,
-        PlayerTag,
-    ]
-);
 
 /// State object
 #[wasm_bindgen]
 pub struct Core {
-    world: World,
+    world: Pin<Box<World>>,
     player: EntityId,
     grid: Grid<Stuff>,
     visible: Grid<bool>,
@@ -61,7 +46,7 @@ pub fn start() {
 
 #[wasm_bindgen(js_name = "initCore")]
 pub fn init_core() -> Core {
-    let mut world = World::new(500_000);
+    let mut world = World::new(10_000);
 
     let player = init_player(&mut world);
 
@@ -110,7 +95,7 @@ pub enum StuffPayload {
 
 impl StuffPayload {
     pub fn from_world(id: EntityId, world: &World) -> Self {
-        let tag = <World as AsQuery<StuffTag>>::as_query(world).get(id);
+        let tag = Query::<&StuffTag>::new(world).fetch(id);
         match tag {
             None => StuffPayload::Empty,
             Some(StuffTag::Wall) => Self::Wall,
@@ -130,7 +115,7 @@ impl Default for StuffPayload {
 /// Id sent to JS
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
 pub struct Id {
-    pub val: u64,
+    pub val: u32,
 }
 
 impl From<EntityId> for Id {
@@ -242,13 +227,26 @@ impl Core {
         self.game_tick += 1;
 
         // logic update
-        update_player(&self.actions, Query::new(&self.world), &mut self.grid);
-        update_melee_ai(Query::new(&self.world), &mut self.grid);
+        update_player(
+            &self.actions,
+            Query::new(&self.world),
+            Query::new(&self.world),
+            Query::new(&self.world),
+            &mut self.grid,
+        );
+        update_melee_ai(
+            Query::new(&self.world),
+            Query::new(&self.world),
+            Query::new(&self.world),
+            Query::new(&self.world),
+            &mut self.grid,
+        );
         update_hp(&mut self.world);
 
         update_grid(Query::new(&self.world), &mut self.grid);
         update_fov(
             self.player,
+            Query::new(&self.world),
             Query::new(&self.world),
             &self.grid,
             &mut self.explored,
@@ -271,13 +269,9 @@ impl Core {
     }
 
     fn player_data(&self) -> (Pos, Hp) {
-        let q: Query<(Pos, Hp)> = Query::new(&self.world);
-        let (pos, hp) = q.into_inner();
-
-        (
-            *pos.get(self.player).unwrap(),
-            *hp.get(self.player).unwrap(),
-        )
+        let q: Query<(&Pos, &Hp)> = Query::new(&self.world);
+        let (pos, hp) = q.fetch(self.player).unwrap();
+        (*pos, *hp)
     }
 
     fn update_output(&mut self) {
@@ -295,13 +289,13 @@ impl Core {
                 output.visible = self.visible[pos];
                 if output.explored {
                     if let Some(id) = self.grid[pos] {
-                        let ty = <World as AsQuery<StuffTag>>::as_query(&self.world)
-                            .get(id.into())
+                        let ty = Query::<&StuffTag>::new(&self.world)
+                            .fetch(id.into())
                             .expect("Failed to get tag of stuff");
                         if output.visible || ty.static_visiblity() {
                             output.payload = StuffPayload::from_world(id.into(), &self.world);
-                            output.icon = <World as AsQuery<Icon>>::as_query(&self.world)
-                                .get(id.into())
+                            output.icon = Query::<&Icon>::new(&self.world)
+                                .fetch(id.into())
                                 .map(|icon| icon.0);
                         }
                     }

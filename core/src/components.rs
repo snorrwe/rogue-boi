@@ -1,4 +1,5 @@
 use crate::math::Vec2;
+use cao_db::entity_id::EntityId;
 use serde::Serialize;
 use std::collections::HashMap;
 
