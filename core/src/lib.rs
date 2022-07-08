@@ -46,11 +46,11 @@ pub fn start() {
 
 #[wasm_bindgen(js_name = "initCore")]
 pub fn init_core() -> Core {
-    let mut world = World::new(100_000);
+    let dims = Vec2 { x: 128, y: 128 };
+    let mut world = World::new(dims.x as u32 * dims.y as u32 * 4);
 
     let player = init_player(&mut world);
 
-    let dims = Vec2 { x: 128, y: 128 };
     let mut grid = Grid::new(dims);
     map_gen::generate_map(
         player,
