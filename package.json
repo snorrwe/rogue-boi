@@ -9,7 +9,7 @@
 		"format": "prettier --ignore-path .gitignore --write --plugin-search-dir=. ."
 	},
 	"devDependencies": {
-		"@rollup/plugin-commonjs": "^11.0.0",
+		"@rollup/plugin-commonjs": "11.0.2",
 		"@rollup/plugin-node-resolve": "^7.0.0",
 		"@wasm-tool/rollup-plugin-rust": "^1.0.0",
 		"rollup": "^1.20.0",
