@@ -326,4 +326,13 @@ impl Core {
     pub fn height(&self) -> i32 {
         self.grid.height()
     }
+
+    #[wasm_bindgen(js_name = "getInventory")]
+    pub fn get_inventiry(&self) -> JsValue {
+        let inventory = Query::<&Inventory>::new(&self.world)
+            .fetch(self.player)
+            .map(|inv| inv.iter().map(Id::from).collect::<Vec<_>>());
+
+        JsValue::from_serde(&inventory).unwrap()
+    }
 }

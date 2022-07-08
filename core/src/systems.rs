@@ -1,5 +1,5 @@
 use crate::{
-    components::{Ai, Hp, Icon, MeleeAi, PlayerTag, Pos, StuffTag, Walkable, ICONS},
+    components::{Ai, Hp, Icon, Inventory, MeleeAi, PlayerTag, Pos, StuffTag, Walkable, ICONS},
     game_log,
     grid::Grid,
     math::{walk_square, Vec2},
@@ -17,6 +17,7 @@ pub(crate) fn init_player(world: &mut World) -> EntityId {
     world.set_component(player, ICONS["person"]).unwrap();
     world.set_component(player, Hp::new(10)).unwrap();
     world.set_component(player, PlayerTag).unwrap();
+    world.set_component(player, Inventory::new(16)).unwrap();
 
     player
 }

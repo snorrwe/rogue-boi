@@ -51,12 +51,28 @@ pub enum InventoryError {
 }
 
 impl Inventory {
+    pub fn new(capacity: usize) -> Self {
+        Self {
+            capacity,
+            items: smallvec::SmallVec::with_capacity(capacity),
+        }
+    }
+
     pub fn add(&mut self, item: EntityId) -> Result<(), InventoryError> {
         if self.items.len() >= self.capacity {
             return Err(InventoryError::Full);
         }
         self.items.push(item);
         Ok(())
+    }
+
+    pub fn remove(&mut self, item: EntityId) -> Option<EntityId> {
+        let (i, _id) = self.items.iter().enumerate().find(|(_i, x)| **x == item)?;
+        Some(self.items.remove(i))
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = EntityId> + '_ {
+        self.items.iter().copied()
     }
 }
 

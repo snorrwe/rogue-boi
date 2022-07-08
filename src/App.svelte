@@ -1,11 +1,13 @@
 <script>
 	import { writable } from 'svelte/store';
 	import Grid from './Grid.svelte';
+	import Inventory from './Inventory.svelte';
 	import Player from './Player.svelte';
 
 	export let core;
 
 	const grid = writable(core.getGrid());
+	const inventory = writable(core.getInventory());
 	let last = new Date().getTime();
 
 	document.addEventListener('keydown', (event) => {
@@ -40,7 +42,10 @@
 		{#if core != null && $grid != null}
 			<Grid grid={$grid} />
 		{/if}
-		<Player log={$grid.log} alive={$grid.playerAlive} hp={$grid.playerHp} pos={$grid.playerPos} />
+		<div>
+			<Inventory {inventory} />
+			<Player log={$grid.log} alive={$grid.playerAlive} hp={$grid.playerHp} pos={$grid.playerPos} />
+		</div>
 	</div>
 </main>
 
