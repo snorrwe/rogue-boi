@@ -45,6 +45,7 @@ pub(crate) fn update_input_events(inputs: &[InputEvent], actions: &mut PlayerAct
 #[derive(Debug)]
 pub enum PlayerError {
     CantMove,
+    NoPlayer,
 }
 
 pub(crate) fn update_player(
@@ -56,20 +57,20 @@ pub(crate) fn update_player(
     hp_query: Query<&mut Hp>,
     grid: &mut Grid<Stuff>,
 ) -> Result<(), PlayerError> {
-    for (_id, pos, _tag, inventory, melee) in player_query.iter() {
-        update_player_inventory(&melee_query, inventory, melee)?;
-        if let Some(delta) = actions.move_action() {
-            handle_player_move(
-                &mut cmd,
-                inventory,
-                melee,
-                &mut pos.0,
-                delta,
-                &stuff_tags,
-                &hp_query,
-                grid,
-            )?;
-        }
+    let (_id, pos, _tag, inventory, melee) =
+        player_query.iter().next().ok_or(PlayerError::NoPlayer)?;
+    update_player_inventory(&melee_query, inventory, melee)?;
+    if let Some(delta) = actions.move_action() {
+        handle_player_move(
+            &mut cmd,
+            inventory,
+            melee,
+            &mut pos.0,
+            delta,
+            &stuff_tags,
+            &hp_query,
+            grid,
+        )?;
     }
     Ok(())
 }

@@ -243,8 +243,7 @@ impl Core {
         ) {
             debug!("player update failed {:?}", err);
             match err {
-                systems::PlayerError::CantMove => {
-                    // undo tick
+                systems::PlayerError::NoPlayer | systems::PlayerError::CantMove => {
                     self.game_tick -= 1;
                     self.cleanup();
                     return;
