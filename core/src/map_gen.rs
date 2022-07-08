@@ -3,7 +3,7 @@ mod tunnel_iter;
 
 use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
-use cao_db::{commands::Commands, entity_id::EntityId, World};
+use cao_db::{commands::Commands, entity_id::EntityId};
 use rand::{
     prelude::{Distribution, SliceRandom},
     Rng,
@@ -11,7 +11,7 @@ use rand::{
 
 use crate::{
     components::{
-        Ai, Description, Hp, Item, MeleeAi, Pos, StuffTag, Sword, ENEMY_TAGS, ENEMY_WEIGHTS, ICONS,
+        Ai, Description, Hp, Item, Melee, Pos, StuffTag, ENEMY_TAGS, ENEMY_WEIGHTS, ICONS,
         ITEM_TAGS, ITEM_WEIGHTS,
     },
     grid::Grid,
@@ -42,18 +42,18 @@ fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid<Stu
             cmd.insert(Hp::new(8))
                 .insert(ICONS["troll"])
                 .insert(Ai)
-                .insert(MeleeAi { power: 3 });
+                .insert(Melee { power: 3 });
         }
         StuffTag::Orc => {
             cmd.insert(Hp::new(4))
                 .insert(ICONS["orc-head"])
                 .insert(Ai)
-                .insert(MeleeAi { power: 1 });
+                .insert(Melee { power: 1 });
         }
 
         StuffTag::Sword => {
             cmd.insert(ICONS["sword"])
-                .insert(Sword { power: 1 })
+                .insert(Melee { power: 1 })
                 .insert(Item)
                 .insert(Description("Simple sword. Power 1".to_string()));
         }

@@ -38,12 +38,7 @@ pub struct Walkable;
 pub struct Item;
 
 #[derive(Debug, Clone, Copy)]
-pub struct Sword {
-    pub power: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct MeleeAi {
+pub struct Melee {
     pub power: i32,
 }
 

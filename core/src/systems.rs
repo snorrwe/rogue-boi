@@ -1,5 +1,5 @@
 use crate::{
-    components::{Ai, Hp, Icon, Inventory, MeleeAi, PlayerTag, Pos, StuffTag, Walkable, ICONS},
+    components::{Ai, Hp, Icon, Inventory, Melee, PlayerTag, Pos, StuffTag, Walkable, ICONS},
     game_log,
     grid::Grid,
     math::{walk_square, Vec2},
@@ -18,6 +18,7 @@ pub(crate) fn init_player(world: &mut World) -> EntityId {
     world.set_component(player, Hp::new(10)).unwrap();
     world.set_component(player, PlayerTag).unwrap();
     world.set_component(player, Inventory::new(16)).unwrap();
+    world.set_component(player, Melee { power: 1 }).unwrap();
 
     player
 }
@@ -49,16 +50,19 @@ pub enum PlayerError {
 pub(crate) fn update_player(
     actions: &PlayerActions,
     mut cmd: Commands,
-    player_query: Query<(EntityId, &mut Pos, &PlayerTag, &mut Inventory)>,
+    melee_query: Query<&Melee>,
+    player_query: Query<(EntityId, &mut Pos, &PlayerTag, &mut Inventory, &mut Melee)>,
     stuff_tags: Query<&StuffTag>,
     hp_query: Query<&mut Hp>,
     grid: &mut Grid<Stuff>,
 ) -> Result<(), PlayerError> {
-    for (_id, pos, _tag, inventory) in player_query.iter() {
+    for (_id, pos, _tag, inventory, melee) in player_query.iter() {
+        update_player_inventory(&melee_query, inventory, melee)?;
         if let Some(delta) = actions.move_action() {
             handle_player_move(
                 &mut cmd,
                 inventory,
+                melee,
                 &mut pos.0,
                 delta,
                 &stuff_tags,
@@ -70,9 +74,24 @@ pub(crate) fn update_player(
     Ok(())
 }
 
+fn update_player_inventory(
+    q: &Query<&Melee>,
+    inventory: &Inventory,
+    power: &mut Melee,
+) -> Result<(), PlayerError> {
+    power.power = 1;
+    for item in inventory.items.iter().copied() {
+        if let Some(melee_weapon) = q.fetch(item) {
+            power.power += melee_weapon.power;
+        }
+    }
+    Ok(())
+}
+
 fn handle_player_move(
     cmd: &mut Commands,
     inventory: &mut Inventory,
+    power: &Melee,
     pos: &mut Vec2,
     delta: Vec2,
     stuff_tags: &Query<&StuffTag>,
@@ -92,9 +111,10 @@ fn handle_player_move(
                 }
                 StuffTag::Troll | StuffTag::Orc => {
                     let hp = hp.fetch(stuff_id).expect("Enemy has no hp");
-                    hp.current -= 1;
+                    let power = power.power;
+                    hp.current -= power;
                     debug!("kick enemy {}: {:?}", stuff_id, hp);
-                    game_log!("Kick enemy {} for {} damage", stuff_id, 1);
+                    game_log!("Kick enemy {} for {} damage", stuff_id, power);
                 }
                 StuffTag::Sword => {
                     // pick up item
@@ -254,7 +274,7 @@ pub(crate) fn update_grid(q: Query<(EntityId, &Pos)>, grid: &mut Grid<Stuff>) {
 
 pub(crate) fn update_melee_ai(
     q_player: Query<(&PlayerTag, &mut Hp, &Pos)>,
-    q_enemy: Query<(EntityId, &MeleeAi, &mut Pos)>,
+    q_enemy: Query<(EntityId, &Melee, &mut Pos, &Ai)>,
     q_tag: Query<&StuffTag>,
     q_walk: Query<&Walkable>,
     grid: &mut Grid<Stuff>,
@@ -268,7 +288,7 @@ pub(crate) fn update_melee_ai(
         }
     };
 
-    for (id, MeleeAi { power }, Pos(pos)) in q_enemy.iter() {
+    for (id, Melee { power }, Pos(pos), _ai) in q_enemy.iter() {
         if pos.chebyshev(*player_pos) <= 1 {
             player_hp.current -= power;
             debug!(

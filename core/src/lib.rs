@@ -238,6 +238,7 @@ impl Core {
             Query::new(&self.world),
             Query::new(&self.world),
             Query::new(&self.world),
+            Query::new(&self.world),
             &mut self.grid,
         ) {
             debug!("player update failed {:?}", err);
