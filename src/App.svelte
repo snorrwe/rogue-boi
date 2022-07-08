@@ -23,6 +23,7 @@
 		core.tick(now - last);
 
 		grid.set(core.getGrid());
+		inventory.set(core.getInventory());
 		last = now;
 
 		requestAnimationFrame(gameLoop);

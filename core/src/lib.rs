@@ -245,8 +245,15 @@ impl Core {
             Query::new(&self.world),
             &mut self.grid,
         );
-        update_hp(&mut self.world);
+        update_hp(
+            Commands::new(&mut self.world),
+            Query::new(&self.world),
+            Query::new(&self.world),
+        );
 
+        self.update_output();
+
+        // post processing
         update_grid(Query::new(&self.world), &mut self.grid);
         update_fov(
             self.player,
@@ -258,7 +265,6 @@ impl Core {
         );
 
         self.world.apply_commands().unwrap();
-        self.update_output();
 
         // cleanup
         self.time = 0;
@@ -293,14 +299,16 @@ impl Core {
                 output.explored = self.explored[pos];
                 output.visible = self.visible[pos];
                 if output.explored {
-                    if let Some(id) = self.grid[pos] {
-                        let ty = Query::<&StuffTag>::new(&self.world)
-                            .fetch(id.into())
-                            .expect("Failed to get tag of stuff");
+                    if let Some((id, ty)) = self.grid[pos].and_then(|id| {
+                        let id = id.into();
+                        Query::<&StuffTag>::new(&self.world)
+                            .fetch(id)
+                            .map(|ty| (id, ty))
+                    }) {
                         if output.visible || ty.static_visiblity() {
                             output.payload = StuffPayload::from_world(id.into(), &self.world);
                             output.icon = Query::<&Icon>::new(&self.world)
-                                .fetch(id.into())
+                                .fetch(id)
                                 .map(|icon| icon.0);
                         }
                     }
@@ -333,7 +341,7 @@ impl Core {
     }
 
     #[wasm_bindgen(js_name = "getInventory")]
-    pub fn get_inventiry(&self) -> JsValue {
+    pub fn get_inventory(&self) -> JsValue {
         let inventory = Query::<&Inventory>::new(&self.world)
             .fetch(self.player)
             .map(|inv| inv.iter().map(Id::from).collect::<Vec<_>>());

@@ -74,10 +74,11 @@ fn handle_player_move(
     grid: &mut Grid<Stuff>,
 ) {
     let new_pos = *pos + delta;
-    match grid.at(new_pos.x, new_pos.y).unwrap() {
-        Some(id) => {
-            let stuff_id = id.into();
-            let tag = stuff_tags.fetch(stuff_id).unwrap();
+    match grid.at(new_pos.x, new_pos.y).unwrap().and_then(|id| {
+        let stuff_id = id.into();
+        stuff_tags.fetch(stuff_id).map(|tag| (stuff_id, tag))
+    }) {
+        Some((stuff_id, tag)) => {
             match tag {
                 StuffTag::Player => unreachable!(),
                 StuffTag::Wall => {
@@ -97,6 +98,7 @@ fn handle_player_move(
                             crate::components::InventoryError::Full => {
                                 game_log!("Inventory is full");
                                 todo!("should fail");
+                                // TODO: fail the move
                             }
                         }
                     }
@@ -286,33 +288,31 @@ pub(crate) fn update_melee_ai(
     }
 }
 
-pub(crate) fn update_hp(world: &mut World) {
+pub(crate) fn update_hp(
+    mut cmd: Commands,
+    query_hp: Query<(EntityId, &Hp, &Ai)>,
+    query_player: Query<(EntityId, &Hp, &PlayerTag, &mut Icon)>,
+) {
     // update AI hps
     //
-    let query = Query::<(EntityId, &Hp, &Ai)>::new(&world);
-    let delete_list: SmallVec<[EntityId; 4]> = query
+    let delete_list: SmallVec<[EntityId; 4]> = query_hp
         .iter()
         .filter_map(|(id, hp, _ai)| (hp.current <= 0).then_some(id))
         .collect();
     for id in delete_list.into_iter() {
         debug!("Entity {} died", id);
         game_log!("{} died", id);
-        world.delete_entity(id).unwrap();
+        cmd.delete(id);
     }
 
     // update Player hp
     //
-    let query = Query::<(EntityId, &Hp, &PlayerTag, &mut Icon)>::new(&world);
-    let mut died = None;
-    for (player_id, hp, _tag, icon) in query.iter() {
+    for (player_id, hp, _tag, icon) in query_player.iter() {
         if hp.current <= 0 {
             info!("Player died");
             game_log!("Player died");
             *icon = ICONS["tombstone"];
-            died = Some(player_id);
+            cmd.entity(player_id).remove::<PlayerTag>();
         }
-    }
-    if let Some(player_id) = died {
-        world.remove_component::<PlayerTag>(player_id).unwrap();
     }
 }
