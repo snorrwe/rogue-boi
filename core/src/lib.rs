@@ -105,7 +105,7 @@ impl StuffPayload {
             Some(StuffTag::Player) => Self::Player { id: id.into() },
             Some(StuffTag::Troll) => Self::Troll { id: id.into() },
             Some(StuffTag::Orc) => Self::Orc { id: id.into() },
-            Some(StuffTag::Sword) => Self::Item { id: id.into() },
+            Some(StuffTag::HpPotion) | Some(StuffTag::Sword) => Self::Item { id: id.into() },
         }
     }
 }

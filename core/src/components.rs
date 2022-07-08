@@ -18,6 +18,7 @@ lazy_static::lazy_static! {
             ("person", Icon("delapouite/person.svg")),
             ("tombstone", Icon("lorc/tombstone.svg")),
             ("sword", Icon("lorc/pointy-sword.svg")),
+            ("hp_potion", Icon("delapouite/health-potion.svg")),
         ]
             .iter()
             .map(|x|*x)
@@ -99,26 +100,31 @@ pub enum StuffTag {
     Troll,
     Orc,
     Sword,
+    HpPotion,
 }
 
 pub const ENEMY_TAGS: &[StuffTag] = &[StuffTag::Troll, StuffTag::Orc];
 pub const ENEMY_WEIGHTS: &[i32] = &[1, 10];
 
-pub const ITEM_TAGS: &[StuffTag] = &[StuffTag::Sword];
-pub const ITEM_WEIGHTS: &[i32] = &[1];
+pub const ITEM_TAGS: &[StuffTag] = &[StuffTag::Sword, StuffTag::HpPotion];
+pub const ITEM_WEIGHTS: &[i32] = &[1, 2];
 
 impl StuffTag {
     pub fn is_opaque(self) -> bool {
         match self {
             StuffTag::Wall => true,
-            StuffTag::Player | StuffTag::Troll | StuffTag::Orc | StuffTag::Sword => false,
+            StuffTag::Player
+            | StuffTag::Troll
+            | StuffTag::Orc
+            | StuffTag::Sword
+            | StuffTag::HpPotion => false,
         }
     }
 
     /// once explored, these stuff remain visible on the screen, even when visibility is obstructed
     pub fn static_visiblity(self) -> bool {
         match self {
-            StuffTag::Wall | StuffTag::Sword => true,
+            StuffTag::Wall | StuffTag::Sword | StuffTag::HpPotion => true,
             StuffTag::Player | StuffTag::Troll | StuffTag::Orc => false,
         }
     }
@@ -134,4 +140,9 @@ impl Hp {
     pub fn new(max: i32) -> Self {
         Self { current: max, max }
     }
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct Heal {
+    pub hp: i32,
 }

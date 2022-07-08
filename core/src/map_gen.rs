@@ -11,7 +11,7 @@ use rand::{
 
 use crate::{
     components::{
-        Ai, Description, Hp, Item, Melee, Pos, StuffTag, ENEMY_TAGS, ENEMY_WEIGHTS, ICONS,
+        Ai, Description, Heal, Hp, Item, Melee, Pos, StuffTag, ENEMY_TAGS, ENEMY_WEIGHTS, ICONS,
         ITEM_TAGS, ITEM_WEIGHTS,
     },
     grid::Grid,
@@ -56,6 +56,12 @@ fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid<Stu
                 .insert(Melee { power: 1 })
                 .insert(Item)
                 .insert(Description("Simple sword. Power 1".to_string()));
+        }
+        StuffTag::HpPotion => {
+            cmd.insert(ICONS["hp_potion"])
+                .insert(Heal { hp: 3 })
+                .insert(Item)
+                .insert(Description("Health potion. Heal 3".to_string()));
         }
     }
 }

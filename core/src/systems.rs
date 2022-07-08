@@ -117,7 +117,7 @@ fn handle_player_move(
                     debug!("kick enemy {}: {:?}", stuff_id, hp);
                     game_log!("Kick enemy {} for {} damage", stuff_id, power);
                 }
-                StuffTag::Sword => {
+                StuffTag::HpPotion | StuffTag::Sword => {
                     // pick up item
                     if let Err(err) = inventory.add(stuff_id) {
                         match err {
