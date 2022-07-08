@@ -28,13 +28,13 @@
 	requestAnimationFrame(gameLoop);
 </script>
 
-<head>
+<svelte:head>
 	{#if core != null}
 		{#each core.icons() as icon}
-			<link rel="prefetch" href="/icons/ffffff/transparent/1x1/{icon}" />
+			<link rel="preload" href="/icons/ffffff/transparent/1x1/{icon}" as="image" />
 		{/each}
 	{/if}
-</head>
+</svelte:head>
 <main>
 	<div class="content">
 		{#if core != null && $grid != null}
