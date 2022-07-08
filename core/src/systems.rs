@@ -1,5 +1,5 @@
 use crate::{
-    components::{Ai, Hp, Icon, Inventory, Melee, PlayerTag, Pos, StuffTag, Walkable, ICONS},
+    components::{Ai, Heal, Hp, Icon, Inventory, Melee, PlayerTag, Pos, StuffTag, Walkable, ICONS},
     game_log,
     grid::Grid,
     math::{walk_square, Vec2},
@@ -55,10 +55,28 @@ pub(crate) fn update_player(
     player_query: Query<(EntityId, &mut Pos, &PlayerTag, &mut Inventory, &mut Melee)>,
     stuff_tags: Query<&StuffTag>,
     hp_query: Query<&mut Hp>,
+    heal_query: Query<&Heal>,
     grid: &mut Grid<Stuff>,
 ) -> Result<(), PlayerError> {
-    let (_id, pos, _tag, inventory, melee) =
+    let (player_id, pos, _tag, inventory, melee) =
         player_query.iter().next().ok_or(PlayerError::NoPlayer)?;
+    if let Some(id) = actions.use_item_action() {
+        let tag = stuff_tags.fetch(id);
+        match tag {
+            Some(StuffTag::HpPotion) => {
+                inventory.remove(id);
+                let heal = heal_query.fetch(id).unwrap();
+                let hp = hp_query.fetch(player_id).unwrap();
+                hp.current = (hp.current + heal.hp).min(hp.max);
+                cmd.delete(id);
+                game_log!("Drank potion.");
+            }
+            None => {
+                inventory.remove(id);
+            }
+            _ => {}
+        }
+    }
     update_player_inventory(&melee_query, inventory, melee)?;
     if let Some(delta) = actions.move_action() {
         handle_player_move(

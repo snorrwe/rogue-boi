@@ -1,13 +1,18 @@
 <script>
 	export let inventory;
+	export let core;
+
+	const useItem = (id) => {
+		core.useItem(id);
+	};
 </script>
 
 <div>
 	<ul>
 		{#each inventory ?? [] as item}
-			<li class="item">
-				<div title={item[1][1]}>
-					<img src="/icons/ffffff/transparent/1x1/{item[1][0]}" />
+			<li class="item" on:click={() => item.usable && useItem(item.id)}>
+				<div title={item.description}>
+					<img src="/icons/ffffff/transparent/1x1/{item.icon}" />
 				</div>
 			</li>
 		{/each}

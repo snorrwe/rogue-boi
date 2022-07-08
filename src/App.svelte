@@ -44,7 +44,7 @@
 			<Grid grid={$grid} />
 		{/if}
 		<div>
-			<Inventory inventory={$inventory} />
+			<Inventory inventory={$inventory} core={core} />
 			<Player log={$grid.log} alive={$grid.playerAlive} hp={$grid.playerHp} pos={$grid.playerPos} />
 		</div>
 	</div>

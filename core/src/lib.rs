@@ -167,17 +167,16 @@ pub struct OutputStuff {
     pub payload: StuffPayload,
 }
 
+#[derive(Default)]
 pub(crate) struct PlayerActions {
     len: usize,
     move_action: Option<Vec2>,
+    use_item_action: Option<EntityId>,
 }
 
 impl PlayerActions {
     pub fn new() -> Self {
-        Self {
-            len: 0,
-            move_action: None,
-        }
+        Self::default()
     }
 }
 
@@ -202,6 +201,17 @@ impl PlayerActions {
 
     pub fn move_action(&self) -> Option<Vec2> {
         self.move_action
+    }
+
+    pub fn insert_use_item(&mut self, item: EntityId) {
+        let old = self.use_item_action.replace(item);
+        if old.is_none() {
+            self.len += 1;
+        }
+    }
+
+    pub fn use_item_action(&self) -> Option<EntityId> {
+        self.use_item_action
     }
 }
 
@@ -235,6 +245,7 @@ impl Core {
         if let Err(err) = update_player(
             &self.actions,
             Commands::new(&mut self.world),
+            Query::new(&self.world),
             Query::new(&self.world),
             Query::new(&self.world),
             Query::new(&self.world),
@@ -358,15 +369,39 @@ impl Core {
 
     #[wasm_bindgen(js_name = "getInventory")]
     pub fn get_inventory(&self) -> JsValue {
-        let item_props = Query::<(&Icon, &Description)>::new(&self.world);
+        let item_props = Query::<(&Icon, &Description, &StuffTag)>::new(&self.world);
         let inventory = Query::<&Inventory>::new(&self.world)
             .fetch(self.player)
             .map(|inv| {
                 inv.iter()
-                    .map(|id| (Id::from(id), item_props.fetch(id)))
+                    .map(|id| {
+                        let props = item_props.fetch(id);
+                        ItemDesc {
+                            id: id.into(),
+                            description: props.map(|p| p.1 .0.clone()),
+                            icon: props.map(|p| p.0 .0.to_string()),
+                            usable: props
+                                .map(|p| matches!(p.2, StuffTag::HpPotion))
+                                .unwrap_or(false),
+                        }
+                    })
                     .collect::<Vec<_>>()
             });
 
         JsValue::from_serde(&inventory).unwrap()
     }
+
+    #[wasm_bindgen(js_name = "useItem")]
+    pub fn use_item(&mut self, id: JsValue) {
+        let id: Id = JsValue::into_serde(&id).unwrap();
+        self.actions.insert_use_item(id.into());
+    }
+}
+
+#[derive(serde::Serialize)]
+struct ItemDesc {
+    pub id: Id,
+    pub description: Option<String>,
+    pub icon: Option<String>,
+    pub usable: bool,
 }
