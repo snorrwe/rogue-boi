@@ -310,7 +310,7 @@ pub(crate) fn update_melee_ai(
     };
 
     for (id, Melee { power }, Pos(pos), _ai) in q_enemy.iter() {
-        if pos.chebyshev(*player_pos) <= 1 {
+        if pos.manhatten(*player_pos) <= 1 {
             player_hp.current -= power;
             debug!(
                 "bonk the player with power {}. Player hp: {:?}",
