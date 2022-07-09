@@ -1,10 +1,14 @@
 <script>
+	import { createEventDispatcher } from 'svelte';
+
 	export let inventory;
 	export let core;
 
+	const dispatch = createEventDispatcher();
+
 	const useItem = (item) => {
-		// TODO: target mode
-		core.useItem(item.id);
+		const response = core.fetchEntity(item.id);
+		dispatch('selected', response);
 	};
 </script>
 

@@ -101,6 +101,7 @@ pub fn stuff_to_js(
         Option<&Ranged>,
         Option<&Heal>,
         Option<&Melee>,
+        Option<&Pos>,
     )>,
     q_ai: Query<(&Ai, &Icon, Option<&Ranged>, Option<&Melee>, &Hp)>,
     q_player: Query<(&PlayerTag, &Icon, &Melee, &Hp)>,
@@ -147,7 +148,9 @@ pub fn stuff_to_js(
             }}
         }
         StuffTag::HpPotion | StuffTag::Sword | StuffTag::LightningScroll => {
-            let (_item, icon, desc, ranged, heal, melee) = q_item.fetch(id).unwrap();
+            let (_item, icon, desc, ranged, heal, melee, pos) = q_item.fetch(id).unwrap();
+            let usable =
+                pos.is_none() && matches!(tag, StuffTag::HpPotion | StuffTag::LightningScroll);
             json! {{
                 "id": id,
                 "tag": tag,
@@ -155,7 +158,8 @@ pub fn stuff_to_js(
                 "heal": heal.clone(),
                 "melee": melee.clone(),
                 "description": desc.0.clone(),
-                "icon": icon.0.clone()
+                "icon": icon.0.clone(),
+                "usable": usable
             }}
         }
     };

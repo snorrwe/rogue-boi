@@ -1,6 +1,7 @@
 <script>
 	import { writable } from 'svelte/store';
 	import Grid from './Grid.svelte';
+	import Highlight from './Highlight.svelte';
 	import Player from './Player.svelte';
 
 	export let core;
@@ -50,21 +51,7 @@
 		</div>
 		<div>
 			{#if $selected != null}
-				<div class="selected">
-					<img
-						class="selected icon"
-						alt={$selected.tag}
-						src="/icons/ffffff/transparent/1x1/{$selected.icon}"
-					/>
-					<div>
-						{$selected.description}
-					</div>
-					{#if $selected.hp}
-						<div>
-							Health: {$selected.hp.current} / {$selected.hp.max}
-						</div>
-					{/if}
-				</div>
+				<Highlight selected={$selected} {core} />
 			{/if}
 			<div>
 				<Player
@@ -75,6 +62,7 @@
 					pos={$grid.player && $grid.player.playerPosition}
 					attack={$grid.player && $grid.player.playerAttack}
 					{core}
+					on:selected={(event) => selected.set(event.detail)}
 				/>
 			</div>
 		</div>
@@ -90,12 +78,5 @@
 	.content {
 		display: grid;
 		grid-template-columns: repeat(2, max-content);
-	}
-
-	.selected {
-		color: white;
-	}
-	.selected.icon {
-		height: 3.2rem;
 	}
 </style>

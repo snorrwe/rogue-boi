@@ -1,5 +1,8 @@
 <script>
+	import { createEventDispatcher } from 'svelte';
+
 	import Inventory from './Inventory.svelte';
+	const dispatch = createEventDispatcher();
 
 	export let alive;
 	export let hp;
@@ -7,12 +10,12 @@
 	export let log;
 	export let attack;
 	export let inventory;
-    export let core;
+	export let core;
 </script>
 
 <div>
 	{#if alive}
-		<Inventory {inventory} {core} />
+		<Inventory {inventory} {core} on:selected={(ev) => dispatch('selected', ev.detail)} />
 
 		<h2>Player stats</h2>
 		{#if hp != null}
