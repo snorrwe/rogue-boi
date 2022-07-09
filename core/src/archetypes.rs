@@ -52,9 +52,10 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         }
         StuffTag::Troll => {
             cmd.insert(Hp::new(8))
+            cmd.insert(Hp::new(6))
                 .insert(ICONS["troll"])
                 .insert(Ai)
-                .insert(Melee { power: 3 });
+                .insert(Melee { power: 2 });
         }
         StuffTag::Orc => {
             cmd.insert(Hp::new(4))
