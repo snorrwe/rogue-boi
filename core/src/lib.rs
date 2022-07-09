@@ -98,17 +98,17 @@ pub fn init_core() -> Core {
     core
 }
 
-pub type Stuff = Option<Id>;
+pub type Stuff = Option<EntityId>;
 
 #[derive(Clone, serde::Serialize)]
 #[serde(tag = "ty")]
 pub enum StuffPayload {
     Empty,
     Wall,
-    Player { id: Id },
-    Troll { id: Id },
-    Orc { id: Id },
-    Item { id: Id },
+    Player { id: EntityId },
+    Troll { id: EntityId },
+    Orc { id: EntityId },
+    Item { id: EntityId },
 }
 
 impl StuffPayload {
@@ -117,11 +117,11 @@ impl StuffPayload {
         match tag {
             None => StuffPayload::Empty,
             Some(StuffTag::Wall) => Self::Wall,
-            Some(StuffTag::Player) => Self::Player { id: id.into() },
-            Some(StuffTag::Troll) => Self::Troll { id: id.into() },
-            Some(StuffTag::Orc) => Self::Orc { id: id.into() },
+            Some(StuffTag::Player) => Self::Player { id },
+            Some(StuffTag::Troll) => Self::Troll { id },
+            Some(StuffTag::Orc) => Self::Orc { id },
             Some(StuffTag::HpPotion) | Some(StuffTag::Sword) | Some(StuffTag::LightningScroll) => {
-                Self::Item { id: id.into() }
+                Self::Item { id }
             }
         }
     }
@@ -130,30 +130,6 @@ impl StuffPayload {
 impl Default for StuffPayload {
     fn default() -> Self {
         Self::Empty
-    }
-}
-
-/// Id sent to JS
-#[derive(Default, Debug, serde::Serialize, serde::Deserialize, Clone, Copy)]
-pub struct Id {
-    pub val: u32,
-}
-
-impl From<EntityId> for Id {
-    fn from(eid: EntityId) -> Self {
-        Self { val: eid.into() }
-    }
-}
-
-impl From<Id> for EntityId {
-    fn from(i: Id) -> Self {
-        i.val.into()
-    }
-}
-
-impl<'a> From<&'a Id> for EntityId {
-    fn from(id: &'a Id) -> Self {
-        (*id).into()
     }
 }
 
@@ -361,13 +337,13 @@ impl Core {
                 output.visible = self.visible[pos];
                 if output.explored {
                     if let Some((id, ty)) = self.grid[pos].and_then(|id| {
-                        let id = id.into();
+                        let id = id;
                         Query::<&StuffTag>::new(&self.world)
                             .fetch(id)
                             .map(|ty| (id, ty))
                     }) {
                         if output.visible || ty.static_visiblity() {
-                            output.payload = StuffPayload::from_world(id.into(), &self.world);
+                            output.payload = StuffPayload::from_world(id, &self.world);
                             output.icon = Query::<&Icon>::new(&self.world)
                                 .fetch(id)
                                 .map(|icon| icon.0);
@@ -419,7 +395,7 @@ impl Core {
                     .map(|id| {
                         let props = item_props.fetch(id);
                         ItemDesc {
-                            id: id.into(),
+                            id,
                             description: props.map(|p| p.1 .0.clone()),
                             icon: props.map(|p| p.0 .0.to_string()),
                             usable: props
@@ -441,21 +417,26 @@ impl Core {
 
     #[wasm_bindgen(js_name = "useItem")]
     pub fn use_item(&mut self, id: JsValue) {
-        let id: Id = JsValue::into_serde(&id).unwrap();
-        self.actions.insert_use_item(id.into());
+        let id: EntityId = JsValue::into_serde(&id).unwrap();
+        self.actions.insert_use_item(id);
     }
 
     #[wasm_bindgen(js_name = "setTarget")]
     pub fn set_target(&mut self, id: JsValue) {
-        let id: Id = JsValue::into_serde(&id).unwrap();
-        self.actions.set_target(id.into());
+        let id: EntityId = JsValue::into_serde(&id).unwrap();
+        self.actions.set_target(id);
+    }
+
+    #[wasm_bindgen(js_name = "fetchEntity")]
+    pub fn fetch_entity(&self, id: JsValue) -> JsValue {
+        todo!()
     }
 }
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ItemDesc {
-    pub id: Id,
+    pub id: EntityId,
     pub description: Option<String>,
     pub icon: Option<String>,
     pub usable: bool,
