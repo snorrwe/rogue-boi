@@ -120,7 +120,9 @@ impl StuffPayload {
             Some(StuffTag::Player) => Self::Player { id: id.into() },
             Some(StuffTag::Troll) => Self::Troll { id: id.into() },
             Some(StuffTag::Orc) => Self::Orc { id: id.into() },
-            Some(StuffTag::HpPotion) | Some(StuffTag::Sword) => Self::Item { id: id.into() },
+            Some(StuffTag::HpPotion) | Some(StuffTag::Sword) | Some(StuffTag::LightningScroll) => {
+                Self::Item { id: id.into() }
+            }
         }
     }
 }
@@ -399,7 +401,8 @@ impl Core {
 
     #[wasm_bindgen(js_name = "getInventory")]
     pub fn get_inventory(&self) -> JsValue {
-        let item_props = Query::<(&Icon, &Description, &StuffTag)>::new(&self.world);
+        let item_props =
+            Query::<(&Icon, &Description, &StuffTag, Option<&Ranged>)>::new(&self.world);
         let inventory = Query::<&Inventory>::new(&self.world)
             .fetch(self.player)
             .map(|inv| {
@@ -411,8 +414,14 @@ impl Core {
                             description: props.map(|p| p.1 .0.clone()),
                             icon: props.map(|p| p.0 .0.to_string()),
                             usable: props
-                                .map(|p| matches!(p.2, StuffTag::HpPotion))
+                                .map(|p| {
+                                    matches!(p.2, StuffTag::HpPotion | StuffTag::LightningScroll)
+                                })
                                 .unwrap_or(false),
+                            target_enemy: props
+                                .map(|p| matches!(p.2, StuffTag::LightningScroll))
+                                .unwrap_or(false),
+                            range: props.and_then(|p| p.3).map(|r| r.range).unwrap_or(-1),
                         }
                     })
                     .collect::<Vec<_>>()
@@ -429,9 +438,12 @@ impl Core {
 }
 
 #[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 struct ItemDesc {
     pub id: Id,
     pub description: Option<String>,
     pub icon: Option<String>,
     pub usable: bool,
+    pub target_enemy: bool,
+    pub range: i32,
 }

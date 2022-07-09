@@ -14,6 +14,7 @@ lazy_static::lazy_static! {
             ("tombstone", Icon("lorc/tombstone.svg")),
             ("sword", Icon("lorc/pointy-sword.svg")),
             ("hp_potion", Icon("delapouite/health-potion.svg")),
+            ("scroll", Icon("lorc/scroll-unfurled.svg")),
         ]
             .iter()
             .map(|x|*x)
@@ -24,8 +25,12 @@ lazy_static::lazy_static! {
 pub const ENEMY_TAGS: &[StuffTag] = &[StuffTag::Troll, StuffTag::Orc];
 pub const ENEMY_WEIGHTS: &[i32] = &[1, 10];
 
-pub const ITEM_TAGS: &[StuffTag] = &[StuffTag::Sword, StuffTag::HpPotion];
-pub const ITEM_WEIGHTS: &[i32] = &[1, 2];
+pub const ITEM_TAGS: &[StuffTag] = &[
+    StuffTag::Sword,
+    StuffTag::HpPotion,
+    StuffTag::LightningScroll,
+];
+pub const ITEM_WEIGHTS: &[i32] = &[1, 2, 1];
 
 pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid<Stuff>) {
     let cmd = cmd.spawn();
@@ -69,6 +74,14 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 .insert(Heal { hp: 3 })
                 .insert(Item)
                 .insert(Description("Health potion. Heal 3".to_string()));
+        }
+        StuffTag::LightningScroll => {
+            cmd.insert(ICONS["scroll"])
+                .insert(Ranged { power: 3, range: 5 })
+                .insert(Item)
+                .insert(Description(
+                    "Hurl a lightning bolt at your foe for 3 damage.".to_string(),
+                ));
         }
     }
 }

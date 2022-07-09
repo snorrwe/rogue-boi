@@ -8,7 +8,6 @@ pub struct Pos(pub Vec2);
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct Icon(pub &'static str);
 
-
 #[derive(Debug, Clone, Copy)]
 pub struct PlayerTag;
 
@@ -80,6 +79,7 @@ pub enum StuffTag {
     Orc,
     Sword,
     HpPotion,
+    LightningScroll,
 }
 
 impl StuffTag {
@@ -90,14 +90,17 @@ impl StuffTag {
             | StuffTag::Troll
             | StuffTag::Orc
             | StuffTag::Sword
-            | StuffTag::HpPotion => false,
+            | StuffTag::HpPotion
+            | StuffTag::LightningScroll => false,
         }
     }
 
     /// once explored, these stuff remain visible on the screen, even when visibility is obstructed
     pub fn static_visiblity(self) -> bool {
         match self {
-            StuffTag::Wall | StuffTag::Sword | StuffTag::HpPotion => true,
+            StuffTag::Wall | StuffTag::Sword | StuffTag::HpPotion | StuffTag::LightningScroll => {
+                true
+            }
             StuffTag::Player | StuffTag::Troll | StuffTag::Orc => false,
         }
     }
@@ -122,4 +125,10 @@ impl Hp {
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct Heal {
     pub hp: i32,
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct Ranged {
+    pub power: i32,
+    pub range: i32,
 }

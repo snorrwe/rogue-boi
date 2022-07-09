@@ -31,7 +31,9 @@ fn place_entities(
     room: &RectRoom,
     max_monsters: u32,
 ) {
-    let n_monsters = rng.gen_range(0..max_monsters + 1);
+    let n_monsters_a = rng.gen_range(0..=max_monsters);
+    let n_monsters_b = rng.gen_range(0..=max_monsters);
+    let n_monsters = n_monsters_a.max(n_monsters_b); // bias towards more monsters
 
     let dist = rand::distributions::WeightedIndex::new(ENEMY_WEIGHTS).unwrap();
 
@@ -53,9 +55,7 @@ fn place_items(
     room: &RectRoom,
     max_items: u32,
 ) {
-    let n_items_a = rng.gen_range(0..=max_items);
-    let n_items_b = rng.gen_range(0..=max_items);
-    let n_items = n_items_a.max(n_items_b); // bias towards more items
+    let n_items = rng.gen_range(0..=max_items);
 
     let dist = rand::distributions::WeightedIndex::new(ITEM_WEIGHTS).unwrap();
 
