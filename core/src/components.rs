@@ -82,10 +82,6 @@ impl Inventory {
     pub fn iter(&self) -> impl Iterator<Item = EntityId> + '_ {
         self.items.iter().copied()
     }
-
-    pub fn is_full(&self) -> bool {
-        self.items.len() >= self.capacity
-    }
 }
 
 #[derive(Debug, Clone, Copy)]
