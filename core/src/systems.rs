@@ -133,7 +133,7 @@ fn handle_player_move(
                     let power = power.power;
                     hp.current -= power;
                     debug!("kick enemy {}: {:?}", stuff_id, hp);
-                    game_log!("Kick enemy {} for {} damage", stuff_id, power);
+                    game_log!("Bonk enemy {} for {} damage", stuff_id, power);
                 }
                 StuffTag::LightningScroll | StuffTag::HpPotion | StuffTag::Sword => {
                     // pick up item
