@@ -64,6 +64,14 @@ pub(crate) fn update_player(
             }
             Some(StuffTag::LightningScroll) => {
                 game_log!("Lightning bolt!");
+                match actions.target() {
+                    Some(id) => {
+                        todo!();
+                    }
+                    None => {
+                        error!("Lightning bolt has no target!");
+                    }
+                }
                 inventory.remove(id);
                 cmd.delete(id);
             }

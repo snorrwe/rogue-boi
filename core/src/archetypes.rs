@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use cao_db::commands::Commands;
+use cao_db::{commands::Commands, entity_id::EntityId, prelude::Query};
+use serde_json::json;
+use wasm_bindgen::JsValue;
 
 use crate::{components::*, grid::Grid, math::Vec2, Stuff};
 
@@ -51,7 +53,6 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
             cmd.insert(ICONS["wall"]);
         }
         StuffTag::Troll => {
-            cmd.insert(Hp::new(8))
             cmd.insert(Hp::new(6))
                 .insert(ICONS["troll"])
                 .insert(Ai)
@@ -85,4 +86,68 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 ));
         }
     }
+}
+
+pub fn stuff_to_js(
+    id: EntityId,
+    tag: StuffTag,
+    q_wall: Query<&Icon>,
+    q_item: Query<(
+        &Item,
+        &Icon,
+        &Description,
+        Option<&Ranged>,
+        Option<&Heal>,
+        Option<&Melee>,
+    )>,
+    q_ai: Query<(&Ai, &Icon, Option<&Ranged>, Option<&Melee>, &Hp)>,
+    q_player: Query<(&PlayerTag, &Icon, &Melee, &Hp)>,
+) -> JsValue {
+    let payload = match tag {
+        StuffTag::Player => {
+            let (_tag, icon, melee, hp) = q_player.fetch(id).unwrap();
+            json! {{
+                "id": id,
+                "tag": tag,
+                "description": "The player",
+                "icon": icon.0.clone(),
+                "hp": hp,
+                "melee": melee.clone()
+            }}
+        }
+        StuffTag::Wall => {
+            let icon = q_wall.fetch(id).unwrap();
+            json! {{
+                "id": id,
+                "tag": tag,
+                "description": "Wall",
+                "icon": icon.0.clone()
+            }}
+        }
+        StuffTag::Troll | StuffTag::Orc => {
+            let (_ai, icon, ranged, melee, hp) = q_ai.fetch(id).unwrap();
+            json! {{
+                "id": id,
+                "tag": tag,
+                "range": ranged.clone(),
+                "melee": melee.clone(),
+                "description": "TBA",
+                "icon": icon.0.clone(),
+                "hp": hp
+            }}
+        }
+        StuffTag::HpPotion | StuffTag::Sword | StuffTag::LightningScroll => {
+            let (_item, icon, desc, ranged, heal, melee) = q_item.fetch(id).unwrap();
+            json! {{
+                "id": id,
+                "tag": tag,
+                "range": ranged.clone(),
+                "heal": heal.clone(),
+                "melee": melee.clone(),
+                "description": desc.0.clone(),
+                "icon": icon.0.clone()
+            }}
+        }
+    };
+    JsValue::from_serde(&payload).unwrap()
 }

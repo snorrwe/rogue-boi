@@ -190,6 +190,7 @@ impl PlayerActions {
     pub fn clear(&mut self) {
         self.move_action = None;
         self.use_item_action = None;
+        self.target = None;
         self.len = 0;
     }
 
@@ -429,7 +430,17 @@ impl Core {
 
     #[wasm_bindgen(js_name = "fetchEntity")]
     pub fn fetch_entity(&self, id: JsValue) -> JsValue {
-        todo!()
+        let id: EntityId = JsValue::into_serde(&id).unwrap();
+        let q = Query::<&StuffTag>::new(&self.world);
+        let tag = q.fetch(id).unwrap();
+        archetypes::stuff_to_js(
+            id,
+            *tag,
+            Query::new(&self.world),
+            Query::new(&self.world),
+            Query::new(&self.world),
+            Query::new(&self.world),
+        )
     }
 }
 

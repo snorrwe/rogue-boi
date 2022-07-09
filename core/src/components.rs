@@ -20,7 +20,7 @@ pub struct Walkable;
 #[derive(Debug, Clone, Copy)]
 pub struct Item;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize)]
 pub struct Melee {
     pub power: i32,
 }
