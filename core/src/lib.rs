@@ -434,8 +434,7 @@ impl Core {
         if !self.world.is_id_valid(id) {
             return JsValue::null();
         }
-        let q = Query::<&StuffTag>::new(&self.world);
-        let tag = q.fetch(id).unwrap();
+        let tag = Query::<&StuffTag>::new(&self.world).fetch(id).unwrap();
         archetypes::stuff_to_js(
             id,
             *tag,
