@@ -7,7 +7,7 @@
 	const dispatch = createEventDispatcher();
 
 	const onClick = (item) => {
-		if (item?.id) {
+		if (item && item.id) {
 			const response = core.fetchEntity(item.id);
 			dispatch('selected', response);
 		} else {

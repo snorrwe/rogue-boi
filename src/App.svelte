@@ -25,7 +25,7 @@
 		grid.set(core.getGrid());
 		inventory.set(core.getInventory());
 		last = now;
-		if ($selected?.id) {
+		if ($selected && $selected.id) {
 			selected.set(core.fetchEntity($selected.id));
 		}
 
@@ -71,9 +71,9 @@
 					inventory={$inventory}
 					log={$grid.log}
 					alive={$grid.player != null}
-					hp={$grid.player?.playerHp}
-					pos={$grid.player?.playerPosition}
-					attack={$grid.player?.playerAttack}
+					hp={$grid.player && $grid.player.playerHp}
+					pos={$grid.player && $grid.player.playerPosition}
+					attack={$grid.player && $grid.player.playerAttack}
 					{core}
 				/>
 			</div>
