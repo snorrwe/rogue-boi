@@ -1,7 +1,6 @@
 use crate::math::Vec2;
 use cao_db::entity_id::EntityId;
 use serde::Serialize;
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct Pos(pub Vec2);
@@ -9,22 +8,6 @@ pub struct Pos(pub Vec2);
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct Icon(pub &'static str);
 
-lazy_static::lazy_static! {
-    pub static ref ICONS: HashMap<&'static str, Icon> = {
-        [
-            ("wall", Icon("delapouite/brick-wall.svg")),
-            ("troll", Icon("skoll/troll.svg")),
-            ("orc-head", Icon("delapouite/orc-head.svg")),
-            ("person", Icon("delapouite/person.svg")),
-            ("tombstone", Icon("lorc/tombstone.svg")),
-            ("sword", Icon("lorc/pointy-sword.svg")),
-            ("hp_potion", Icon("delapouite/health-potion.svg")),
-        ]
-            .iter()
-            .map(|x|*x)
-            .collect()
-    };
-}
 
 #[derive(Debug, Clone, Copy)]
 pub struct PlayerTag;
@@ -98,12 +81,6 @@ pub enum StuffTag {
     Sword,
     HpPotion,
 }
-
-pub const ENEMY_TAGS: &[StuffTag] = &[StuffTag::Troll, StuffTag::Orc];
-pub const ENEMY_WEIGHTS: &[i32] = &[1, 10];
-
-pub const ITEM_TAGS: &[StuffTag] = &[StuffTag::Sword, StuffTag::HpPotion];
-pub const ITEM_WEIGHTS: &[i32] = &[1, 2];
 
 impl StuffTag {
     pub fn is_opaque(self) -> bool {

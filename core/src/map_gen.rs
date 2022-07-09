@@ -3,17 +3,15 @@ mod tunnel_iter;
 
 use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
-use cao_db::{commands::Commands, entity_id::EntityId};
+use cao_db::prelude::*;
 use rand::{
     prelude::{Distribution, SliceRandom},
     Rng,
 };
 
 use crate::{
-    components::{
-        Ai, Description, Heal, Hp, Item, Melee, Pos, StuffTag, ENEMY_TAGS, ENEMY_WEIGHTS, ICONS,
-        ITEM_TAGS, ITEM_WEIGHTS,
-    },
+    archetypes::{init_entity, ENEMY_TAGS, ENEMY_WEIGHTS, ITEM_TAGS, ITEM_WEIGHTS},
+    components::{Pos, StuffTag},
     grid::Grid,
     math::Vec2,
     Stuff,
@@ -25,45 +23,6 @@ pub struct MapGenProps {
     pub max_rooms: u32,
     pub max_monsters_per_room: u32,
     pub max_items_per_room: u32,
-}
-
-fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid<Stuff>) {
-    let cmd = cmd.spawn();
-    grid[pos] = Some(Default::default());
-    cmd.insert(tag).insert(Pos(pos));
-    match tag {
-        StuffTag::Player => {
-            unreachable!()
-        }
-        StuffTag::Wall => {
-            cmd.insert(ICONS["wall"]);
-        }
-        StuffTag::Troll => {
-            cmd.insert(Hp::new(8))
-                .insert(ICONS["troll"])
-                .insert(Ai)
-                .insert(Melee { power: 3 });
-        }
-        StuffTag::Orc => {
-            cmd.insert(Hp::new(4))
-                .insert(ICONS["orc-head"])
-                .insert(Ai)
-                .insert(Melee { power: 1 });
-        }
-
-        StuffTag::Sword => {
-            cmd.insert(ICONS["sword"])
-                .insert(Melee { power: 1 })
-                .insert(Item)
-                .insert(Description("Simple sword. Power 1".to_string()));
-        }
-        StuffTag::HpPotion => {
-            cmd.insert(ICONS["hp_potion"])
-                .insert(Heal { hp: 3 })
-                .insert(Item)
-                .insert(Description("Health potion. Heal 3".to_string()));
-        }
-    }
 }
 
 fn place_entities(
@@ -118,6 +77,7 @@ pub fn generate_map(
     grid: &mut Grid<Stuff>,
     props: MapGenProps,
 ) {
+    grid.fill(None); // reset the grid
     let mut working_set = Grid::new(grid.dims());
     // fill the map with walls and delete old entities
     //

@@ -1,5 +1,6 @@
 use crate::{
-    components::{Ai, Heal, Hp, Icon, Inventory, Melee, PlayerTag, Pos, StuffTag, Walkable, ICONS},
+    archetypes::ICONS,
+    components::{Ai, Heal, Hp, Icon, Inventory, Melee, PlayerTag, Pos, StuffTag, Walkable},
     game_log,
     grid::Grid,
     math::{walk_square, Vec2},
@@ -9,17 +10,6 @@ use crate::{
 use cao_db::{commands::Commands, entity_id::EntityId, query::Query};
 use smallvec::SmallVec;
 use tracing::{debug, info, trace};
-
-pub(crate) fn init_player(mut cmd: Commands) {
-    cmd.spawn()
-        .insert(StuffTag::Player)
-        .insert(Pos(Vec2::new(16, 16)))
-        .insert(ICONS["person"])
-        .insert(Hp::new(10))
-        .insert(PlayerTag)
-        .insert(Inventory::new(16))
-        .insert(Melee { power: 1 });
-}
 
 pub(crate) fn update_input_events(inputs: &[InputEvent], actions: &mut PlayerActions) {
     let mut delta = Vec2::new(0, 0);

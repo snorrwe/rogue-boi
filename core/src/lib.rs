@@ -1,3 +1,4 @@
+mod archetypes;
 mod components;
 mod grid;
 mod logging;
@@ -9,12 +10,13 @@ mod utils;
 
 use std::pin::Pin;
 
+use archetypes::{init_entity, ICONS};
 use cao_db::{commands::Commands, entity_id::EntityId, query::Query, World};
 use components::*;
 use grid::Grid;
 use math::Vec2;
 
-use systems::{init_player, update_fov, update_grid, update_player};
+use systems::{update_fov, update_grid, update_player};
 use tracing::debug;
 use wasm_bindgen::prelude::*;
 
@@ -50,13 +52,18 @@ pub fn start() {
 pub fn init_core() -> Core {
     let dims = Vec2 { x: 64, y: 64 };
     let mut world = World::new(dims.x as u32 * dims.y as u32);
+    let mut grid = Grid::new(dims);
 
-    init_player(Commands::new(&world));
+    init_entity(
+        dims / 2,
+        StuffTag::Player,
+        &mut Commands::new(&world),
+        &mut grid,
+    );
     world.apply_commands().unwrap();
 
     let (player, _) = Query::<(EntityId, &PlayerTag)>::new(&world).one();
 
-    let mut grid = Grid::new(dims);
     map_gen::generate_map(
         player,
         Commands::new(&world),
