@@ -9,7 +9,7 @@ use crate::{
 };
 use cao_db::{commands::Commands, entity_id::EntityId, query::Query};
 use smallvec::SmallVec;
-use tracing::{debug, info, trace};
+use tracing::{debug, error, info, trace};
 
 pub(crate) fn update_input_events(inputs: &[InputEvent], actions: &mut PlayerActions) {
     let mut delta = Vec2::new(0, 0);
@@ -62,10 +62,18 @@ pub(crate) fn update_player(
                 hp.current = (hp.current + heal.hp).min(hp.max);
                 cmd.delete(id);
             }
+            Some(StuffTag::LightningScroll) => {
+                game_log!("Lightning bolt!");
+                inventory.remove(id);
+                cmd.delete(id);
+            }
             None => {
+                error!("Item has no stuff tag");
                 inventory.remove(id);
             }
-            _ => {}
+            _ => {
+                unreachable!("Bad item use")
+            }
         }
     }
     update_player_inventory(&melee_query, inventory, melee)?;

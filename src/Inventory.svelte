@@ -2,8 +2,9 @@
 	export let inventory;
 	export let core;
 
-	const useItem = (id) => {
-		core.useItem(id);
+	const useItem = (item) => {
+		// TODO: target mode
+		core.useItem(item.id);
 	};
 </script>
 
@@ -11,7 +12,7 @@
 	<h2>Inventory</h2>
 	<ul>
 		{#each inventory ?? [] as item}
-			<li class="item" class:usable={item.usable} on:click={() => item.usable && useItem(item.id)}>
+			<li class="item" class:usable={item.usable} on:click={() => item.usable && useItem(item)}>
 				<div title={item.description}>
 					<img src="/icons/ffffff/transparent/1x1/{item.icon}" />
 				</div>

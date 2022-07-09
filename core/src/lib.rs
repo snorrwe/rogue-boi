@@ -195,6 +195,7 @@ pub(crate) struct PlayerActions {
     len: usize,
     move_action: Option<Vec2>,
     use_item_action: Option<EntityId>,
+    target: Option<EntityId>,
 }
 
 impl PlayerActions {
@@ -236,6 +237,14 @@ impl PlayerActions {
 
     pub fn use_item_action(&self) -> Option<EntityId> {
         self.use_item_action
+    }
+
+    pub fn set_target(&mut self, target: EntityId) {
+        self.target = Some(target);
+    }
+
+    pub fn target(&self) -> Option<EntityId> {
+        self.target
     }
 }
 
@@ -434,6 +443,12 @@ impl Core {
     pub fn use_item(&mut self, id: JsValue) {
         let id: Id = JsValue::into_serde(&id).unwrap();
         self.actions.insert_use_item(id.into());
+    }
+
+    #[wasm_bindgen(js_name = "setTarget")]
+    pub fn set_target(&mut self, id: JsValue) {
+        let id: Id = JsValue::into_serde(&id).unwrap();
+        self.actions.set_target(id.into());
     }
 }
 
