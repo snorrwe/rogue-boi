@@ -38,5 +38,6 @@
 		display: grid;
 		grid-template-columns: repeat(6, 2.2em);
 		grid-auto-rows: 2.2em;
+		list-style: none;
 	}
 </style>
