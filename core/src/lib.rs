@@ -51,15 +51,15 @@ pub fn init_core() -> Core {
     let dims = Vec2 { x: 64, y: 64 };
     let mut world = World::new(dims.x as u32 * dims.y as u32);
 
-    init_player(Commands::new(&mut world));
+    init_player(Commands::new(&world));
     world.apply_commands().unwrap();
 
-    let (player, _) = Query::<(EntityId, &PlayerTag)>::new(&mut world).one();
+    let (player, _) = Query::<(EntityId, &PlayerTag)>::new(&world).one();
 
     let mut grid = Grid::new(dims);
     map_gen::generate_map(
         player,
-        Commands::new(&mut world),
+        Commands::new(&world),
         &mut grid,
         map_gen::MapGenProps {
             room_min_size: 6,
@@ -272,6 +272,7 @@ impl Core {
                 systems::PlayerError::NoPlayer | systems::PlayerError::CantMove => {
                     self.game_tick -= 1;
                     self.cleanup();
+                    self.update_output();
                     return;
                 }
             }

@@ -127,6 +127,7 @@ fn handle_player_move(
             match tag {
                 StuffTag::Player => unreachable!(),
                 StuffTag::Wall => {
+                    game_log!("Can't move into wall");
                     return Err(PlayerError::CantMove);
                 }
                 StuffTag::Troll | StuffTag::Orc => {
