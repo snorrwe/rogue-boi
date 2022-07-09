@@ -1,7 +1,6 @@
 <script>
 	import { writable } from 'svelte/store';
 	import Grid from './Grid.svelte';
-	import Inventory from './Inventory.svelte';
 	import Player from './Player.svelte';
 
 	export let core;
@@ -44,13 +43,14 @@
 			<Grid grid={$grid} />
 		{/if}
 		<div>
-			<Inventory inventory={$inventory} {core} />
 			<Player
+				inventory={$inventory}
 				log={$grid.log}
 				alive={$grid.player != null}
 				hp={$grid.player?.playerHp}
 				pos={$grid.player?.playerPosition}
 				attack={$grid.player?.playerAttack}
+				{core}
 			/>
 		</div>
 	</div>

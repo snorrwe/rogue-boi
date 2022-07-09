@@ -8,6 +8,7 @@
 </script>
 
 <div>
+	<h2>Inventory</h2>
 	<ul>
 		{#each inventory ?? [] as item}
 			<li class="item" class:usable={item.usable} on:click={() => item.usable && useItem(item.id)}>
@@ -31,5 +32,11 @@
 
 	.usable {
 		cursor: pointer;
+	}
+
+	ul {
+		display: grid;
+		grid-template-columns: repeat(6, 2.2em);
+		grid-auto-rows: 2.2em;
 	}
 </style>
