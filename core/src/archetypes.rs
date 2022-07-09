@@ -30,7 +30,7 @@ pub const ITEM_TAGS: &[StuffTag] = &[
     StuffTag::HpPotion,
     StuffTag::LightningScroll,
 ];
-pub const ITEM_WEIGHTS: &[i32] = &[1, 2, 1];
+pub const ITEM_WEIGHTS: &[i32] = &[2, 2, 1];
 
 pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid<Stuff>) {
     let cmd = cmd.spawn();
