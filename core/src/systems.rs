@@ -1,7 +1,7 @@
 use crate::{
     archetypes::ICONS,
     components::{
-        Ai, Heal, Hp, Icon, Inventory, Melee, PathCache, PlayerTag, Pos, StuffTag, Walkable,
+        Ai, Heal, Hp, Icon, Inventory, Melee, PathCache, PlayerTag, Pos, Ranged, StuffTag, Walkable,
     },
     game_log,
     grid::Grid,
@@ -36,6 +36,8 @@ pub(crate) fn update_input_events(inputs: &[InputEvent], actions: &mut PlayerAct
 pub enum PlayerError {
     CantMove,
     NoPlayer,
+    NoTarget,
+    InvalidTarget,
 }
 
 pub(crate) fn update_player(
@@ -46,6 +48,8 @@ pub(crate) fn update_player(
     stuff_tags: Query<&StuffTag>,
     hp_query: Query<&mut Hp>,
     heal_query: Query<&Heal>,
+    target_query: Query<(&Pos, &mut Hp)>,
+    item_query: Query<Option<&Ranged>>,
     grid: &mut Grid<Stuff>,
 ) -> Result<(), PlayerError> {
     let (player_id, pos, _tag, inventory, melee) =
@@ -64,19 +68,32 @@ pub(crate) fn update_player(
                 hp.current = (hp.current + heal.hp).min(hp.max);
                 cmd.delete(id);
             }
-            Some(StuffTag::LightningScroll) => {
-                game_log!("Lightning bolt!");
-                match actions.target() {
-                    Some(id) => {
-                        todo!();
+            Some(StuffTag::LightningScroll) => match actions.target() {
+                Some(target_id) => {
+                    debug!("Use lightning scroll {}", id);
+                    let (target_pos, target_hp) =
+                        target_query.fetch(target_id).ok_or_else(|| {
+                            game_log!("Invalid target for lightning bolt");
+                            PlayerError::InvalidTarget
+                        })?;
+                    let range = item_query.fetch(id).unwrap();
+                    let range = range.unwrap();
+                    if target_pos.0.chebyshev(pos.0) > range.range {
+                        game_log!("Target is too far away");
+                        return Err(PlayerError::InvalidTarget);
                     }
-                    None => {
-                        error!("Lightning bolt has no target!");
-                    }
+                    let dmg = range.power;
+                    target_hp.current -= dmg;
+                    inventory.remove(id);
+                    cmd.delete(id);
+                    game_log!("Lightning bolt hits {} for {} damage!", target_id, dmg);
                 }
-                inventory.remove(id);
-                cmd.delete(id);
-            }
+                None => {
+                    game_log!("Lightning bolt has no target!");
+                    error!("Lightning bolt has no target!");
+                    return Err(PlayerError::NoTarget);
+                }
+            },
             None => {
                 error!("Item has no stuff tag");
                 inventory.remove(id);

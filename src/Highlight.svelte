@@ -5,6 +5,10 @@
 	const useItem = (item) => () => {
 		core.useItem(item.id);
 	};
+
+	const target = (item) => () => {
+		core.setTarget(item.id);
+	};
 </script>
 
 <div class="selected">
@@ -23,6 +27,9 @@
 	{/if}
 	{#if selected.usable}
 		<button on:click={useItem(selected)}>Use</button>
+	{/if}
+	{#if selected.targetable}
+		<button on:click={target(selected)}>Target</button>
 	{/if}
 </div>
 

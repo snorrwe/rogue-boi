@@ -144,7 +144,8 @@ pub fn stuff_to_js(
                 "melee": melee.clone(),
                 "description": "TBA",
                 "icon": icon.0.clone(),
-                "hp": hp
+                "hp": hp,
+                "targetable": true
             }}
         }
         StuffTag::HpPotion | StuffTag::Sword | StuffTag::LightningScroll => {

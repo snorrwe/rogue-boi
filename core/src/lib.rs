@@ -260,11 +260,16 @@ impl Core {
             Query::new(&self.world),
             Query::new(&self.world),
             Query::new(&self.world),
+            Query::new(&self.world),
+            Query::new(&self.world),
             &mut self.grid,
         ) {
             debug!("player update failed {:?}", err);
             match err {
-                systems::PlayerError::NoPlayer | systems::PlayerError::CantMove => {
+                systems::PlayerError::NoPlayer
+                | systems::PlayerError::CantMove
+                | systems::PlayerError::NoTarget
+                | systems::PlayerError::InvalidTarget => {
                     self.game_tick -= 1;
                     self.cleanup();
                     self.update_output();
