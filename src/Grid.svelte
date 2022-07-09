@@ -1,10 +1,24 @@
 <script>
+	import { createEventDispatcher } from 'svelte';
+
 	export let grid;
+	export let core;
+
+	const dispatch = createEventDispatcher();
+
+	const onClick = (item) => {
+		if (item?.id) {
+			const response = core.fetchEntity(item.id);
+			dispatch('selected', response);
+		} else {
+			dispatch('selected', null);
+		}
+	};
 </script>
 
 <div class="grid" style="--cols: {grid.grid.dims.x}; --rows: {grid.grid.dims.y}">
 	{#each grid.grid.data as item}
-		<div class="grid-item">
+		<div class="grid-item" on:click={() => onClick(item)}>
 			<div class:grid_visible={item.visible}>
 				{#if item.icon && item.explored}
 					<img src="/icons/ffffff/transparent/1x1/{item.icon}" alt={item.type} />

@@ -105,15 +105,23 @@ pub fn stuff_to_js(
 ) -> JsValue {
     let payload = match tag {
         StuffTag::Player => {
-            let (_tag, icon, melee, hp) = q_player.fetch(id).unwrap();
-            json! {{
-                "id": id,
-                "tag": tag,
-                "description": "The player",
-                "icon": icon.0.clone(),
-                "hp": hp,
-                "melee": melee.clone()
-            }}
+            if let Some((_tag, icon, melee, hp)) = q_player.fetch(id) {
+                json! {{
+                    "id": id,
+                    "tag": tag,
+                    "description": "The player",
+                    "icon": icon.0.clone(),
+                    "hp": hp,
+                    "melee": melee.clone()
+                }}
+            } else {
+                json! {{
+                    "id": id,
+                    "tag": tag,
+                    "description": "The resting place of the player",
+                    "icon": ICONS["tombstone"].0.clone(),
+                }}
+            }
         }
         StuffTag::Wall => {
             let icon = q_wall.fetch(id).unwrap();

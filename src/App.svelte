@@ -6,6 +6,7 @@
 	export let core;
 
 	const grid = writable(core.getGrid());
+	const selected = writable(null);
 	const inventory = writable(core.getInventory());
 	let last = new Date().getTime();
 
@@ -24,6 +25,9 @@
 		grid.set(core.getGrid());
 		inventory.set(core.getInventory());
 		last = now;
+		if ($selected?.id) {
+			selected.set(core.fetchEntity($selected.id));
+		}
 
 		requestAnimationFrame(gameLoop);
 	};
@@ -39,19 +43,40 @@
 </svelte:head>
 <main>
 	<div class="content">
-		{#if core != null && $grid != null}
-			<Grid grid={$grid} />
-		{/if}
 		<div>
-			<Player
-				inventory={$inventory}
-				log={$grid.log}
-				alive={$grid.player != null}
-				hp={$grid.player?.playerHp}
-				pos={$grid.player?.playerPosition}
-				attack={$grid.player?.playerAttack}
-				{core}
-			/>
+			{#if core != null && $grid != null}
+				<Grid grid={$grid} {core} on:selected={(event) => selected.set(event.detail)} />
+			{/if}
+		</div>
+		<div>
+			{#if $selected != null}
+				<div class="selected">
+					<img
+						class="selected icon"
+						alt={$selected.tag}
+						src="/icons/ffffff/transparent/1x1/{$selected.icon}"
+					/>
+					<div>
+						{$selected.description}
+					</div>
+					{#if $selected.hp}
+						<div>
+							Health: {$selected.hp.current} / {$selected.hp.max}
+						</div>
+					{/if}
+				</div>
+			{/if}
+			<div>
+				<Player
+					inventory={$inventory}
+					log={$grid.log}
+					alive={$grid.player != null}
+					hp={$grid.player?.playerHp}
+					pos={$grid.player?.playerPosition}
+					attack={$grid.player?.playerAttack}
+					{core}
+				/>
+			</div>
 		</div>
 	</div>
 </main>
@@ -65,5 +90,12 @@
 	.content {
 		display: grid;
 		grid-template-columns: repeat(2, max-content);
+	}
+
+	.selected {
+		color: white;
+	}
+	.selected.icon {
+		height: 3.2rem;
 	}
 </style>

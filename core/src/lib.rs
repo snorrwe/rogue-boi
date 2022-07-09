@@ -431,6 +431,9 @@ impl Core {
     #[wasm_bindgen(js_name = "fetchEntity")]
     pub fn fetch_entity(&self, id: JsValue) -> JsValue {
         let id: EntityId = JsValue::into_serde(&id).unwrap();
+        if !self.world.is_id_valid(id) {
+            return JsValue::null();
+        }
         let q = Query::<&StuffTag>::new(&self.world);
         let tag = q.fetch(id).unwrap();
         archetypes::stuff_to_js(
