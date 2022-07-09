@@ -1,6 +1,7 @@
 use crate::math::Vec2;
 use cao_db::entity_id::EntityId;
 use serde::Serialize;
+use smallvec::SmallVec;
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct Pos(pub Vec2);
@@ -31,7 +32,7 @@ pub struct Description(pub String);
 #[derive(Debug, Clone)]
 pub struct Inventory {
     pub capacity: usize,
-    pub items: smallvec::SmallVec<[EntityId; 32]>,
+    pub items: SmallVec<[EntityId; 32]>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -44,7 +45,7 @@ impl Inventory {
     pub fn new(capacity: usize) -> Self {
         Self {
             capacity,
-            items: smallvec::SmallVec::with_capacity(capacity),
+            items: SmallVec::with_capacity(capacity),
         }
     }
 
@@ -131,4 +132,9 @@ pub struct Heal {
 pub struct Ranged {
     pub power: i32,
     pub range: i32,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct PathCache {
+    pub path: SmallVec<[Vec2; 16]>,
 }

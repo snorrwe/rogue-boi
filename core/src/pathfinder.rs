@@ -54,7 +54,7 @@ pub fn find_path(
     to: Vec2,
     grid: &Grid<Stuff>,
     walkies: &Query<&Walkable>,
-    path: &mut SmallVec<[Vec2; 32]>,
+    path: &mut SmallVec<[Vec2; 16]>,
 ) -> bool {
     let mut open_set = BinaryHeap::with_capacity(from.manhatten(to) as usize);
     let mut came_from = HashMap::new();
@@ -95,10 +95,7 @@ pub fn find_path(
             });
         }
     }
-    debug!(
-        "Failed to find path, from: {} to: {}\ncame_from: {:#?}",
-        from, to, came_from
-    );
+    debug!("Failed to find path, from: {} to: {}", from, to,);
     false
 }
 
@@ -106,7 +103,7 @@ fn reconstruct_path(
     target: Vec2,
     mut pos: Vec2,
     came_from: &HashMap<Vec2, Vec2>,
-    path: &mut SmallVec<[Vec2; 32]>,
+    path: &mut SmallVec<[Vec2; 16]>,
 ) {
     path.push(pos);
     while let Some(p) = came_from.get(&pos) {

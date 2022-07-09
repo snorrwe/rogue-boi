@@ -1,6 +1,8 @@
 use crate::{
     archetypes::ICONS,
-    components::{Ai, Heal, Hp, Icon, Inventory, Melee, PlayerTag, Pos, StuffTag, Walkable},
+    components::{
+        Ai, Heal, Hp, Icon, Inventory, Melee, PathCache, PlayerTag, Pos, StuffTag, Walkable,
+    },
     game_log,
     grid::Grid,
     math::{walk_square, Vec2},
@@ -9,7 +11,7 @@ use crate::{
 };
 use cao_db::{commands::Commands, entity_id::EntityId, query::Query};
 use smallvec::SmallVec;
-use tracing::{debug, error, info, trace};
+use tracing::{debug, error, info};
 
 pub(crate) fn update_input_events(inputs: &[InputEvent], actions: &mut PlayerActions) {
     let mut delta = Vec2::new(0, 0);
@@ -301,7 +303,7 @@ pub(crate) fn update_grid(q: Query<(EntityId, &Pos)>, grid: &mut Grid<Stuff>) {
 
 pub(crate) fn update_melee_ai(
     q_player: Query<(&PlayerTag, &mut Hp, &Pos)>,
-    q_enemy: Query<(EntityId, &Melee, &mut Pos, &Ai)>,
+    q_enemy: Query<(&Ai, EntityId, &Melee, &mut Pos, &mut PathCache)>,
     q_tag: Query<&StuffTag>,
     q_walk: Query<&Walkable>,
     grid: &mut Grid<Stuff>,
@@ -315,7 +317,7 @@ pub(crate) fn update_melee_ai(
         }
     };
 
-    for (id, Melee { power }, Pos(pos), _ai) in q_enemy.iter() {
+    for (_ai, id, Melee { power }, Pos(pos), cache) in q_enemy.iter() {
         if pos.manhatten(*player_pos) <= 1 {
             player_hp.current -= power;
             debug!(
@@ -323,18 +325,20 @@ pub(crate) fn update_melee_ai(
                 power, player_hp
             );
             game_log!("{} hits the player for {} damage", id, power);
+            cache.path.clear();
         } else if walk_grid_on_segment(*pos, *player_pos, grid, &q_tag).is_none() {
-            let mut path = SmallVec::new(); // TODO: cache paths?
-            find_path(*pos, *player_pos, grid, &q_walk, &mut path);
-            trace!("walk towards player {:?}", path);
-
-            while let Some(new_pos) = path.pop() {
-                if new_pos != *pos {
-                    grid[*pos] = None;
-                    grid[new_pos] = Some(id.into());
-                    *pos = new_pos;
-                    break;
-                }
+            cache.path.clear();
+            cache.path.push(*player_pos); // add the last step, so the enemy can follow players
+            find_path(*pos, *player_pos, grid, &q_walk, &mut cache.path);
+        }
+        if let Some(new_pos) = cache.path.pop() {
+            if grid[new_pos].is_some() {
+                // taken
+                cache.path.clear();
+            } else {
+                grid[*pos] = None;
+                grid[new_pos] = Some(id);
+                *pos = new_pos;
             }
         }
     }
