@@ -57,7 +57,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 .insert(ICONS["troll"])
                 .insert(Ai)
                 .insert(PathCache::default())
-                .insert(Melee { power: 2, skill: 5 })
+                .insert(Melee { power: 4, skill: 5 })
                 .insert(Leash {
                     origin: pos,
                     radius: 20,
@@ -127,7 +127,7 @@ pub fn stuff_to_js(
                     "description": "The player",
                     "icon": icon.0.clone(),
                     "hp": hp,
-                    "melee": melee.clone()
+                    "melee": melee.clone(),
                 }}
             } else {
                 json! {{
@@ -152,7 +152,7 @@ pub fn stuff_to_js(
             json! {{
                 "id": id,
                 "tag": tag,
-                "range": ranged.clone(),
+                "ranged": ranged.clone(),
                 "melee": melee.clone(),
                 "description": "TBA",
                 "icon": icon.0.clone(),
