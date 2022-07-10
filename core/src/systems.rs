@@ -301,11 +301,12 @@ pub(crate) fn update_fov(
 ) {
     const RADIUS: i32 = 8;
 
-    let player_pos = q.fetch(player).unwrap();
-    set_visible(&grid, visible, &tags_q, player_pos.0, RADIUS);
-    visible[player_pos.0] = true;
-    flood_vizibility(&grid, visible, player_pos.0, RADIUS);
-    explored.or_eq(&visible);
+    if let Some(player_pos) = q.fetch(player) {
+        set_visible(&grid, visible, &tags_q, player_pos.0, RADIUS);
+        visible[player_pos.0] = true;
+        flood_vizibility(&grid, visible, player_pos.0, RADIUS);
+        explored.or_eq(&visible);
+    }
 }
 
 pub(crate) fn update_grid(q: Query<(EntityId, &Pos)>, grid: &mut Grid<Stuff>) {
