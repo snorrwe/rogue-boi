@@ -85,25 +85,15 @@ pub enum StuffTag {
 
 impl StuffTag {
     pub fn is_opaque(self) -> bool {
-        match self {
-            StuffTag::Wall => true,
-            StuffTag::Player
-            | StuffTag::Troll
-            | StuffTag::Orc
-            | StuffTag::Sword
-            | StuffTag::HpPotion
-            | StuffTag::LightningScroll => false,
-        }
+        matches!(self, StuffTag::Wall)
     }
 
     /// once explored, these stuff remain visible on the screen, even when visibility is obstructed
     pub fn static_visiblity(self) -> bool {
-        match self {
-            StuffTag::Wall | StuffTag::Sword | StuffTag::HpPotion | StuffTag::LightningScroll => {
-                true
-            }
-            StuffTag::Player | StuffTag::Troll | StuffTag::Orc => false,
-        }
+        matches!(
+            self,
+            StuffTag::Wall | StuffTag::Sword | StuffTag::HpPotion | StuffTag::LightningScroll
+        )
     }
 }
 
