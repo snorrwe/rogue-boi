@@ -28,7 +28,6 @@ pub struct Core {
     world: Pin<Box<World>>,
     player: EntityId,
     camera_pos: Vec2,
-    grid: Grid<Stuff>,
     visible: Grid<bool>,
     explored: Grid<bool>,
     inputs: Vec<InputEvent>,
@@ -52,7 +51,7 @@ pub fn start() {
 pub fn init_core() -> Core {
     let dims = Vec2 { x: 64, y: 64 };
     let mut world = World::new(dims.x as u32 * dims.y as u32);
-    let mut grid = Grid::new(dims);
+    let mut grid = Grid::<Stuff>::new(dims);
 
     init_entity(
         dims / 2,
@@ -60,6 +59,7 @@ pub fn init_core() -> Core {
         &mut Commands::new(&world),
         &mut grid,
     );
+    world.insert_resource(grid);
     world.apply_commands().unwrap();
 
     let (player, _) = Query::<(EntityId, &PlayerTag)>::new(&world).one();
@@ -67,7 +67,7 @@ pub fn init_core() -> Core {
     map_gen::generate_map(
         player,
         Commands::new(&world),
-        &mut grid,
+        ResMut::new(&world),
         map_gen::MapGenProps {
             room_min_size: 6,
             room_max_size: 10,
@@ -77,7 +77,7 @@ pub fn init_core() -> Core {
         },
     );
     world.apply_commands().unwrap();
-    update_grid(Query::new(&world), &mut grid);
+    update_grid(Query::new(&world), ResMut::new(&world));
 
     let (_t, Pos(camera_pos)) = Query::<(&PlayerTag, &Pos)>::new(&world).one();
     let camera_pos = *camera_pos;
@@ -85,7 +85,6 @@ pub fn init_core() -> Core {
     let mut core = Core {
         world,
         player,
-        grid,
         visible: Grid::new(dims),
         explored: Grid::new(dims),
         inputs: Vec::with_capacity(16),
@@ -276,7 +275,7 @@ impl Core {
             Query::new(&self.world),
             Query::new(&self.world),
             Query::new(&self.world),
-            &mut self.grid,
+            ResMut::new(&self.world),
         ) {
             debug!("player update failed {:?}", err);
             match err {
@@ -301,18 +300,18 @@ impl Core {
             Query::new(&self.world),
             Query::new(&self.world),
             Query::new(&self.world),
-            &mut self.grid,
+            ResMut::new(&self.world),
         );
         update_player_hp(Commands::new(&mut self.world), Query::new(&self.world));
         self.world.apply_commands().unwrap();
 
         // post processing
-        update_grid(Query::new(&self.world), &mut self.grid);
+        update_grid(Query::new(&self.world), ResMut::new(&self.world));
         update_fov(
             self.player,
             Query::new(&self.world),
             Query::new(&self.world),
-            &self.grid,
+            Res::new(&self.world),
             &mut self.explored,
             &mut self.visible,
         );
@@ -346,18 +345,19 @@ impl Core {
 
     fn update_output(&mut self) {
         let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
+        let grid = self.world.get_resource::<Grid<Stuff>>().unwrap();
 
         let mut result = Grid::new(self.viewport * 2);
         let min = self.camera_pos - self.viewport;
         let max = self.camera_pos + self.viewport;
-        for y in min.y.max(0)..max.y.min(self.grid.height()) {
-            for x in min.x.max(0)..max.x.min(self.grid.width()) {
+        for y in min.y.max(0)..max.y.min(grid.height()) {
+            for x in min.x.max(0)..max.x.min(grid.width()) {
                 let pos = Vec2::new(x, y);
                 let mut output = OutputStuff::default();
                 output.explored = self.explored[pos];
                 output.visible = self.visible[pos];
                 if output.explored {
-                    if let Some((id, ty)) = self.grid[pos].and_then(|id| {
+                    if let Some((id, ty)) = grid[pos].and_then(|id| {
                         let id = id;
                         Query::<&StuffTag>::new(&self.world)
                             .fetch(id)
@@ -395,14 +395,6 @@ impl Core {
     #[wasm_bindgen(js_name = "getGrid")]
     pub fn get_grid(&self) -> JsValue {
         self.output_cache.clone()
-    }
-
-    pub fn width(&self) -> i32 {
-        self.grid.width()
-    }
-
-    pub fn height(&self) -> i32 {
-        self.grid.height()
     }
 
     #[wasm_bindgen(js_name = "getInventory")]

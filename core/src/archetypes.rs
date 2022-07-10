@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use cao_db::{commands::Commands, entity_id::EntityId, prelude::Query};
+use cao_db::prelude::*;
 use serde_json::json;
 use wasm_bindgen::JsValue;
 

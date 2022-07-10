@@ -74,7 +74,7 @@ fn place_items(
 pub fn generate_map(
     player_id: EntityId,
     mut cmd: Commands,
-    grid: &mut Grid<Stuff>,
+    mut grid: ResMut<Grid<Stuff>>,
     props: MapGenProps,
 ) {
     grid.fill(None); // reset the grid
@@ -105,7 +105,7 @@ pub fn generate_map(
                 grid[pos] = Some(player_id.into());
             }
             _ => {
-                init_entity(pos, tag, &mut cmd, grid);
+                init_entity(pos, tag, &mut cmd, &mut grid);
             }
         }
     }

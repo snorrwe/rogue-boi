@@ -51,7 +51,7 @@ pub(crate) fn update_player(
     heal_query: Query<&Heal>,
     target_query: Query<(&Pos, &mut Hp)>,
     item_query: Query<Option<&Ranged>>,
-    grid: &mut Grid<Stuff>,
+    mut grid: ResMut<Grid<Stuff>>,
 ) -> Result<(), PlayerError> {
     if actions.wait() {
         game_log!("Waiting...");
@@ -122,7 +122,7 @@ pub(crate) fn update_player(
             delta,
             &stuff_tags,
             &hp_query,
-            grid,
+            &mut grid,
         )?;
     }
     Ok(())
@@ -309,7 +309,7 @@ pub(crate) fn update_fov(
     player: EntityId,
     q: Query<&Pos, With<PlayerTag>>,
     tags_q: Query<&StuffTag>,
-    grid: &Grid<Stuff>,
+    grid: Res<Grid<Stuff>>,
     explored: &mut Grid<bool>,
     visible: &mut Grid<bool>,
 ) {
@@ -323,7 +323,7 @@ pub(crate) fn update_fov(
     }
 }
 
-pub(crate) fn update_grid(q: Query<(EntityId, &Pos)>, grid: &mut Grid<Stuff>) {
+pub(crate) fn update_grid(q: Query<(EntityId, &Pos)>, mut grid: ResMut<Grid<Stuff>>) {
     // zero out the map
     grid.fill(Default::default());
 
@@ -338,7 +338,7 @@ pub(crate) fn update_melee_ai(
     q_enemy: Query<(EntityId, &Melee, &mut Pos, &mut PathCache, Option<&Leash>), With<Ai>>,
     q_tag: Query<&StuffTag>,
     q_walk: Query<&Walkable>,
-    grid: &mut Grid<Stuff>,
+    mut grid: ResMut<Grid<Stuff>>,
 ) {
     let (player_hp, Pos(player_pos)) = match q_player.iter().next() {
         Some(x) => x,
@@ -358,12 +358,12 @@ pub(crate) fn update_melee_ai(
             player_hp.current -= power;
             game_log!("{} hits you for {} damage", id, power);
             cache.path.clear();
-        } else if walk_grid_on_segment(*pos, *player_pos, grid, &q_tag).is_none() {
+        } else if walk_grid_on_segment(*pos, *player_pos, &grid, &q_tag).is_none() {
             debug!("Player is visible, finding path");
             cache.path.clear();
             cache.path.push(*player_pos); // push the last pos, so entities can follow players
                                           // across corridors
-            if !find_path(*pos, *player_pos, grid, &q_walk, &mut cache.path) {
+            if !find_path(*pos, *player_pos, &grid, &q_walk, &mut cache.path) {
                 // finding path failed, pop the player pos
                 cache.path.clear();
             }
@@ -376,7 +376,7 @@ pub(crate) fn update_melee_ai(
             // if the enemy has a leash and the player is not visible, return to the origin
             if let Some(leash) = leash {
                 cache.path.clear();
-                find_path(*pos, leash.origin, grid, &q_walk, &mut cache.path);
+                find_path(*pos, leash.origin, &grid, &q_walk, &mut cache.path);
             }
         }
         if let Some(mut new_pos) = cache.path.pop() {
