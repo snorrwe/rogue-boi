@@ -10,6 +10,7 @@ use crate::{
     InputEvent, PlayerActions, Stuff,
 };
 use cao_db::prelude::*;
+use rand::Rng;
 use tracing::{debug, error, info};
 
 pub(crate) fn update_input_events(inputs: &[InputEvent], actions: &mut PlayerActions) {
@@ -85,11 +86,15 @@ pub(crate) fn update_player(
                         game_log!("Target is too far away");
                         return Err(PlayerError::InvalidTarget);
                     }
-                    let dmg = range.power;
-                    target_hp.current -= dmg;
+                    if skill_check(range.skill) {
+                        let dmg = range.power;
+                        target_hp.current -= dmg;
+                        game_log!("Lightning bolt hits {} for {} damage!", target_id, dmg);
+                    } else {
+                        game_log!("Lightning bolt misses!");
+                    }
                     inventory.remove(id);
                     cmd.delete(id);
-                    game_log!("Lightning bolt hits {} for {} damage!", target_id, dmg);
                 }
                 None => {
                     game_log!("Lightning bolt has no target!");
@@ -159,11 +164,16 @@ fn handle_player_move(
                     return Err(PlayerError::CantMove);
                 }
                 StuffTag::Troll | StuffTag::Orc => {
-                    let hp = hp.fetch(stuff_id).expect("Enemy has no hp");
-                    let power = power.power;
-                    hp.current -= power;
-                    debug!("kick enemy {}: {:?}", stuff_id, hp);
-                    game_log!("Bonk enemy {} for {} damage", stuff_id, power);
+                    if skill_check(power.skill) {
+                        let hp = hp.fetch(stuff_id).expect("Enemy has no hp");
+                        let power = power.power;
+                        hp.current -= power;
+                        debug!("kick enemy {}: {:?}", stuff_id, hp);
+                        game_log!("Bonk enemy {} for {} damage", stuff_id, power);
+                    } else {
+                        debug!("miss enemy {}", stuff_id);
+                        game_log!("Your attack misses");
+                    }
                 }
                 StuffTag::LightningScroll | StuffTag::HpPotion | StuffTag::Sword => {
                     // pick up item
@@ -337,14 +347,15 @@ pub(crate) fn update_melee_ai(
         }
     };
 
-    for (id, Melee { power }, Pos(pos), cache) in q_enemy.iter() {
+    for (id, Melee { power, skill }, Pos(pos), cache) in q_enemy.iter() {
         if pos.manhatten(*player_pos) <= 1 {
+            if !skill_check(*skill) {
+                game_log!("{} misses", id);
+                continue;
+            }
+
             player_hp.current -= power;
-            debug!(
-                "bonk the player with power {}. Player hp: {:?}",
-                power, player_hp
-            );
-            game_log!("{} hits the player for {} damage", id, power);
+            game_log!("{} hits you for {} damage", id, power);
             cache.path.clear();
         } else if walk_grid_on_segment(*pos, *player_pos, grid, &q_tag).is_none() {
             debug!("Player is visible, finding path");
@@ -400,4 +411,10 @@ pub(crate) fn update_ai_hp(
         game_log!("{} died", id);
         cmd.delete(id);
     }
+}
+
+/// Throw a D6, if result is >= skill then the check passes
+pub fn skill_check(skill: i32) -> bool {
+    let mut rng = rand::thread_rng();
+    rng.gen_range(1..=6) >= skill
 }

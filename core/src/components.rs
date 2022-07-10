@@ -24,6 +24,7 @@ pub struct Item;
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct Melee {
     pub power: i32,
+    pub skill: i32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -122,9 +123,16 @@ pub struct Heal {
 pub struct Ranged {
     pub power: i32,
     pub range: i32,
+    pub skill: i32,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct PathCache {
     pub path: SmallVec<[Vec2; 16]>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct Defense {
+    pub melee: i32,
+    pub ranged: i32,
 }

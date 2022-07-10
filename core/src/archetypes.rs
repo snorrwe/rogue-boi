@@ -46,7 +46,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 .insert(Hp::new(10))
                 .insert(PlayerTag)
                 .insert(Inventory::new(16))
-                .insert(Melee { power: 1 });
+                .insert(Melee { power: 1, skill: 2 });
         }
 
         StuffTag::Wall => {
@@ -57,19 +57,19 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 .insert(ICONS["troll"])
                 .insert(Ai)
                 .insert(PathCache::default())
-                .insert(Melee { power: 2 });
+                .insert(Melee { power: 2, skill: 5 });
         }
         StuffTag::Orc => {
             cmd.insert(Hp::new(4))
                 .insert(ICONS["orc-head"])
                 .insert(Ai)
-                .insert(Melee { power: 1 })
+                .insert(Melee { power: 1, skill: 3 })
                 .insert(PathCache::default());
         }
 
         StuffTag::Sword => {
             cmd.insert(ICONS["sword"])
-                .insert(Melee { power: 1 })
+                .insert(Melee { power: 1, skill: 0 })
                 .insert(Item)
                 .insert(Description("Simple sword. Power 1".to_string()));
         }
@@ -81,7 +81,11 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         }
         StuffTag::LightningScroll => {
             cmd.insert(ICONS["scroll"])
-                .insert(Ranged { power: 3, range: 5 })
+                .insert(Ranged {
+                    power: 3,
+                    range: 5,
+                    skill: 2,
+                })
                 .insert(Item)
                 .insert(Description(
                     "Hurl a lightning bolt at your foe for 3 damage.".to_string(),
