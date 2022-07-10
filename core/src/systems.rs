@@ -344,6 +344,7 @@ pub(crate) fn update_melee_ai(
             game_log!("{} hits the player for {} damage", id, power);
             cache.path.clear();
         } else if walk_grid_on_segment(*pos, *player_pos, grid, &q_tag).is_none() {
+            debug!("Player is visible, finding path");
             cache.path.clear();
             cache.path.push(*player_pos); // add the last step, so the enemy can follow players
             find_path(*pos, *player_pos, grid, &q_walk, &mut cache.path);
