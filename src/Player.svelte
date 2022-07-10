@@ -7,7 +7,6 @@
 	export let alive;
 	export let hp;
 	export let pos;
-	export let log;
 	export let attack;
 	export let inventory;
 	export let core;
@@ -38,11 +37,6 @@
 
 	{#if !alive}
 		<p>You died!</p>
-	{/if}
-
-	{#if log}
-		<h2>Logs</h2>
-		<pre>{log}</pre>
 	{/if}
 </div>
 

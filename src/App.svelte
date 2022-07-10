@@ -2,6 +2,7 @@
 	import { writable } from 'svelte/store';
 	import Grid from './Grid.svelte';
 	import Highlight from './Highlight.svelte';
+	import Log from './Log.svelte';
 	import Player from './Player.svelte';
 
 	export let core;
@@ -56,7 +57,6 @@
 			<div>
 				<Player
 					inventory={$inventory}
-					log={$grid.log}
 					alive={$grid.player != null}
 					hp={$grid.player && $grid.player.playerHp}
 					pos={$grid.player && $grid.player.playerPosition}
@@ -66,6 +66,10 @@
 				/>
 			</div>
 		</div>
+		<div>
+			<h2>Logs</h2>
+			<Log log={$grid.log} />
+		</div>
 	</div>
 </main>
 
@@ -73,10 +77,11 @@
 	main {
 		padding: 1em;
 		margin: 0 auto;
+		color: white;
 	}
 
 	.content {
 		display: grid;
-		grid-template-columns: repeat(2, max-content);
+		grid-template-columns: repeat(3, max-content);
 	}
 </style>
