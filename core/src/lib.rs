@@ -30,8 +30,6 @@ pub struct Core {
     camera_pos: Vec2,
     visible: Grid<bool>,
     explored: Grid<bool>,
-    inputs: Vec<InputEvent>,
-    actions: PlayerActions,
     output_cache: JsValue,
     viewport: Vec2,
     time: i32,
@@ -82,13 +80,14 @@ pub fn init_core() -> Core {
     let (_t, Pos(camera_pos)) = Query::<(&PlayerTag, &Pos)>::new(&world).one();
     let camera_pos = *camera_pos;
 
+    world.insert_resource(Vec::<InputEvent>::with_capacity(16));
+    world.insert_resource(PlayerActions::new());
+
     let mut core = Core {
         world,
         player,
         visible: Grid::new(dims),
         explored: Grid::new(dims),
-        inputs: Vec::with_capacity(16),
-        actions: PlayerActions::new(),
         output_cache: JsValue::null(),
         viewport: Vec2::new(10, 10),
         time: 0,
@@ -167,7 +166,7 @@ pub struct OutputStuff {
     pub payload: StuffPayload,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub(crate) struct PlayerActions {
     len: usize,
     move_action: Option<Vec2>,
@@ -253,10 +252,16 @@ impl Core {
 
     pub fn tick(&mut self, dt_ms: i32) {
         self.time += dt_ms;
-        update_input_events(self.inputs.as_slice(), &mut self.actions);
+        update_input_events(Res::new(&self.world), ResMut::new(&self.world));
 
         // min cooldown
-        if self.actions.is_empty() || self.time < 120 {
+        if self
+            .world
+            .get_resource::<PlayerActions>()
+            .unwrap()
+            .is_empty()
+            || self.time < 120
+        {
             return;
         }
         let _span = tracing::span!(tracing::Level::DEBUG, "game_update").entered();
@@ -266,7 +271,7 @@ impl Core {
 
         // logic update
         if let Err(err) = update_player(
-            &self.actions,
+            Res::new(&self.world),
             Commands::new(&self.world),
             Query::new(&self.world),
             Query::new(&self.world),
@@ -333,14 +338,19 @@ impl Core {
     }
 
     fn cleanup(&mut self) {
-        self.inputs.clear();
-        self.actions.clear();
+        fn clean(mut inputs: ResMut<Vec<InputEvent>>, mut actions: ResMut<PlayerActions>) {
+            inputs.clear();
+            actions.clear();
+        }
+
+        clean(ResMut::new(&self.world), ResMut::new(&self.world));
     }
 
     #[wasm_bindgen(js_name = "pushEvent")]
     pub fn push_event(&mut self, event: JsValue) {
         let event: InputEvent = event.into_serde().unwrap();
-        self.inputs.push(event);
+        let mut inputs = ResMut::<Vec<InputEvent>>::new(&self.world);
+        inputs.push(event);
     }
 
     fn update_output(&mut self) {
@@ -431,18 +441,27 @@ impl Core {
     #[wasm_bindgen(js_name = "useItem")]
     pub fn use_item(&mut self, id: JsValue) {
         let id: EntityId = JsValue::into_serde(&id).unwrap();
-        self.actions.insert_use_item(id);
+        self.world
+            .get_resource_mut::<PlayerActions>()
+            .unwrap()
+            .insert_use_item(id);
     }
 
     #[wasm_bindgen]
     pub fn wait(&mut self) {
-        self.actions.insert_wait();
+        self.world
+            .get_resource_mut::<PlayerActions>()
+            .unwrap()
+            .insert_wait();
     }
 
     #[wasm_bindgen(js_name = "setTarget")]
     pub fn set_target(&mut self, id: JsValue) {
         let id: EntityId = JsValue::into_serde(&id).unwrap();
-        self.actions.set_target(id);
+        self.world
+            .get_resource_mut::<PlayerActions>()
+            .unwrap()
+            .set_target(id);
     }
 
     #[wasm_bindgen(js_name = "fetchEntity")]

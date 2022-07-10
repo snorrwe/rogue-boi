@@ -14,9 +14,12 @@ use cao_db::prelude::*;
 use rand::Rng;
 use tracing::{debug, error, info};
 
-pub(crate) fn update_input_events(inputs: &[InputEvent], actions: &mut PlayerActions) {
+pub(crate) fn update_input_events(
+    inputs: Res<Vec<InputEvent>>,
+    mut actions: ResMut<PlayerActions>,
+) {
     let mut delta = Vec2::new(0, 0);
-    for event in inputs {
+    for event in &inputs[..] {
         match event {
             InputEvent::KeyDown { key } if key == "w" || key == "ArrowUp" => delta.y = -1,
             InputEvent::KeyDown { key } if key == "s" || key == "ArrowDown" => delta.y = 1,
@@ -42,7 +45,7 @@ pub enum PlayerError {
 }
 
 pub(crate) fn update_player(
-    actions: &PlayerActions,
+    actions: Res<PlayerActions>,
     mut cmd: Commands,
     melee_query: Query<&Melee>,
     player_query: Query<(EntityId, &mut Pos, &mut Inventory, &mut Melee), With<PlayerTag>>,
