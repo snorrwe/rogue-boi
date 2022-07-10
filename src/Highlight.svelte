@@ -25,6 +25,9 @@
 			Health: {selected.hp.current} / {selected.hp.max}
 		</div>
 	{/if}
+	{#if selected.melee}
+		<div>Melee: {selected.melee.power}</div>
+	{/if}
 	{#if selected.usable}
 		<button on:click={useItem(selected)}>Use</button>
 	{/if}
