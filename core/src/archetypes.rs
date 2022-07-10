@@ -58,6 +58,9 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 .insert(Ai)
                 .insert(PathCache::default())
                 .insert(Melee { power: 4, skill: 5 })
+                .insert(Description(
+                    "Large brutish troll. Clumsy, but hits hard".to_string(),
+                ))
                 .insert(Leash {
                     origin: pos,
                     radius: 20,
@@ -69,6 +72,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 .insert(Ai)
                 .insert(Melee { power: 1, skill: 3 })
                 .insert(PathCache::default())
+                .insert(Description("An orc. Cunning, but brutal".to_string()))
                 .insert(Leash {
                     origin: pos,
                     radius: 20,
@@ -106,21 +110,32 @@ pub fn stuff_to_js(
     id: EntityId,
     tag: StuffTag,
     q_wall: Query<&Icon>,
-    q_item: Query<(
-        &Item,
-        &Icon,
-        &Description,
-        Option<&Ranged>,
-        Option<&Heal>,
-        Option<&Melee>,
-        Option<&Pos>,
-    )>,
-    q_ai: Query<(&Ai, &Icon, Option<&Ranged>, Option<&Melee>, &Hp)>,
-    q_player: Query<(&PlayerTag, &Icon, &Melee, &Hp)>,
+    q_item: Query<
+        (
+            &Icon,
+            &Description,
+            Option<&Ranged>,
+            Option<&Heal>,
+            Option<&Melee>,
+            Option<&Pos>,
+        ),
+        With<Item>,
+    >,
+    q_ai: Query<
+        (
+            &Icon,
+            Option<&Ranged>,
+            Option<&Melee>,
+            &Hp,
+            Option<&Description>,
+        ),
+        With<Ai>,
+    >,
+    q_player: Query<(&Icon, &Melee, &Hp), With<PlayerTag>>,
 ) -> JsValue {
     let payload = match tag {
         StuffTag::Player => {
-            if let Some((_tag, icon, melee, hp)) = q_player.fetch(id) {
+            if let Some((icon, melee, hp)) = q_player.fetch(id) {
                 json! {{
                     "id": id,
                     "tag": tag,
@@ -148,20 +163,20 @@ pub fn stuff_to_js(
             }}
         }
         StuffTag::Troll | StuffTag::Orc => {
-            let (_ai, icon, ranged, melee, hp) = q_ai.fetch(id).unwrap();
+            let (icon, ranged, melee, hp, description) = q_ai.fetch(id).unwrap();
             json! {{
                 "id": id,
                 "tag": tag,
                 "ranged": ranged.clone(),
                 "melee": melee.clone(),
-                "description": "TBA",
+                "description": description.clone(),
                 "icon": icon.0.clone(),
                 "hp": hp,
                 "targetable": true
             }}
         }
         StuffTag::HpPotion | StuffTag::Sword | StuffTag::LightningScroll => {
-            let (_item, icon, desc, ranged, heal, melee, pos) = q_item.fetch(id).unwrap();
+            let (icon, desc, ranged, heal, melee, pos) = q_item.fetch(id).unwrap();
             let usable =
                 pos.is_none() && matches!(tag, StuffTag::HpPotion | StuffTag::LightningScroll);
             json! {{
