@@ -10,7 +10,6 @@ use crate::{
     InputEvent, PlayerActions, Stuff,
 };
 use cao_db::prelude::*;
-use smallvec::SmallVec;
 use tracing::{debug, error, info};
 
 pub(crate) fn update_input_events(inputs: &[InputEvent], actions: &mut PlayerActions) {
@@ -362,25 +361,10 @@ pub(crate) fn update_melee_ai(
     }
 }
 
-pub(crate) fn update_hp(
+pub(crate) fn update_player_hp(
     mut cmd: Commands,
-    query_hp: Query<(EntityId, &Hp), (With<Ai>, WithOut<PlayerTag>)>,
     query_player: Query<(EntityId, &Hp, &mut Icon), With<PlayerTag>>,
 ) {
-    // update AI hps
-    //
-    let delete_list: SmallVec<[EntityId; 4]> = query_hp
-        .iter()
-        .filter_map(|(id, hp)| (hp.current <= 0).then_some(id))
-        .collect();
-    for id in delete_list.into_iter() {
-        debug!("Entity {} died", id);
-        game_log!("{} died", id);
-        cmd.delete(id);
-    }
-
-    // update Player hp
-    //
     for (player_id, hp, icon) in query_player.iter() {
         if hp.current <= 0 {
             info!("Player died");
@@ -388,5 +372,19 @@ pub(crate) fn update_hp(
             *icon = ICONS["tombstone"];
             cmd.entity(player_id).remove::<PlayerTag>();
         }
+    }
+}
+
+pub(crate) fn update_ai_hp(
+    mut cmd: Commands,
+    query_hp: Query<(EntityId, &Hp), (With<Ai>, WithOut<PlayerTag>)>,
+) {
+    for id in query_hp
+        .iter()
+        .filter_map(|(id, hp)| (hp.current <= 0).then_some(id))
+    {
+        debug!("Entity {} died", id);
+        game_log!("{} died", id);
+        cmd.delete(id);
     }
 }

@@ -16,11 +16,11 @@ use components::*;
 use grid::Grid;
 use math::Vec2;
 
-use systems::{update_fov, update_grid, update_player};
+use systems::{update_ai_hp, update_fov, update_grid, update_player};
 use tracing::debug;
 use wasm_bindgen::prelude::*;
 
-use crate::systems::{update_hp, update_input_events, update_melee_ai};
+use crate::systems::{update_input_events, update_melee_ai, update_player_hp};
 
 /// State object
 #[wasm_bindgen]
@@ -277,6 +277,11 @@ impl Core {
                 }
             }
         }
+        // update ai hp, so player can kill entities before their update
+        update_ai_hp(Commands::new(&mut self.world), Query::new(&self.world));
+        self.world.apply_commands().unwrap();
+
+        // ai update
         update_melee_ai(
             Query::new(&self.world),
             Query::new(&self.world),
@@ -284,12 +289,7 @@ impl Core {
             Query::new(&self.world),
             &mut self.grid,
         );
-        update_hp(
-            Commands::new(&mut self.world),
-            Query::new(&self.world),
-            Query::new(&self.world),
-        );
-        // apply logic update commands
+        update_player_hp(Commands::new(&mut self.world), Query::new(&self.world));
         self.world.apply_commands().unwrap();
 
         // post processing
