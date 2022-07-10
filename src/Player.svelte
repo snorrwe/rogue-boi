@@ -33,6 +33,7 @@
 				Position: {pos.x}, {pos.y}
 			</p>
 		{/if}
+		<button on:click={() => core.wait()}>Wait</button>
 	{/if}
 
 	{#if !alive}

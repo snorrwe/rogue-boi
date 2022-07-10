@@ -8,6 +8,8 @@ use tracing::debug;
 use crate::components::Walkable;
 use crate::{grid::Grid, math::Vec2, Stuff};
 
+pub type Path = SmallVec<[Vec2; 16]>;
+
 #[derive(Eq, Clone, Copy, Debug)]
 struct Node {
     hcost: i32,
@@ -54,7 +56,7 @@ pub fn find_path(
     to: Vec2,
     grid: &Grid<Stuff>,
     walkies: &Query<&Walkable>,
-    path: &mut SmallVec<[Vec2; 16]>,
+    path: &mut Path,
 ) -> bool {
     let mut open_set = BinaryHeap::with_capacity(from.manhatten(to) as usize);
     let mut came_from = HashMap::new();
@@ -74,12 +76,10 @@ pub fn find_path(
         }
         let new_g = current.gcost + 1;
 
-        let new_neighbours: ArrayVec<_, 4> = [Vec2::X, -Vec2::X, Vec2::Y, -Vec2::Y]
+        let new_neighbours: ArrayVec<_, 4> = [Vec2::X, Vec2::Y, -Vec2::X, -Vec2::Y]
             .iter()
             .map(|x| current.pos + *x)
-            .filter(|pos| {
-                grid[*pos].is_none() || walkies.fetch(grid[*pos].unwrap().into()).is_some()
-            })
+            .filter(|pos| grid[*pos].is_none() || walkies.fetch(grid[*pos].unwrap()).is_some())
             // if it's a new node, or if it's cheaper than the previous visit
             // this is required because we only check the cross neighbours, so our `f` const function is inconsistent
             .filter(|pos| gcost.get(pos).map(|cost| new_g < *cost).unwrap_or(true))
@@ -99,17 +99,12 @@ pub fn find_path(
     false
 }
 
-fn reconstruct_path(
-    target: Vec2,
-    mut pos: Vec2,
-    came_from: &HashMap<Vec2, Vec2>,
-    path: &mut SmallVec<[Vec2; 16]>,
-) {
+fn reconstruct_path(target: Vec2, mut pos: Vec2, came_from: &HashMap<Vec2, Vec2>, path: &mut Path) {
     path.push(pos);
     while let Some(p) = came_from.get(&pos) {
-        path.push(*p);
         pos = *p;
-        if p.manhatten(target) <= 1 {
+        path.push(pos);
+        if pos.manhatten(target) <= 1 {
             return;
         }
     }

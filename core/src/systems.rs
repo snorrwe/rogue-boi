@@ -51,6 +51,10 @@ pub(crate) fn update_player(
     item_query: Query<Option<&Ranged>>,
     grid: &mut Grid<Stuff>,
 ) -> Result<(), PlayerError> {
+    if actions.wait() {
+        game_log!("Waiting...");
+        return Ok(());
+    }
     let (player_id, pos, inventory, melee) =
         player_query.iter().next().ok_or(PlayerError::NoPlayer)?;
     if let Some(id) = actions.use_item_action() {
@@ -345,8 +349,17 @@ pub(crate) fn update_melee_ai(
         } else if walk_grid_on_segment(*pos, *player_pos, grid, &q_tag).is_none() {
             debug!("Player is visible, finding path");
             cache.path.clear();
-            cache.path.push(*player_pos); // add the last step, so the enemy can follow players
-            find_path(*pos, *player_pos, grid, &q_walk, &mut cache.path);
+            cache.path.push(*player_pos); // push the last pos, so entities can follow players
+                                          // across corridors
+            if !find_path(*pos, *player_pos, grid, &q_walk, &mut cache.path) {
+                // finding path failed, pop the player pos
+                cache.path.clear();
+            }
+            // if the distance to the player is 1
+            // there is a bug in pathfinding that returns the current pos as the last
+            while cache.path.last() == Some(pos) {
+                cache.path.pop();
+            }
         }
         if let Some(new_pos) = cache.path.pop() {
             if grid[new_pos].is_some() {

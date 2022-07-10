@@ -76,6 +76,8 @@ pub fn init_core() -> Core {
             max_items_per_room: 2,
         },
     );
+    world.apply_commands().unwrap();
+    update_grid(Query::new(&world), &mut grid);
 
     let (_t, Pos(camera_pos)) = Query::<(&PlayerTag, &Pos)>::new(&world).one();
     let camera_pos = *camera_pos;
@@ -172,25 +174,30 @@ pub(crate) struct PlayerActions {
     move_action: Option<Vec2>,
     use_item_action: Option<EntityId>,
     target: Option<EntityId>,
+    wait: bool,
 }
 
 impl PlayerActions {
     pub fn new() -> Self {
         Self::default()
     }
-}
 
-impl PlayerActions {
+    pub fn wait(&self) -> bool {
+        self.wait
+    }
+
     pub fn len(&self) -> usize {
         self.len
     }
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
     pub fn clear(&mut self) {
         self.move_action = None;
         self.use_item_action = None;
         self.target = None;
+        self.wait = false;
         self.len = 0;
     }
 
@@ -222,6 +229,13 @@ impl PlayerActions {
 
     pub fn target(&self) -> Option<EntityId> {
         self.target
+    }
+
+    pub fn insert_wait(&mut self) {
+        if !self.wait {
+            self.len += 1;
+        }
+        self.wait = true;
     }
 }
 
@@ -426,6 +440,11 @@ impl Core {
     pub fn use_item(&mut self, id: JsValue) {
         let id: EntityId = JsValue::into_serde(&id).unwrap();
         self.actions.insert_use_item(id);
+    }
+
+    #[wasm_bindgen]
+    pub fn wait(&mut self) {
+        self.actions.insert_wait();
     }
 
     #[wasm_bindgen(js_name = "setTarget")]
