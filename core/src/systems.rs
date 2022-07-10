@@ -1,7 +1,8 @@
 use crate::{
     archetypes::ICONS,
     components::{
-        Ai, Heal, Hp, Icon, Inventory, Melee, PathCache, PlayerTag, Pos, Ranged, StuffTag, Walkable,
+        Ai, Heal, Hp, Icon, Inventory, Leash, Melee, PathCache, PlayerTag, Pos, Ranged, StuffTag,
+        Walkable,
     },
     game_log,
     grid::Grid,
@@ -334,7 +335,7 @@ pub(crate) fn update_grid(q: Query<(EntityId, &Pos)>, grid: &mut Grid<Stuff>) {
 
 pub(crate) fn update_melee_ai(
     q_player: Query<(&mut Hp, &Pos), With<PlayerTag>>,
-    q_enemy: Query<(EntityId, &Melee, &mut Pos, &mut PathCache), With<Ai>>,
+    q_enemy: Query<(EntityId, &Melee, &mut Pos, &mut PathCache, Option<&Leash>), With<Ai>>,
     q_tag: Query<&StuffTag>,
     q_walk: Query<&Walkable>,
     grid: &mut Grid<Stuff>,
@@ -347,7 +348,7 @@ pub(crate) fn update_melee_ai(
         }
     };
 
-    for (id, Melee { power, skill }, Pos(pos), cache) in q_enemy.iter() {
+    for (id, Melee { power, skill }, Pos(pos), cache, leash) in q_enemy.iter() {
         if pos.manhatten(*player_pos) <= 1 {
             if !skill_check(*skill) {
                 game_log!("{} misses", id);
@@ -371,8 +372,22 @@ pub(crate) fn update_melee_ai(
             while cache.path.last() == Some(pos) {
                 cache.path.pop();
             }
+        } else if cache.path.is_empty() {
+            // if the enemy has a leash and the player is not visible, return to the origin
+            if let Some(leash) = leash {
+                cache.path.clear();
+                find_path(*pos, leash.origin, grid, &q_walk, &mut cache.path);
+            }
         }
-        if let Some(new_pos) = cache.path.pop() {
+        if let Some(mut new_pos) = cache.path.pop() {
+            if let Some(leash) = leash {
+                // if at the end of leash, don't move
+                if new_pos.manhatten(leash.origin) > leash.radius {
+                    cache.path.clear();
+                    new_pos = *pos;
+                }
+            }
+
             if grid[new_pos].is_some() {
                 // taken
                 cache.path.clear();
@@ -409,6 +424,7 @@ pub(crate) fn update_ai_hp(
     {
         debug!("Entity {} died", id);
         game_log!("{} died", id);
+
         cmd.delete(id);
     }
 }

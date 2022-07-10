@@ -57,14 +57,22 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 .insert(ICONS["troll"])
                 .insert(Ai)
                 .insert(PathCache::default())
-                .insert(Melee { power: 2, skill: 5 });
+                .insert(Melee { power: 2, skill: 5 })
+                .insert(Leash {
+                    origin: pos,
+                    radius: 20,
+                });
         }
         StuffTag::Orc => {
             cmd.insert(Hp::new(4))
                 .insert(ICONS["orc-head"])
                 .insert(Ai)
                 .insert(Melee { power: 1, skill: 3 })
-                .insert(PathCache::default());
+                .insert(PathCache::default())
+                .insert(Leash {
+                    origin: pos,
+                    radius: 20,
+                });
         }
 
         StuffTag::Sword => {
