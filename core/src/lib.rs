@@ -254,7 +254,7 @@ impl Core {
         // logic update
         if let Err(err) = update_player(
             &self.actions,
-            Commands::new(&mut self.world),
+            Commands::new(&self.world),
             Query::new(&self.world),
             Query::new(&self.world),
             Query::new(&self.world),

@@ -16,7 +16,7 @@
 	<h2>Inventory</h2>
 	<ul>
 		{#each inventory ?? [] as item}
-			<li class="item" class:usable={item.usable} on:click={() => item.usable && useItem(item)}>
+			<li class="item" on:click={() => useItem(item)}>
 				<div title={item.description}>
 					<img src="/icons/ffffff/transparent/1x1/{item.icon}" alt={item.description} />
 				</div>
@@ -33,9 +33,6 @@
 	.item {
 		height: 2.2rem;
 		width: 2.2rem;
-	}
-
-	.usable {
 		cursor: pointer;
 	}
 
