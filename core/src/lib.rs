@@ -11,7 +11,7 @@ mod utils;
 use std::pin::Pin;
 
 use archetypes::{init_entity, ICONS};
-use cao_db::{commands::Commands, entity_id::EntityId, query::Query, World};
+use cao_db::prelude::*;
 use components::*;
 use grid::Grid;
 use math::Vec2;
@@ -303,8 +303,9 @@ impl Core {
             &mut self.visible,
         );
 
-        if let Some((_t, Pos(camera_pos))) =
-            Query::<(&PlayerTag, &Pos)>::new(&self.world).iter().next()
+        if let Some(Pos(camera_pos)) = Query::<&Pos, With<PlayerTag>>::new(&self.world)
+            .iter()
+            .next()
         {
             self.camera_pos = *camera_pos;
         }

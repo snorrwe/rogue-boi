@@ -9,7 +9,7 @@ use crate::{
     pathfinder::find_path,
     InputEvent, PlayerActions, Stuff,
 };
-use cao_db::{commands::Commands, entity_id::EntityId, query::Query};
+use cao_db::prelude::*;
 use smallvec::SmallVec;
 use tracing::{debug, error, info};
 
@@ -44,7 +44,7 @@ pub(crate) fn update_player(
     actions: &PlayerActions,
     mut cmd: Commands,
     melee_query: Query<&Melee>,
-    player_query: Query<(EntityId, &mut Pos, &PlayerTag, &mut Inventory, &mut Melee)>,
+    player_query: Query<(EntityId, &mut Pos, &mut Inventory, &mut Melee), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
     hp_query: Query<&mut Hp>,
     heal_query: Query<&Heal>,
@@ -52,7 +52,7 @@ pub(crate) fn update_player(
     item_query: Query<Option<&Ranged>>,
     grid: &mut Grid<Stuff>,
 ) -> Result<(), PlayerError> {
-    let (player_id, pos, _tag, inventory, melee) =
+    let (player_id, pos, inventory, melee) =
         player_query.iter().next().ok_or(PlayerError::NoPlayer)?;
     if let Some(id) = actions.use_item_action() {
         let tag = stuff_tags.fetch(id);
@@ -293,7 +293,7 @@ fn flood_vizibility(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Ve
 /// recompute visible area
 pub(crate) fn update_fov(
     player: EntityId,
-    q: Query<(&StuffTag, &Pos)>,
+    q: Query<&Pos, With<PlayerTag>>,
     tags_q: Query<&StuffTag>,
     grid: &Grid<Stuff>,
     explored: &mut Grid<bool>,
@@ -301,7 +301,7 @@ pub(crate) fn update_fov(
 ) {
     const RADIUS: i32 = 8;
 
-    let (_player_tag, player_pos) = q.fetch(player).unwrap();
+    let player_pos = q.fetch(player).unwrap();
     set_visible(&grid, visible, &tags_q, player_pos.0, RADIUS);
     visible[player_pos.0] = true;
     flood_vizibility(&grid, visible, player_pos.0, RADIUS);
@@ -319,22 +319,21 @@ pub(crate) fn update_grid(q: Query<(EntityId, &Pos)>, grid: &mut Grid<Stuff>) {
 }
 
 pub(crate) fn update_melee_ai(
-    q_player: Query<(&PlayerTag, &mut Hp, &Pos)>,
-    q_enemy: Query<(&Ai, EntityId, &Melee, &mut Pos, &mut PathCache)>,
+    q_player: Query<(&mut Hp, &Pos), With<PlayerTag>>,
+    q_enemy: Query<(EntityId, &Melee, &mut Pos, &mut PathCache), With<Ai>>,
     q_tag: Query<&StuffTag>,
     q_walk: Query<&Walkable>,
     grid: &mut Grid<Stuff>,
 ) {
-    let (player_hp, Pos(player_pos)) = match q_player.iter().next().map(|(_tag, hp, pos)| (hp, pos))
-    {
-        Some(id) => id,
+    let (player_hp, Pos(player_pos)) = match q_player.iter().next() {
+        Some(x) => x,
         None => {
             debug!("No player on the map! Skipping melee update");
             return;
         }
     };
 
-    for (_ai, id, Melee { power }, Pos(pos), cache) in q_enemy.iter() {
+    for (id, Melee { power }, Pos(pos), cache) in q_enemy.iter() {
         if pos.manhatten(*player_pos) <= 1 {
             player_hp.current -= power;
             debug!(
@@ -363,14 +362,14 @@ pub(crate) fn update_melee_ai(
 
 pub(crate) fn update_hp(
     mut cmd: Commands,
-    query_hp: Query<(EntityId, &Hp, &Ai)>,
-    query_player: Query<(EntityId, &Hp, &PlayerTag, &mut Icon)>,
+    query_hp: Query<(EntityId, &Hp), (With<Ai>, WithOut<PlayerTag>)>,
+    query_player: Query<(EntityId, &Hp, &mut Icon), With<PlayerTag>>,
 ) {
     // update AI hps
     //
     let delete_list: SmallVec<[EntityId; 4]> = query_hp
         .iter()
-        .filter_map(|(id, hp, _ai)| (hp.current <= 0).then_some(id))
+        .filter_map(|(id, hp)| (hp.current <= 0).then_some(id))
         .collect();
     for id in delete_list.into_iter() {
         debug!("Entity {} died", id);
@@ -380,7 +379,7 @@ pub(crate) fn update_hp(
 
     // update Player hp
     //
-    for (player_id, hp, _tag, icon) in query_player.iter() {
+    for (player_id, hp, icon) in query_player.iter() {
         if hp.current <= 0 {
             info!("Player died");
             game_log!("Player died");
