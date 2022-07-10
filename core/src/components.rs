@@ -132,12 +132,6 @@ pub struct PathCache {
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
-pub struct Defense {
-    pub melee: i32,
-    pub ranged: i32,
-}
-
-#[derive(Debug, Clone, Copy, Serialize)]
 pub struct Leash {
     pub origin: Vec2,
     pub radius: i32,
