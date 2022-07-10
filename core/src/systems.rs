@@ -62,7 +62,7 @@ pub(crate) fn update_player(
         let tag = stuff_tags.fetch(id);
         match tag {
             Some(StuffTag::HpPotion) => {
-                game_log!("Drank a health potion.");
+                game_log!("Drink a health potion.");
                 inventory.remove(id);
                 let hp = hp_query.fetch(player_id).unwrap();
                 if hp.full() {
