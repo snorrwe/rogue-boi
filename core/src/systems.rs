@@ -8,7 +8,7 @@ use crate::{
     grid::Grid,
     math::{walk_square, Vec2},
     pathfinder::find_path,
-    InputEvent, PlayerActions, Stuff,
+    Explored, GameTick, InputEvent, PlayerActions, ShouldUpdate, Stuff, Visible,
 };
 use cao_db::prelude::*;
 use rand::Rng;
@@ -45,6 +45,41 @@ pub enum PlayerError {
 }
 
 pub(crate) fn update_player(
+    mut should_run: ResMut<ShouldUpdate>,
+    actions: Res<PlayerActions>,
+    mut cmd: Commands,
+    melee_query: Query<&Melee>,
+    player_query: Query<(EntityId, &mut Pos, &mut Inventory, &mut Melee), With<PlayerTag>>,
+    stuff_tags: Query<&StuffTag>,
+    hp_query: Query<&mut Hp>,
+    heal_query: Query<&Heal>,
+    target_query: Query<(&Pos, &mut Hp)>,
+    item_query: Query<Option<&Ranged>>,
+    mut grid: ResMut<Grid<Stuff>>,
+) {
+    should_run.0 = true;
+    if actions.wait() {
+        game_log!("Waiting...");
+        return;
+    }
+    if let Err(err) = update_player_inner(
+        actions,
+        cmd,
+        melee_query,
+        player_query,
+        stuff_tags,
+        hp_query,
+        heal_query,
+        target_query,
+        item_query,
+        grid,
+    ) {
+        debug!("player update failed {:?}", err);
+        should_run.0 = false;
+    }
+}
+
+fn update_player_inner(
     actions: Res<PlayerActions>,
     mut cmd: Commands,
     melee_query: Query<&Melee>,
@@ -56,10 +91,6 @@ pub(crate) fn update_player(
     item_query: Query<Option<&Ranged>>,
     mut grid: ResMut<Grid<Stuff>>,
 ) -> Result<(), PlayerError> {
-    if actions.wait() {
-        game_log!("Waiting...");
-        return Ok(());
-    }
     let (player_id, pos, inventory, melee) =
         player_query.iter().next().ok_or(PlayerError::NoPlayer)?;
     if let Some(id) = actions.use_item_action() {
@@ -309,20 +340,19 @@ fn flood_vizibility(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Ve
 
 /// recompute visible area
 pub(crate) fn update_fov(
-    player: EntityId,
     q: Query<&Pos, With<PlayerTag>>,
     tags_q: Query<&StuffTag>,
     grid: Res<Grid<Stuff>>,
-    explored: &mut Grid<bool>,
-    visible: &mut Grid<bool>,
+    mut explored: ResMut<Explored>,
+    mut visible: ResMut<Visible>,
 ) {
     const RADIUS: i32 = 8;
 
-    if let Some(player_pos) = q.fetch(player) {
-        set_visible(&grid, visible, &tags_q, player_pos.0, RADIUS);
-        visible[player_pos.0] = true;
-        flood_vizibility(&grid, visible, player_pos.0, RADIUS);
-        explored.or_eq(&visible);
+    if let Some(player_pos) = q.iter().next() {
+        set_visible(&grid, &mut visible.0, &tags_q, player_pos.0, RADIUS);
+        visible.0[player_pos.0] = true;
+        flood_vizibility(&grid, &mut visible.0, player_pos.0, RADIUS);
+        explored.0.or_eq(&visible.0);
     }
 }
 
@@ -432,7 +462,15 @@ pub(crate) fn update_ai_hp(
 }
 
 /// Throw a D6, if result is >= skill then the check passes
-pub fn skill_check(skill: i32) -> bool {
+pub(crate) fn skill_check(skill: i32) -> bool {
     let mut rng = rand::thread_rng();
     rng.gen_range(1..=6) >= skill
+}
+
+pub(crate) fn update_tick(mut t: ResMut<GameTick>) {
+    t.0 += 1;
+}
+
+pub(crate) fn should_update(r: Res<ShouldUpdate>) -> bool {
+    r.0
 }

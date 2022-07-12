@@ -16,24 +16,30 @@ use components::*;
 use grid::Grid;
 use math::Vec2;
 
-use systems::{update_ai_hp, update_fov, update_grid, update_player};
-use tracing::debug;
+use systems::{should_update, update_ai_hp, update_fov, update_grid, update_player, update_tick};
 use wasm_bindgen::prelude::*;
 
 use crate::systems::{update_input_events, update_melee_ai, update_player_hp};
+
+#[derive(Clone)]
+struct Visible(pub Grid<bool>);
+#[derive(Clone)]
+struct Explored(pub Grid<bool>);
+#[derive(Clone, Copy)]
+struct PlayerId(pub EntityId);
+#[derive(Clone, Copy)]
+struct ShouldUpdate(pub bool);
+#[derive(Clone, Copy)]
+struct GameTick(pub i32);
 
 /// State object
 #[wasm_bindgen]
 pub struct Core {
     world: Pin<Box<World>>,
-    player: EntityId,
     camera_pos: Vec2,
-    visible: Grid<bool>,
-    explored: Grid<bool>,
     output_cache: JsValue,
     viewport: Vec2,
     time: i32,
-    game_tick: usize,
 }
 
 #[wasm_bindgen(start)]
@@ -75,23 +81,42 @@ pub fn init_core() -> Core {
         },
     );
     world.apply_commands().unwrap();
-    update_grid(Query::new(&world), ResMut::new(&world));
+    world.run_system(update_grid);
 
     let (_t, Pos(camera_pos)) = Query::<(&PlayerTag, &Pos)>::new(&world).one();
     let camera_pos = *camera_pos;
 
+    world.insert_resource(GameTick(0));
+    world.insert_resource(ShouldUpdate(false));
+    world.insert_resource(PlayerId(player));
     world.insert_resource(Vec::<InputEvent>::with_capacity(16));
     world.insert_resource(PlayerActions::new());
+    world.insert_resource(Visible(Grid::new(dims)));
+    world.insert_resource(Explored(Grid::new(dims)));
+
+    world.add_stage(
+        SystemStage::new("player")
+            .with_system(update_player)
+            .with_system(update_ai_hp),
+    );
+    world.add_stage(
+        SystemStage::new("ai-update")
+            .with_should_run(should_update)
+            .with_system(update_tick)
+            .with_system(update_melee_ai)
+            .with_system(update_player_hp),
+    );
+    world.add_stage(
+        SystemStage::new("post-processing")
+            .with_system(update_grid)
+            .with_system(update_fov),
+    );
 
     let mut core = Core {
         world,
-        player,
-        visible: Grid::new(dims),
-        explored: Grid::new(dims),
         output_cache: JsValue::null(),
         viewport: Vec2::new(10, 10),
         time: 0,
-        game_tick: 0,
         camera_pos,
     };
     core.init();
@@ -252,7 +277,7 @@ impl Core {
 
     pub fn tick(&mut self, dt_ms: i32) {
         self.time += dt_ms;
-        update_input_events(Res::new(&self.world), ResMut::new(&self.world));
+        self.world.run_system(update_input_events);
 
         // min cooldown
         if self
@@ -267,59 +292,7 @@ impl Core {
         let _span = tracing::span!(tracing::Level::DEBUG, "game_update").entered();
 
         self.time = 0;
-        self.game_tick += 1;
-
-        // logic update
-        if let Err(err) = update_player(
-            Res::new(&self.world),
-            Commands::new(&self.world),
-            Query::new(&self.world),
-            Query::new(&self.world),
-            Query::new(&self.world),
-            Query::new(&self.world),
-            Query::new(&self.world),
-            Query::new(&self.world),
-            Query::new(&self.world),
-            ResMut::new(&self.world),
-        ) {
-            debug!("player update failed {:?}", err);
-            match err {
-                systems::PlayerError::NoPlayer
-                | systems::PlayerError::CantMove
-                | systems::PlayerError::NoTarget
-                | systems::PlayerError::InvalidTarget => {
-                    self.game_tick -= 1;
-                    self.cleanup();
-                    self.update_output();
-                    return;
-                }
-            }
-        }
-        // update ai hp, so player can kill entities before their update
-        update_ai_hp(Commands::new(&mut self.world), Query::new(&self.world));
-        self.world.apply_commands().unwrap();
-
-        // ai update
-        update_melee_ai(
-            Query::new(&self.world),
-            Query::new(&self.world),
-            Query::new(&self.world),
-            Query::new(&self.world),
-            ResMut::new(&self.world),
-        );
-        update_player_hp(Commands::new(&mut self.world), Query::new(&self.world));
-        self.world.apply_commands().unwrap();
-
-        // post processing
-        update_grid(Query::new(&self.world), ResMut::new(&self.world));
-        update_fov(
-            self.player,
-            Query::new(&self.world),
-            Query::new(&self.world),
-            Res::new(&self.world),
-            &mut self.explored,
-            &mut self.visible,
-        );
+        self.world.tick();
 
         if let Some(Pos(camera_pos)) = Query::<&Pos, With<PlayerTag>>::new(&self.world)
             .iter()
@@ -343,7 +316,7 @@ impl Core {
             actions.clear();
         }
 
-        clean(ResMut::new(&self.world), ResMut::new(&self.world));
+        self.world.run_system(clean);
     }
 
     #[wasm_bindgen(js_name = "pushEvent")]
@@ -360,12 +333,14 @@ impl Core {
         let mut result = Grid::new(self.viewport * 2);
         let min = self.camera_pos - self.viewport;
         let max = self.camera_pos + self.viewport;
+        let visible = self.world.get_resource::<Visible>().unwrap();
+        let explored = self.world.get_resource::<Explored>().unwrap();
         for y in min.y.max(0)..max.y.min(grid.height()) {
             for x in min.x.max(0)..max.x.min(grid.width()) {
                 let pos = Vec2::new(x, y);
                 let mut output = OutputStuff::default();
-                output.explored = self.explored[pos];
-                output.visible = self.visible[pos];
+                output.explored = explored.0[pos];
+                output.visible = visible.0[pos];
                 if output.explored {
                     if let Some((id, ty)) = grid[pos].and_then(|id| {
                         let id = id;
@@ -392,7 +367,8 @@ impl Core {
                 player_attack: attack.power,
                 player_pos: pos.0,
             });
-        let log = crate::logging::compute_log(self.game_tick);
+        let game_tick = self.world.get_resource::<GameTick>().unwrap().0;
+        let log = crate::logging::compute_log(game_tick as usize);
         let result = RenderedOutput {
             player,
             log,
@@ -411,8 +387,9 @@ impl Core {
     pub fn get_inventory(&self) -> JsValue {
         let item_props =
             Query::<(&Icon, &Description, &StuffTag, Option<&Ranged>)>::new(&self.world);
-        let inventory = Query::<&Inventory>::new(&self.world)
-            .fetch(self.player)
+        let inventory = Query::<&Inventory, With<PlayerTag>>::new(&self.world)
+            .iter()
+            .next()
             .map(|inv| {
                 inv.iter()
                     .map(|id| {
