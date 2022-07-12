@@ -81,7 +81,6 @@ pub fn init_core() -> Core {
         },
     );
     world.apply_commands().unwrap();
-    world.run_system(update_grid);
 
     let (_t, Pos(camera_pos)) = Query::<(&PlayerTag, &Pos)>::new(&world).one();
     let camera_pos = *camera_pos;
@@ -108,6 +107,13 @@ pub fn init_core() -> Core {
     );
     world.add_stage(
         SystemStage::new("post-processing")
+            .with_system(update_grid)
+            .with_system(update_fov),
+    );
+
+    // run initial update
+    world.run_stage(
+        SystemStage::new("initial-post-process")
             .with_system(update_grid)
             .with_system(update_fov),
     );
