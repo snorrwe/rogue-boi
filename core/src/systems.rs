@@ -8,8 +8,9 @@ use crate::{
     grid::Grid,
     math::{walk_square, Vec2},
     pathfinder::find_path,
-    CameraPos, Explored, GameTick, InputEvent, Output, OutputStuff, PlayerActions, PlayerOutput,
-    RenderedOutput, ShouldUpdate, Stuff, StuffPayload, Viewport, Visibility, Visible,
+    CameraPos, Explored, GameTick, InputEvent, Output, OutputStuff, PlayerActions, PlayerId,
+    PlayerOutput, RenderedOutput, ShouldUpdateAi, ShouldUpdatePlayer, Stuff, StuffPayload,
+    Viewport, Visibility, Visible,
 };
 use cao_db::prelude::*;
 use rand::Rng;
@@ -35,63 +36,18 @@ pub fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<Pla
     }
 }
 
-#[derive(Debug)]
-pub enum PlayerError {
-    CantMove,
-    NoPlayer,
-    NoTarget,
-    InvalidTarget,
-}
-
-pub fn update_player(
-    mut should_run: ResMut<ShouldUpdate>,
-    actions: Res<PlayerActions>,
-    cmd: Commands,
-    melee_query: Query<&Melee>,
-    player_query: Query<(EntityId, &mut Pos, &mut Inventory, &mut Melee), With<PlayerTag>>,
-    stuff_tags: Query<&StuffTag>,
-    hp_query: Query<&mut Hp>,
-    heal_query: Query<&Heal>,
-    target_query: Query<(&Pos, &mut Hp)>,
-    item_query: Query<Option<&Ranged>>,
-    grid: ResMut<Grid<Stuff>>,
-) {
-    should_run.0 = true;
-    if actions.wait() {
-        game_log!("Waiting...");
-        return;
-    }
-    if let Err(err) = update_player_inner(
-        actions,
-        cmd,
-        melee_query,
-        player_query,
-        stuff_tags,
-        hp_query,
-        heal_query,
-        target_query,
-        item_query,
-        grid,
-    ) {
-        debug!("player update failed {:?}", err);
-        should_run.0 = false;
-    }
-}
-
-fn update_player_inner(
+pub fn update_player_item_use(
     actions: Res<PlayerActions>,
     mut cmd: Commands,
-    melee_query: Query<&Melee>,
-    player_query: Query<(EntityId, &mut Pos, &mut Inventory, &mut Melee), With<PlayerTag>>,
+    player_query: Query<(EntityId, &mut Pos, &mut Inventory), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
     hp_query: Query<&mut Hp>,
     heal_query: Query<&Heal>,
     target_query: Query<(&Pos, &mut Hp)>,
     item_query: Query<Option<&Ranged>>,
-    mut grid: ResMut<Grid<Stuff>>,
-) -> Result<(), PlayerError> {
-    let (player_id, pos, inventory, melee) =
-        player_query.iter().next().ok_or(PlayerError::NoPlayer)?;
+    mut should_run: ResMut<ShouldUpdateAi>,
+) {
+    let (player_id, pos, inventory) = player_query.iter().next().unwrap();
     if let Some(id) = actions.use_item_action() {
         let tag = stuff_tags.fetch(id);
         match tag {
@@ -109,16 +65,20 @@ fn update_player_inner(
             Some(StuffTag::LightningScroll) => match actions.target() {
                 Some(target_id) => {
                     debug!("Use lightning scroll {}", id);
-                    let (target_pos, target_hp) =
-                        target_query.fetch(target_id).ok_or_else(|| {
+                    let (target_pos, target_hp) = match target_query.fetch(target_id) {
+                        Some(x) => x,
+                        None => {
                             game_log!("Invalid target for lightning bolt");
-                            PlayerError::InvalidTarget
-                        })?;
+                            should_run.0 = false;
+                            return;
+                        }
+                    };
                     let range = item_query.fetch(id).unwrap();
                     let range = range.unwrap();
                     if target_pos.0.chebyshev(pos.0) > range.range {
                         game_log!("Target is too far away");
-                        return Err(PlayerError::InvalidTarget);
+                        should_run.0 = false;
+                        return;
                     }
                     if skill_check(range.skill) {
                         let dmg = range.power;
@@ -133,7 +93,8 @@ fn update_player_inner(
                 None => {
                     game_log!("Lightning bolt has no target!");
                     error!("Lightning bolt has no target!");
-                    return Err(PlayerError::NoTarget);
+                    should_run.0 = false;
+                    return;
                 }
             },
             None => {
@@ -145,94 +106,88 @@ fn update_player_inner(
             }
         }
     }
-    update_player_inventory(&melee_query, inventory, melee)?;
-    if let Some(delta) = actions.move_action() {
-        handle_player_move(
-            &mut cmd,
-            inventory,
-            melee,
-            &mut pos.0,
-            delta,
-            &stuff_tags,
-            &hp_query,
-            &mut grid,
-        )?;
-    }
-    Ok(())
 }
 
-fn update_player_inventory(
-    q: &Query<&Melee>,
-    inventory: &Inventory,
-    power: &mut Melee,
-) -> Result<(), PlayerError> {
-    power.power = 1;
-    for item in inventory.items.iter().copied() {
-        if let Some(melee_weapon) = q.fetch(item) {
-            power.power += melee_weapon.power;
-        }
-    }
-    Ok(())
-}
-
-fn handle_player_move(
-    cmd: &mut Commands,
-    inventory: &mut Inventory,
-    power: &Melee,
-    pos: &mut Vec2,
-    delta: Vec2,
-    stuff_tags: &Query<&StuffTag>,
-    hp: &Query<&mut Hp>,
-    grid: &mut Grid<Stuff>,
-) -> Result<(), PlayerError> {
-    let new_pos = *pos + delta;
-    match grid.at(new_pos.x, new_pos.y).unwrap().and_then(|id| {
-        let stuff_id = id.into();
-        stuff_tags.fetch(stuff_id).map(|tag| (stuff_id, tag))
-    }) {
-        Some((stuff_id, tag)) => {
-            match tag {
-                StuffTag::Player => unreachable!(),
-                StuffTag::Wall => {
-                    game_log!("Can't move into wall");
-                    return Err(PlayerError::CantMove);
-                }
-                StuffTag::Troll | StuffTag::Orc => {
-                    if skill_check(power.skill) {
-                        let hp = hp.fetch(stuff_id).expect("Enemy has no hp");
-                        let power = power.power;
-                        hp.current -= power;
-                        debug!("kick enemy {}: {:?}", stuff_id, hp);
-                        game_log!("Bonk enemy {} for {} damage", stuff_id, power);
-                    } else {
-                        debug!("miss enemy {}", stuff_id);
-                        game_log!("Your attack misses");
-                    }
-                }
-                StuffTag::LightningScroll | StuffTag::HpPotion | StuffTag::Sword => {
-                    // pick up item
-                    if let Err(err) = inventory.add(stuff_id) {
-                        match err {
-                            crate::components::InventoryError::Full => {
-                                game_log!("Inventory is full");
-                                return Err(PlayerError::CantMove);
-                            }
-                        }
-                    }
-                    grid_step(pos, new_pos, grid);
-                    // remove the position component of the item
-                    cmd.entity(stuff_id).remove::<Pos>();
-                    game_log!("Picked up a {:?}", tag);
-                }
+pub fn update_player_inventory(
+    q_melee: Query<&mut Melee>,
+    q_inventory: Query<(EntityId, &Inventory), With<PlayerTag>>,
+) {
+    for (player_id, inventory) in q_inventory.iter() {
+        let mut power = 1;
+        for item in inventory.items.iter().copied() {
+            if let Some(melee_weapon) = q_melee.fetch(item) {
+                power += melee_weapon.power;
             }
         }
+        q_melee.fetch(player_id).unwrap().power = power;
+    }
+}
+
+pub fn handle_player_move(
+    actions: Res<PlayerActions>,
+    mut cmd: Commands,
+    player_q: Query<(&mut Inventory, &Melee, &mut Pos), With<PlayerTag>>,
+    stuff_tags: Query<&StuffTag>,
+    hp: Query<&mut Hp>,
+    mut grid: ResMut<Grid<Stuff>>,
+    mut should_run: ResMut<ShouldUpdateAi>,
+) {
+    let delta = match actions.move_action() {
+        Some(x) => x,
         None => {
-            // empty position
-            // update the grid asap so the monsters will see the updated player position
-            grid_step(pos, new_pos, grid);
+            return;
+        }
+    };
+    for (inventory, power, pos) in player_q.iter() {
+        let pos = &mut pos.0;
+        let new_pos: Vec2 = *pos + delta;
+        match grid.at(new_pos.x, new_pos.y).unwrap().and_then(|id| {
+            let stuff_id = id.into();
+            stuff_tags.fetch(stuff_id).map(|tag| (stuff_id, tag))
+        }) {
+            Some((stuff_id, tag)) => {
+                match tag {
+                    StuffTag::Player => unreachable!(),
+                    StuffTag::Wall => {
+                        game_log!("Can't move into wall");
+                        should_run.0 = false;
+                    }
+                    StuffTag::Troll | StuffTag::Orc => {
+                        if skill_check(power.skill) {
+                            let hp = hp.fetch(stuff_id).expect("Enemy has no hp");
+                            let power = power.power;
+                            hp.current -= power;
+                            debug!("kick enemy {}: {:?}", stuff_id, hp);
+                            game_log!("Bonk enemy {} for {} damage", stuff_id, power);
+                        } else {
+                            debug!("miss enemy {}", stuff_id);
+                            game_log!("Your attack misses");
+                        }
+                    }
+                    StuffTag::LightningScroll | StuffTag::HpPotion | StuffTag::Sword => {
+                        // pick up item
+                        if let Err(err) = inventory.add(stuff_id) {
+                            match err {
+                                crate::components::InventoryError::Full => {
+                                    game_log!("Inventory is full");
+                                    should_run.0 = false;
+                                }
+                            }
+                        }
+                        grid_step(pos, new_pos, &mut grid);
+                        // remove the position component of the item
+                        cmd.entity(stuff_id).remove::<Pos>();
+                        game_log!("Picked up a {:?}", tag);
+                    }
+                }
+            }
+            None => {
+                // empty position
+                // update the grid asap so the monsters will see the updated player position
+                grid_step(pos, new_pos, &mut grid);
+            }
         }
     }
-    Ok(())
 }
 
 fn grid_step(pos: &mut Vec2, new_pos: Vec2, grid: &mut Grid<Stuff>) {
@@ -470,7 +425,7 @@ pub fn update_tick(mut t: ResMut<GameTick>) {
     t.0 += 1;
 }
 
-pub fn should_update(r: Res<ShouldUpdate>) -> bool {
+pub fn should_update(r: Res<ShouldUpdateAi>) -> bool {
     r.0
 }
 
@@ -542,4 +497,32 @@ pub fn update_output(
 pub fn init_player(mut cmd: Commands, mut grid: ResMut<Grid<Stuff>>) {
     let dims = grid.dims() / 2;
     init_entity(dims, StuffTag::Player, &mut cmd, &mut grid);
+}
+
+pub fn should_update_player(s: Res<ShouldUpdatePlayer>) -> bool {
+    s.0
+}
+
+pub fn player_prepare(
+    mut should_update: ResMut<ShouldUpdateAi>,
+    mut player_id: ResMut<PlayerId>,
+    q: Query<EntityId, With<PlayerTag>>,
+    mut should_update_player: ResMut<ShouldUpdatePlayer>,
+    actions: Res<PlayerActions>,
+) {
+    // if no player is found then don't update player logic
+    should_update_player.0 = false;
+    should_update.0 = true;
+    for id in q.iter() {
+        player_id.0 = id;
+        should_update_player.0 = true;
+        break;
+    }
+    if should_update_player.0 {
+        if actions.wait() {
+            game_log!("Waiting...");
+            should_update_player.0 = false;
+            return;
+        }
+    }
 }

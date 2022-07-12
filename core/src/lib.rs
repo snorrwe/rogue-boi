@@ -17,8 +17,9 @@ use icons::ICONS;
 use math::Vec2;
 
 use systems::{
-    init_player, rotate_log, should_update, update_ai_hp, update_camera_pos, update_fov,
-    update_grid, update_output, update_player, update_tick,
+    handle_player_move, init_player, player_prepare, rotate_log, should_update,
+    should_update_player, update_ai_hp, update_camera_pos, update_fov, update_grid, update_output,
+    update_player_inventory, update_player_item_use, update_tick,
 };
 use wasm_bindgen::prelude::*;
 
@@ -31,8 +32,6 @@ pub struct Explored(pub Grid<bool>);
 #[derive(Clone, Copy)]
 pub struct PlayerId(pub EntityId);
 #[derive(Clone, Copy)]
-pub struct ShouldUpdate(pub bool);
-#[derive(Clone, Copy)]
 pub struct GameTick(pub i32);
 #[derive(Clone, Copy)]
 pub struct Viewport(pub Vec2);
@@ -42,6 +41,10 @@ pub struct CameraPos(pub Vec2);
 pub struct Output(pub JsValue);
 #[derive(Clone, Copy)]
 pub struct Visibility(pub Vec2);
+#[derive(Clone, Copy)]
+pub struct ShouldUpdateAi(pub bool);
+#[derive(Clone, Copy)]
+pub struct ShouldUpdatePlayer(pub bool);
 
 /// State object
 #[wasm_bindgen]
@@ -55,7 +58,7 @@ pub fn start() {
     utils::set_panic_hook();
     tracing_wasm::set_as_global_default_with_config(
         tracing_wasm::WASMLayerConfigBuilder::new()
-            .set_max_level(tracing::Level::DEBUG)
+            // .set_max_level(tracing::Level::DEBUG)
             .build(),
     );
 }
@@ -75,7 +78,8 @@ pub fn init_core() -> Core {
         max_items_per_room: 2,
     });
     world.insert_resource(GameTick(0));
-    world.insert_resource(ShouldUpdate(false));
+    world.insert_resource(ShouldUpdateAi(false));
+    world.insert_resource(ShouldUpdatePlayer(false));
     world.insert_resource(Vec::<InputEvent>::with_capacity(16));
     world.insert_resource(PlayerActions::new());
     world.insert_resource(Visible(Grid::new(world_dims)));
@@ -85,9 +89,16 @@ pub fn init_core() -> Core {
     world.insert_resource(CameraPos(Vec2::ZERO));
     world.insert_resource(Output(JsValue::null()));
 
+    world.add_stage(SystemStage::new("player-update-pre").with_system(player_prepare));
     world.add_stage(
         SystemStage::new("player-update")
-            .with_system(update_player)
+            .with_should_run(should_update_player)
+            .with_system(update_player_item_use)
+            .with_system(handle_player_move)
+            .with_system(update_player_inventory),
+    );
+    world.add_stage(
+        SystemStage::new("player-update-post")
             .with_system(update_ai_hp)
             .with_system(update_camera_pos),
     );
@@ -99,7 +110,7 @@ pub fn init_core() -> Core {
             .with_system(update_player_hp),
     );
     world.add_stage(
-        SystemStage::new("post-processing")
+        SystemStage::new("post-update")
             .with_should_run(should_update)
             .with_system(update_grid)
             .with_system(update_fov)
