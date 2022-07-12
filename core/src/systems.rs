@@ -14,10 +14,7 @@ use cao_db::prelude::*;
 use rand::Rng;
 use tracing::{debug, error, info};
 
-pub(crate) fn update_input_events(
-    inputs: Res<Vec<InputEvent>>,
-    mut actions: ResMut<PlayerActions>,
-) {
+pub fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<PlayerActions>) {
     let mut delta = Vec2::new(0, 0);
     for event in &inputs[..] {
         match event {
@@ -44,7 +41,7 @@ pub enum PlayerError {
     InvalidTarget,
 }
 
-pub(crate) fn update_player(
+pub fn update_player(
     mut should_run: ResMut<ShouldUpdate>,
     actions: Res<PlayerActions>,
     cmd: Commands,
@@ -339,7 +336,7 @@ fn flood_vizibility(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Ve
 }
 
 /// recompute visible area
-pub(crate) fn update_fov(
+pub fn update_fov(
     q: Query<&Pos, With<PlayerTag>>,
     tags_q: Query<&StuffTag>,
     grid: Res<Grid<Stuff>>,
@@ -356,7 +353,7 @@ pub(crate) fn update_fov(
     }
 }
 
-pub(crate) fn update_grid(q: Query<(EntityId, &Pos)>, mut grid: ResMut<Grid<Stuff>>) {
+pub fn update_grid(q: Query<(EntityId, &Pos)>, mut grid: ResMut<Grid<Stuff>>) {
     // zero out the map
     grid.fill(Default::default());
     for (id, pos) in q.iter() {
@@ -365,7 +362,7 @@ pub(crate) fn update_grid(q: Query<(EntityId, &Pos)>, mut grid: ResMut<Grid<Stuf
     }
 }
 
-pub(crate) fn update_melee_ai(
+pub fn update_melee_ai(
     q_player: Query<(&mut Hp, &Pos), With<PlayerTag>>,
     q_enemy: Query<(EntityId, &Melee, &mut Pos, &mut PathCache, Option<&Leash>), With<Ai>>,
     q_tag: Query<&StuffTag>,
@@ -432,7 +429,7 @@ pub(crate) fn update_melee_ai(
     }
 }
 
-pub(crate) fn update_player_hp(
+pub fn update_player_hp(
     mut cmd: Commands,
     query_player: Query<(EntityId, &Hp, &mut Icon), With<PlayerTag>>,
 ) {
@@ -446,7 +443,7 @@ pub(crate) fn update_player_hp(
     }
 }
 
-pub(crate) fn update_ai_hp(
+pub fn update_ai_hp(
     mut cmd: Commands,
     query_hp: Query<(EntityId, &Hp), (With<Ai>, WithOut<PlayerTag>)>,
 ) {
@@ -462,15 +459,19 @@ pub(crate) fn update_ai_hp(
 }
 
 /// Throw a D6, if result is >= skill then the check passes
-pub(crate) fn skill_check(skill: i32) -> bool {
+pub fn skill_check(skill: i32) -> bool {
     let mut rng = rand::thread_rng();
     rng.gen_range(1..=6) >= skill
 }
 
-pub(crate) fn update_tick(mut t: ResMut<GameTick>) {
+pub fn update_tick(mut t: ResMut<GameTick>) {
     t.0 += 1;
 }
 
-pub(crate) fn should_update(r: Res<ShouldUpdate>) -> bool {
+pub fn should_update(r: Res<ShouldUpdate>) -> bool {
     r.0
+}
+
+pub fn rotate_log() {
+    crate::logging::rotate_log();
 }

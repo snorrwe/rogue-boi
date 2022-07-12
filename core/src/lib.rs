@@ -16,21 +16,23 @@ use components::*;
 use grid::Grid;
 use math::Vec2;
 
-use systems::{should_update, update_ai_hp, update_fov, update_grid, update_player, update_tick};
+use systems::{
+    rotate_log, should_update, update_ai_hp, update_fov, update_grid, update_player, update_tick,
+};
 use wasm_bindgen::prelude::*;
 
 use crate::systems::{update_input_events, update_melee_ai, update_player_hp};
 
 #[derive(Clone)]
-struct Visible(pub Grid<bool>);
+pub struct Visible(pub Grid<bool>);
 #[derive(Clone)]
-struct Explored(pub Grid<bool>);
+pub struct Explored(pub Grid<bool>);
 #[derive(Clone, Copy)]
-struct PlayerId(pub EntityId);
+pub struct PlayerId(pub EntityId);
 #[derive(Clone, Copy)]
-struct ShouldUpdate(pub bool);
+pub struct ShouldUpdate(pub bool);
 #[derive(Clone, Copy)]
-struct GameTick(pub i32);
+pub struct GameTick(pub i32);
 
 /// State object
 #[wasm_bindgen]
@@ -107,8 +109,10 @@ pub fn init_core() -> Core {
     );
     world.add_stage(
         SystemStage::new("post-processing")
+            .with_should_run(should_update)
             .with_system(update_grid)
-            .with_system(update_fov),
+            .with_system(update_fov)
+            .with_system(rotate_log),
     );
 
     // run initial update
@@ -198,7 +202,7 @@ pub struct OutputStuff {
 }
 
 #[derive(Default, Clone)]
-pub(crate) struct PlayerActions {
+pub struct PlayerActions {
     len: usize,
     move_action: Option<Vec2>,
     use_item_action: Option<EntityId>,
@@ -313,7 +317,6 @@ impl Core {
         self.world.apply_commands().unwrap();
 
         self.cleanup();
-        crate::logging::rotate_log();
     }
 
     fn cleanup(&mut self) {
