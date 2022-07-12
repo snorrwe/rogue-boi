@@ -131,7 +131,7 @@ pub struct PathCache {
     pub path: SmallVec<[Vec2; 16]>,
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy)]
 pub struct Leash {
     pub origin: Vec2,
     pub radius: i32,
