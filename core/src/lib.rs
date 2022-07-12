@@ -18,7 +18,7 @@ use math::Vec2;
 
 use systems::{
     rotate_log, should_update, update_ai_hp, update_camera_pos, update_fov, update_grid,
-    update_player, update_tick,
+    update_output, update_player, update_tick,
 };
 use wasm_bindgen::prelude::*;
 
@@ -38,12 +38,13 @@ pub struct GameTick(pub i32);
 pub struct Viewport(pub Vec2);
 #[derive(Clone, Copy)]
 pub struct CameraPos(pub Vec2);
+#[derive(Clone)]
+pub struct Output(pub JsValue);
 
 /// State object
 #[wasm_bindgen]
 pub struct Core {
     world: Pin<Box<World>>,
-    output_cache: JsValue,
     time: i32,
 }
 
@@ -89,6 +90,7 @@ pub fn init_core() -> Core {
     world.insert_resource(Explored(Grid::new(dims)));
     world.insert_resource(Viewport(Vec2::new(10, 10)));
     world.insert_resource(CameraPos(Vec2::ZERO));
+    world.insert_resource(Output(JsValue::null()));
 
     world.add_stage(
         SystemStage::new("player-update")
@@ -110,6 +112,7 @@ pub fn init_core() -> Core {
             .with_system(update_fov)
             .with_system(rotate_log),
     );
+    world.add_stage(SystemStage::new("render").with_system(update_output));
 
     // run initial update
     world.run_system(map_gen::generate_map);
@@ -119,12 +122,9 @@ pub fn init_core() -> Core {
             .with_system(update_grid)
             .with_system(update_fov),
     );
+    world.run_system(update_output);
 
-    let mut core = Core {
-        world,
-        output_cache: JsValue::null(),
-        time: 0,
-    };
+    let mut core = Core { world, time: 0 };
     core.init();
     core
 }
@@ -143,8 +143,7 @@ pub enum StuffPayload {
 }
 
 impl StuffPayload {
-    pub fn from_world(id: EntityId, world: &World) -> Self {
-        let tag = Query::<&StuffTag>::new(world).fetch(id);
+    pub fn new(id: EntityId, tag: Option<StuffTag>) -> Self {
         match tag {
             None => StuffPayload::Empty,
             Some(StuffTag::Wall) => Self::Wall,
@@ -273,7 +272,6 @@ impl Core {
     pub fn init(&mut self) {
         game_log!("Hello wanderer!");
         self.tick(0);
-        self.update_output();
     }
 
     pub fn icons(&self) -> JsValue {
@@ -300,11 +298,6 @@ impl Core {
         self.time = 0;
         self.world.tick();
 
-        self.update_output();
-
-        // commands should be empty, but let's apply these just to be sure
-        self.world.apply_commands().unwrap();
-
         self.cleanup();
     }
 
@@ -324,63 +317,9 @@ impl Core {
         inputs.push(event);
     }
 
-    fn update_output(&mut self) {
-        let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
-        let grid = self.world.get_resource::<Grid<Stuff>>().unwrap();
-        let viewport = self.world.get_resource::<Viewport>().unwrap().0;
-        let camera_pos = self.world.get_resource::<CameraPos>().unwrap().0;
-
-        let mut result = Grid::new(viewport * 2);
-        let min = camera_pos - viewport;
-        let max = camera_pos + viewport;
-        let visible = self.world.get_resource::<Visible>().unwrap();
-        let explored = self.world.get_resource::<Explored>().unwrap();
-        for y in min.y.max(0)..max.y.min(grid.height()) {
-            for x in min.x.max(0)..max.x.min(grid.width()) {
-                let pos = Vec2::new(x, y);
-                let mut output = OutputStuff::default();
-                output.explored = explored.0[pos];
-                output.visible = visible.0[pos];
-                if output.explored {
-                    if let Some((id, ty)) = grid[pos].and_then(|id| {
-                        let id = id;
-                        Query::<&StuffTag>::new(&self.world)
-                            .fetch(id)
-                            .map(|ty| (id, ty))
-                    }) {
-                        if output.visible || ty.static_visiblity() {
-                            output.payload = StuffPayload::from_world(id, &self.world);
-                            output.icon = Query::<&Icon>::new(&self.world)
-                                .fetch(id)
-                                .map(|icon| icon.0);
-                        }
-                    }
-                }
-                result[pos - min] = output;
-            }
-        }
-        let player = Query::<(&Pos, &Hp, &Melee, &PlayerTag)>::new(&self.world)
-            .iter()
-            .next()
-            .map(|(pos, hp, attack, _tag)| PlayerOutput {
-                player_hp: *hp,
-                player_attack: attack.power,
-                player_pos: pos.0,
-            });
-        let game_tick = self.world.get_resource::<GameTick>().unwrap().0;
-        let log = crate::logging::compute_log(game_tick as usize);
-        let result = RenderedOutput {
-            player,
-            log,
-            grid: result,
-            offset: min,
-        };
-        self.output_cache = JsValue::from_serde(&result).unwrap();
-    }
-
     #[wasm_bindgen(js_name = "getGrid")]
     pub fn get_grid(&self) -> JsValue {
-        self.output_cache.clone()
+        self.world.get_resource::<Output>().unwrap().0.clone()
     }
 
     #[wasm_bindgen(js_name = "getInventory")]

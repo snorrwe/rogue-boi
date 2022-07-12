@@ -8,12 +8,13 @@ use crate::{
     grid::Grid,
     math::{walk_square, Vec2},
     pathfinder::find_path,
-    CameraPos, Explored, GameTick, InputEvent, PlayerActions, ShouldUpdate, Stuff, Viewport,
-    Visible,
+    CameraPos, Explored, GameTick, InputEvent, Output, OutputStuff, PlayerActions, PlayerOutput,
+    RenderedOutput, ShouldUpdate, Stuff, StuffPayload, Viewport, Visible,
 };
 use cao_db::prelude::*;
 use rand::Rng;
 use tracing::{debug, error, info};
+use wasm_bindgen::JsValue;
 
 pub fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<PlayerActions>) {
     let mut delta = Vec2::new(0, 0);
@@ -481,4 +482,59 @@ pub fn update_camera_pos(mut camera: ResMut<CameraPos>, q: Query<&Pos, With<Play
     for pos in q.iter() {
         camera.0 = pos.0;
     }
+}
+
+pub fn update_output(
+    grid: Res<Grid<Stuff>>,
+    viewport: Res<Viewport>,
+    camera_pos: Res<CameraPos>,
+    visible: Res<Visible>,
+    explored: Res<Explored>,
+    stuff: Query<&StuffTag>,
+    icons: Query<&Icon>,
+    q_player: Query<(&Pos, &Hp, &Melee), With<PlayerTag>>,
+    game_tick: Res<GameTick>,
+    mut output_cache: ResMut<Output>,
+) {
+    let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
+
+    let mut result = Grid::new(viewport.0 * 2);
+    let min = camera_pos.0 - viewport.0;
+    let max = camera_pos.0 + viewport.0;
+    for y in min.y.max(0)..max.y.min(grid.height()) {
+        for x in min.x.max(0)..max.x.min(grid.width()) {
+            let pos = Vec2::new(x, y);
+            let mut output = OutputStuff::default();
+            output.explored = explored.0[pos];
+            output.visible = visible.0[pos];
+            if output.explored {
+                if let Some((id, ty)) = grid[pos].and_then(|id| {
+                    let id = id;
+                    stuff.fetch(id).map(|ty| (id, ty))
+                }) {
+                    if output.visible || ty.static_visiblity() {
+                        output.payload = StuffPayload::new(id, Some(*ty));
+                        output.icon = icons.fetch(id).map(|icon| icon.0);
+                    }
+                }
+            }
+            result[pos - min] = output;
+        }
+    }
+    let player = q_player
+        .iter()
+        .next()
+        .map(|(pos, hp, attack)| PlayerOutput {
+            player_hp: *hp,
+            player_attack: attack.power,
+            player_pos: pos.0,
+        });
+    let log = crate::logging::compute_log(game_tick.0 as usize);
+    let result = RenderedOutput {
+        player,
+        log,
+        grid: result,
+        offset: min,
+    };
+    output_cache.0 = JsValue::from_serde(&result).unwrap();
 }
