@@ -8,7 +8,7 @@ use crate::{
     grid::Grid,
     math::{walk_square, Vec2},
     pathfinder::find_path,
-    Explored, GameTick, InputEvent, PlayerActions, ShouldUpdate, Stuff, Visible,
+    Explored, GameTick, InputEvent, PlayerActions, ShouldUpdate, Stuff, Viewport, Visible,
 };
 use cao_db::prelude::*;
 use rand::Rng;
@@ -342,13 +342,13 @@ pub fn update_fov(
     grid: Res<Grid<Stuff>>,
     mut explored: ResMut<Explored>,
     mut visible: ResMut<Visible>,
+    viewport: Res<Viewport>,
 ) {
-    const RADIUS: i32 = 8;
-
+    let radius = viewport.0.x.max(viewport.0.y);
     if let Some(player_pos) = q.iter().next() {
-        set_visible(&grid, &mut visible.0, &tags_q, player_pos.0, RADIUS);
+        set_visible(&grid, &mut visible.0, &tags_q, player_pos.0, radius);
         visible.0[player_pos.0] = true;
-        flood_vizibility(&grid, &mut visible.0, player_pos.0, RADIUS);
+        flood_vizibility(&grid, &mut visible.0, player_pos.0, radius);
         explored.0.or_eq(&visible.0);
     }
 }

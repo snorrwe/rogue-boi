@@ -11,12 +11,13 @@ use rand::{
 
 use crate::{
     archetypes::{init_entity, ENEMY_TAGS, ENEMY_WEIGHTS, ITEM_TAGS, ITEM_WEIGHTS},
-    components::{Pos, StuffTag},
+    components::{PlayerTag, Pos, StuffTag},
     grid::Grid,
     math::Vec2,
     Stuff,
 };
 
+#[derive(Clone)]
 pub struct MapGenProps {
     pub room_min_size: u32,
     pub room_max_size: u32,
@@ -72,11 +73,12 @@ fn place_items(
 }
 
 pub fn generate_map(
-    player_id: EntityId,
+    player_q: Query<EntityId, With<PlayerTag>>,
     mut cmd: Commands,
     mut grid: ResMut<Grid<Stuff>>,
-    props: MapGenProps,
+    props: Res<MapGenProps>,
 ) {
+    let player_id = player_q.one();
     grid.fill(None); // reset the grid
     let mut working_set = Grid::new(grid.dims());
     // fill the map with walls and delete old entities

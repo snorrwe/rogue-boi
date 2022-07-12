@@ -33,6 +33,8 @@ pub struct PlayerId(pub EntityId);
 pub struct ShouldUpdate(pub bool);
 #[derive(Clone, Copy)]
 pub struct GameTick(pub i32);
+#[derive(Clone, Copy)]
+pub struct Viewport(pub Vec2);
 
 /// State object
 #[wasm_bindgen]
@@ -40,7 +42,6 @@ pub struct Core {
     world: Pin<Box<World>>,
     camera_pos: Vec2,
     output_cache: JsValue,
-    viewport: Vec2,
     time: i32,
 }
 
@@ -70,23 +71,13 @@ pub fn init_core() -> Core {
 
     let (player, _) = Query::<(EntityId, &PlayerTag)>::new(&world).one();
 
-    map_gen::generate_map(
-        player,
-        Commands::new(&world),
-        ResMut::new(&world),
-        map_gen::MapGenProps {
-            room_min_size: 6,
-            room_max_size: 10,
-            max_rooms: 50,
-            max_monsters_per_room: 2,
-            max_items_per_room: 2,
-        },
-    );
-    world.apply_commands().unwrap();
-
-    let (_t, Pos(camera_pos)) = Query::<(&PlayerTag, &Pos)>::new(&world).one();
-    let camera_pos = *camera_pos;
-
+    world.insert_resource(map_gen::MapGenProps {
+        room_min_size: 6,
+        room_max_size: 10,
+        max_rooms: 50,
+        max_monsters_per_room: 2,
+        max_items_per_room: 2,
+    });
     world.insert_resource(GameTick(0));
     world.insert_resource(ShouldUpdate(false));
     world.insert_resource(PlayerId(player));
@@ -94,6 +85,7 @@ pub fn init_core() -> Core {
     world.insert_resource(PlayerActions::new());
     world.insert_resource(Visible(Grid::new(dims)));
     world.insert_resource(Explored(Grid::new(dims)));
+    world.insert_resource(Viewport(Vec2::new(10, 10)));
 
     world.add_stage(
         SystemStage::new("player")
@@ -116,16 +108,19 @@ pub fn init_core() -> Core {
     );
 
     // run initial update
+    world.run_system(map_gen::generate_map);
     world.run_stage(
         SystemStage::new("initial-post-process")
             .with_system(update_grid)
             .with_system(update_fov),
     );
 
+    let (_t, Pos(camera_pos)) = Query::<(&PlayerTag, &Pos)>::new(&world).one();
+    let camera_pos = *camera_pos;
+
     let mut core = Core {
         world,
         output_cache: JsValue::null(),
-        viewport: Vec2::new(10, 10),
         time: 0,
         camera_pos,
     };
@@ -338,10 +333,11 @@ impl Core {
     fn update_output(&mut self) {
         let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
         let grid = self.world.get_resource::<Grid<Stuff>>().unwrap();
+        let viewport = self.world.get_resource::<Viewport>().unwrap().0;
 
-        let mut result = Grid::new(self.viewport * 2);
-        let min = self.camera_pos - self.viewport;
-        let max = self.camera_pos + self.viewport;
+        let mut result = Grid::new(viewport * 2);
+        let min = self.camera_pos - viewport;
+        let max = self.camera_pos + viewport;
         let visible = self.world.get_resource::<Visible>().unwrap();
         let explored = self.world.get_resource::<Explored>().unwrap();
         for y in min.y.max(0)..max.y.min(grid.height()) {
