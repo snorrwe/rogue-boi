@@ -66,7 +66,7 @@
 				/>
 			</div>
 		</div>
-		<div>
+		<div class="log">
 			<h2>Logs</h2>
 			<Log log={$grid.log} />
 		</div>
@@ -75,13 +75,19 @@
 
 <style>
 	main {
-		padding: 1em;
+		padding: 2em;
 		margin: 0 auto;
 		color: white;
+		min-width: 0px;
 	}
 
 	.content {
 		display: grid;
-		grid-template-columns: repeat(3, max-content);
+		grid-template-columns: minmax(0, 2fr) repeat(2, 1fr);
+	}
+
+	.log {
+		max-height: 100%;
+		overflow: auto;
 	}
 </style>
