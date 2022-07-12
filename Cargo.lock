@@ -40,7 +40,7 @@ checksum = "37ccbd214614c6783386c1af30caf03192f17891059cecc394b4fb119e363de3"
 [[package]]
 name = "cao-db"
 version = "0.1.0"
-source = "git+https://github.com/caolo-game/caolo-entities#33d024001add4e2fc340cbf5b18ad010af752649"
+source = "git+https://github.com/caolo-game/caolo-entities#004cfa7392fdbb25859c842f49c9c556f2c21765"
 dependencies = [
  "parking_lot",
  "serde",

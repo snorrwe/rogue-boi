@@ -53,10 +53,7 @@ pub struct Core {
 
 #[wasm_bindgen(start)]
 pub fn start() {
-    #[cfg(debug_assertions)]
-    {
-        utils::set_panic_hook();
-    }
+    utils::set_panic_hook();
     tracing_wasm::set_as_global_default();
 }
 
