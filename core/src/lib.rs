@@ -25,27 +25,6 @@ use wasm_bindgen::prelude::*;
 
 use crate::systems::{update_input_events, update_melee_ai, update_player_hp};
 
-#[derive(Clone)]
-pub struct Visible(pub Grid<bool>);
-#[derive(Clone)]
-pub struct Explored(pub Grid<bool>);
-#[derive(Clone, Copy)]
-pub struct PlayerId(pub EntityId);
-#[derive(Clone, Copy)]
-pub struct GameTick(pub i32);
-#[derive(Clone, Copy)]
-pub struct Viewport(pub Vec2);
-#[derive(Clone, Copy)]
-pub struct CameraPos(pub Vec2);
-#[derive(Clone)]
-pub struct Output(pub JsValue);
-#[derive(Clone, Copy)]
-pub struct Visibility(pub Vec2);
-#[derive(Clone, Copy)]
-pub struct ShouldUpdateWorld(pub bool);
-#[derive(Clone, Copy)]
-pub struct ShouldUpdatePlayer(pub bool);
-
 /// State object
 #[wasm_bindgen]
 pub struct Core {

@@ -1,16 +1,11 @@
 use crate::{
     archetypes::{icon, init_entity},
-    components::{
-        Ai, Heal, Hp, Icon, Inventory, Leash, Melee, PathCache, PlayerTag, Pos, Ranged, StuffTag,
-        Walkable,
-    },
+    components::*,
     game_log,
     grid::Grid,
     math::{walk_square, Vec2},
     pathfinder::find_path,
-    CameraPos, Explored, GameTick, InputEvent, Output, OutputStuff, PlayerActions, PlayerId,
-    PlayerOutput, RenderedOutput, ShouldUpdatePlayer, ShouldUpdateWorld, Stuff, StuffPayload,
-    Viewport, Visibility, Visible,
+    InputEvent, OutputStuff, PlayerActions, PlayerOutput, RenderedOutput, Stuff, StuffPayload,
 };
 use cao_db::prelude::*;
 use rand::Rng;
