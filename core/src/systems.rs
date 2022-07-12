@@ -8,7 +8,8 @@ use crate::{
     grid::Grid,
     math::{walk_square, Vec2},
     pathfinder::find_path,
-    Explored, GameTick, InputEvent, PlayerActions, ShouldUpdate, Stuff, Viewport, Visible,
+    CameraPos, Explored, GameTick, InputEvent, PlayerActions, ShouldUpdate, Stuff, Viewport,
+    Visible,
 };
 use cao_db::prelude::*;
 use rand::Rng;
@@ -474,4 +475,10 @@ pub fn should_update(r: Res<ShouldUpdate>) -> bool {
 
 pub fn rotate_log() {
     crate::logging::rotate_log();
+}
+
+pub fn update_camera_pos(mut camera: ResMut<CameraPos>, q: Query<&Pos, With<PlayerTag>>) {
+    for pos in q.iter() {
+        camera.0 = pos.0;
+    }
 }

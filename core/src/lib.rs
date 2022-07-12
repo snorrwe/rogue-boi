@@ -17,7 +17,8 @@ use grid::Grid;
 use math::Vec2;
 
 use systems::{
-    rotate_log, should_update, update_ai_hp, update_fov, update_grid, update_player, update_tick,
+    rotate_log, should_update, update_ai_hp, update_camera_pos, update_fov, update_grid,
+    update_player, update_tick,
 };
 use wasm_bindgen::prelude::*;
 
@@ -35,12 +36,13 @@ pub struct ShouldUpdate(pub bool);
 pub struct GameTick(pub i32);
 #[derive(Clone, Copy)]
 pub struct Viewport(pub Vec2);
+#[derive(Clone, Copy)]
+pub struct CameraPos(pub Vec2);
 
 /// State object
 #[wasm_bindgen]
 pub struct Core {
     world: Pin<Box<World>>,
-    camera_pos: Vec2,
     output_cache: JsValue,
     time: i32,
 }
@@ -86,11 +88,13 @@ pub fn init_core() -> Core {
     world.insert_resource(Visible(Grid::new(dims)));
     world.insert_resource(Explored(Grid::new(dims)));
     world.insert_resource(Viewport(Vec2::new(10, 10)));
+    world.insert_resource(CameraPos(Vec2::ZERO));
 
     world.add_stage(
-        SystemStage::new("player")
+        SystemStage::new("player-update")
             .with_system(update_player)
-            .with_system(update_ai_hp),
+            .with_system(update_ai_hp)
+            .with_system(update_camera_pos),
     );
     world.add_stage(
         SystemStage::new("ai-update")
@@ -109,20 +113,17 @@ pub fn init_core() -> Core {
 
     // run initial update
     world.run_system(map_gen::generate_map);
+    world.run_system(update_camera_pos);
     world.run_stage(
         SystemStage::new("initial-post-process")
             .with_system(update_grid)
             .with_system(update_fov),
     );
 
-    let (_t, Pos(camera_pos)) = Query::<(&PlayerTag, &Pos)>::new(&world).one();
-    let camera_pos = *camera_pos;
-
     let mut core = Core {
         world,
         output_cache: JsValue::null(),
         time: 0,
-        camera_pos,
     };
     core.init();
     core
@@ -299,13 +300,6 @@ impl Core {
         self.time = 0;
         self.world.tick();
 
-        if let Some(Pos(camera_pos)) = Query::<&Pos, With<PlayerTag>>::new(&self.world)
-            .iter()
-            .next()
-        {
-            self.camera_pos = *camera_pos;
-        }
-
         self.update_output();
 
         // commands should be empty, but let's apply these just to be sure
@@ -334,10 +328,11 @@ impl Core {
         let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
         let grid = self.world.get_resource::<Grid<Stuff>>().unwrap();
         let viewport = self.world.get_resource::<Viewport>().unwrap().0;
+        let camera_pos = self.world.get_resource::<CameraPos>().unwrap().0;
 
         let mut result = Grid::new(viewport * 2);
-        let min = self.camera_pos - viewport;
-        let max = self.camera_pos + viewport;
+        let min = camera_pos - viewport;
+        let max = camera_pos + viewport;
         let visible = self.world.get_resource::<Visible>().unwrap();
         let explored = self.world.get_resource::<Explored>().unwrap();
         for y in min.y.max(0)..max.y.min(grid.height()) {
