@@ -47,7 +47,7 @@ pub enum PlayerError {
 pub(crate) fn update_player(
     mut should_run: ResMut<ShouldUpdate>,
     actions: Res<PlayerActions>,
-    mut cmd: Commands,
+    cmd: Commands,
     melee_query: Query<&Melee>,
     player_query: Query<(EntityId, &mut Pos, &mut Inventory, &mut Melee), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
@@ -55,7 +55,7 @@ pub(crate) fn update_player(
     heal_query: Query<&Heal>,
     target_query: Query<(&Pos, &mut Hp)>,
     item_query: Query<Option<&Ranged>>,
-    mut grid: ResMut<Grid<Stuff>>,
+    grid: ResMut<Grid<Stuff>>,
 ) {
     should_run.0 = true;
     if actions.wait() {
