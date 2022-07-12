@@ -45,7 +45,8 @@ export default [
 				verbose: true,
 				serverPath: '/build/'
 			}),
-            icons(),
+			icons(),
+			production && cleanBuildArtifacts(),
 
 			// In dev mode, call `npm run start` once
 			// the bundle has been generated
@@ -69,6 +70,18 @@ function icons() {
 	return {
 		writeBundle() {
 			require('child_process').spawn('cargo', ['xtask', 'copy-icons'], {
+				stdio: ['ignore', 'inherit', 'inherit'],
+				shell: true
+			});
+		}
+	};
+}
+
+function cleanBuildArtifacts() {
+	return {
+		name: 'cleanBuildArtifacts',
+		buildStart() {
+			require('child_process').spawn('cargo', ['xtask', 'clean'], {
 				stdio: ['ignore', 'inherit', 'inherit'],
 				shell: true
 			});

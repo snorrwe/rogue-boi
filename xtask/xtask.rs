@@ -12,11 +12,14 @@ struct Args {
 enum Commands {
     Icons,
     CopyIcons,
+    Clean,
 }
 
 fn main() {
     let args = Args::parse();
 
+    let root = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let root = Path::new(&root).parent().unwrap();
     match args.command {
         Commands::Icons => {
             icons::ICONS.iter().for_each(|(_, path)| {
@@ -24,12 +27,8 @@ fn main() {
             });
         }
         Commands::CopyIcons => {
-            let root = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-            let src_root = Path::new(&root)
-                .parent()
-                .unwrap()
-                .join("icons/icons/ffffff/transparent/1x1");
-            let dst_root = Path::new(&root).parent().unwrap().join("public/icons");
+            let src_root = root.join("icons/icons/ffffff/transparent/1x1");
+            let dst_root = root.join("public/icons");
             std::fs::remove_dir_all(&dst_root).unwrap_or_default();
             std::fs::create_dir_all(&dst_root).unwrap();
             icons::ICONS.iter().for_each(|(name, path)| {
@@ -38,6 +37,10 @@ fn main() {
 
                 std::fs::copy(src_path, dst_path).unwrap();
             });
+        }
+        Commands::Clean => {
+            std::fs::remove_dir_all(root.join("public/build")).unwrap_or_default();
+            std::fs::remove_dir_all(root.join("public/icons")).unwrap_or_default();
         }
     }
 }
