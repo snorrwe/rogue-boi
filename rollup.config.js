@@ -62,14 +62,6 @@ export default [
 			clearScreen: false
 		}
 	}
-	// {
-	//   input: {
-	//     foo: "./core/Cargo.toml",
-	//   },
-	//   plugins: [
-	//     rust(),
-	//   ],
-	// }
 ];
 
 function serve() {
