@@ -58,7 +58,8 @@ export default [
 
 			// If we're building for production (npm run build
 			// instead of npm run dev), minify
-			production && terser()
+			production && terser(),
+			production && bundle()
 		],
 		watch: {
 			clearScreen: false
@@ -68,7 +69,7 @@ export default [
 
 function icons() {
 	return {
-		writeBundle() {
+		generateBundle() {
 			require('child_process').spawn('cargo', ['xtask', 'copy-icons'], {
 				stdio: ['ignore', 'inherit', 'inherit'],
 				shell: true
@@ -102,6 +103,18 @@ function serve() {
 					shell: true
 				});
 			}
+		}
+	};
+}
+
+function bundle() {
+	return {
+		name: 'build-bundle',
+		writeBundle() {
+			require('child_process').spawn('cargo', ['xtask', 'bundle'], {
+				stdio: ['ignore', 'inherit', 'inherit'],
+				shell: true
+			});
 		}
 	};
 }

@@ -12,3 +12,5 @@ path="xtask.rs"
 [dependencies]
 clap = { version = "3.2.10", features = ["derive"] }
 icons = { version = "0.1.0", path = "../icons" }
+zip = "0.6.2"
+walkdir= "2.3.2"
