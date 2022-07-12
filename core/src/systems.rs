@@ -1,5 +1,5 @@
 use crate::{
-    archetypes::icon,
+    archetypes::{icon, init_entity},
     components::{
         Ai, Heal, Hp, Icon, Inventory, Leash, Melee, PathCache, PlayerTag, Pos, Ranged, StuffTag,
         Walkable,
@@ -537,4 +537,9 @@ pub fn update_output(
         offset: min,
     };
     output_cache.0 = JsValue::from_serde(&result).unwrap();
+}
+
+pub fn init_player(mut cmd: Commands, mut grid: ResMut<Grid<Stuff>>) {
+    let dims = grid.dims() / 2;
+    init_entity(dims, StuffTag::Player, &mut cmd, &mut grid);
 }

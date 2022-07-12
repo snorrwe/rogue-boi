@@ -10,7 +10,6 @@ mod utils;
 
 use std::pin::Pin;
 
-use archetypes::init_entity;
 use cao_db::prelude::*;
 use components::*;
 use grid::Grid;
@@ -18,8 +17,8 @@ use icons::ICONS;
 use math::Vec2;
 
 use systems::{
-    rotate_log, should_update, update_ai_hp, update_camera_pos, update_fov, update_grid,
-    update_output, update_player, update_tick,
+    init_player, rotate_log, should_update, update_ai_hp, update_camera_pos, update_fov,
+    update_grid, update_output, update_player, update_tick,
 };
 use wasm_bindgen::prelude::*;
 
@@ -65,18 +64,8 @@ pub fn start() {
 pub fn init_core() -> Core {
     let world_dims = Vec2 { x: 64, y: 64 };
     let mut world = World::new(world_dims.x as u32 * world_dims.y as u32);
-    let mut grid = Grid::<Stuff>::new(world_dims);
 
-    init_entity(
-        world_dims / 2,
-        StuffTag::Player,
-        &mut Commands::new(&world),
-        &mut grid,
-    );
-    world.insert_resource(grid);
-    world.apply_commands().unwrap();
-
-    let (player, _) = Query::<(EntityId, &PlayerTag)>::new(&world).one();
+    world.insert_resource(Grid::<Stuff>::new(world_dims));
 
     world.insert_resource(map_gen::MapGenProps {
         room_min_size: 6,
@@ -87,7 +76,6 @@ pub fn init_core() -> Core {
     });
     world.insert_resource(GameTick(0));
     world.insert_resource(ShouldUpdate(false));
-    world.insert_resource(PlayerId(player));
     world.insert_resource(Vec::<InputEvent>::with_capacity(16));
     world.insert_resource(PlayerActions::new());
     world.insert_resource(Visible(Grid::new(world_dims)));
@@ -119,7 +107,10 @@ pub fn init_core() -> Core {
     );
     world.add_stage(SystemStage::new("render").with_system(update_output));
 
-    // run initial update
+    // Initialize the game world
+    world.run_system(init_player);
+    let player = Query::<EntityId, With<PlayerTag>>::new(&world).one();
+    world.insert_resource(PlayerId(player));
     world.run_system(map_gen::generate_map);
     world.run_system(update_camera_pos);
     world.run_stage(
