@@ -54,7 +54,11 @@ pub struct Core {
 #[wasm_bindgen(start)]
 pub fn start() {
     utils::set_panic_hook();
-    tracing_wasm::set_as_global_default();
+    tracing_wasm::set_as_global_default_with_config(
+        tracing_wasm::WASMLayerConfigBuilder::new()
+            .set_max_level(tracing::Level::DEBUG)
+            .build(),
+    );
 }
 
 #[wasm_bindgen(js_name = "initCore")]
