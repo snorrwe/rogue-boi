@@ -9,7 +9,7 @@ use crate::{
     math::{walk_square, Vec2},
     pathfinder::find_path,
     CameraPos, Explored, GameTick, InputEvent, Output, OutputStuff, PlayerActions, PlayerOutput,
-    RenderedOutput, ShouldUpdate, Stuff, StuffPayload, Viewport, Visible,
+    RenderedOutput, ShouldUpdate, Stuff, StuffPayload, Viewport, Visibility, Visible,
 };
 use cao_db::prelude::*;
 use rand::Rng;
@@ -344,7 +344,7 @@ pub fn update_fov(
     grid: Res<Grid<Stuff>>,
     mut explored: ResMut<Explored>,
     mut visible: ResMut<Visible>,
-    viewport: Res<Viewport>,
+    viewport: Res<Visibility>,
 ) {
     let radius = viewport.0.x.max(viewport.0.y);
     if let Some(player_pos) = q.iter().next() {

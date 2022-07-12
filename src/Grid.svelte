@@ -14,9 +14,12 @@
 			dispatch('selected', null);
 		}
 	};
+
+    const cellSize = `${1+ 10 / grid.grid.dims.x}em`;
+    console.log(cellSize, grid.grid.dims);
 </script>
 
-<div class="grid" style="--cols: {grid.grid.dims.x}; --rows: {grid.grid.dims.y}">
+<div class="grid" style="--cell-size: {cellSize}; --cols: {grid.grid.dims.x}; --rows: {grid.grid.dims.y}">
 	{#each grid.grid.data as item}
 		<div class="grid-item" on:click={() => onClick(item)}>
 			<div class:grid_visible={item.visible}>
@@ -33,8 +36,8 @@
 <style>
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(var(--cols), 2.2em);
-		grid-auto-rows: 2.2em;
+		grid-template-columns: repeat(var(--cols), var(--cell-size));
+		grid-auto-rows: var(--cell-size);
 	}
 
 	.grid-item {
@@ -49,7 +52,7 @@
 	}
 
 	.floor {
-		height: 2.2rem;
-		width: 2.2rem;
+		height: var(--cell-size);
+		width: var(--cell-size);
 	}
 </style>

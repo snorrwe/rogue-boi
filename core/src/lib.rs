@@ -41,6 +41,8 @@ pub struct Viewport(pub Vec2);
 pub struct CameraPos(pub Vec2);
 #[derive(Clone)]
 pub struct Output(pub JsValue);
+#[derive(Clone, Copy)]
+pub struct Visibility(pub Vec2);
 
 /// State object
 #[wasm_bindgen]
@@ -89,7 +91,8 @@ pub fn init_core() -> Core {
     world.insert_resource(PlayerActions::new());
     world.insert_resource(Visible(Grid::new(world_dims)));
     world.insert_resource(Explored(Grid::new(world_dims)));
-    world.insert_resource(Viewport(Vec2::new(10, 10)));
+    world.insert_resource(Viewport(Vec2::new(20, 20)));
+    world.insert_resource(Visibility(Vec2::new(10, 10)));
     world.insert_resource(CameraPos(Vec2::ZERO));
     world.insert_resource(Output(JsValue::null()));
 
