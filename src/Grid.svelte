@@ -21,7 +21,7 @@
 		<div class="grid-item" on:click={() => onClick(item)}>
 			<div class:grid_visible={item.visible}>
 				{#if item.icon && item.explored}
-					<img src="/icons/{item.icon}.svg" alt={item.type} />
+					<img src="icons/{item.icon}.svg" alt={item.type} />
 				{:else}
 					<div class="floor" />
 				{/if}

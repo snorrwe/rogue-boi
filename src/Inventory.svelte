@@ -18,7 +18,7 @@
 		{#each inventory ?? [] as item}
 			<li class="item" on:click={() => useItem(item)}>
 				<div title={item.description}>
-					<img src="/icons/{item.icon}.svg" alt={item.description} />
+					<img src="icons/{item.icon}.svg" alt={item.description} />
 				</div>
 			</li>
 		{/each}
