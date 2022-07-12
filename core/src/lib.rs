@@ -17,8 +17,8 @@ use icons::ICONS;
 use math::Vec2;
 
 use systems::{
-    handle_player_move, init_player, player_prepare, rotate_log, should_update,
-    should_update_player, update_ai_hp, update_camera_pos, update_fov, update_grid, update_output,
+    handle_player_move, init_player, player_prepare, rotate_log, should_update_player,
+    should_update_world, update_ai_hp, update_camera_pos, update_fov, update_grid, update_output,
     update_player_inventory, update_player_item_use, update_tick,
 };
 use wasm_bindgen::prelude::*;
@@ -42,7 +42,7 @@ pub struct Output(pub JsValue);
 #[derive(Clone, Copy)]
 pub struct Visibility(pub Vec2);
 #[derive(Clone, Copy)]
-pub struct ShouldUpdateAi(pub bool);
+pub struct ShouldUpdateWorld(pub bool);
 #[derive(Clone, Copy)]
 pub struct ShouldUpdatePlayer(pub bool);
 
@@ -78,7 +78,7 @@ pub fn init_core() -> Core {
         max_items_per_room: 2,
     });
     world.insert_resource(GameTick(0));
-    world.insert_resource(ShouldUpdateAi(false));
+    world.insert_resource(ShouldUpdateWorld(false));
     world.insert_resource(ShouldUpdatePlayer(false));
     world.insert_resource(Vec::<InputEvent>::with_capacity(16));
     world.insert_resource(PlayerActions::new());
@@ -104,19 +104,23 @@ pub fn init_core() -> Core {
     );
     world.add_stage(
         SystemStage::new("ai-update")
-            .with_should_run(should_update)
+            .with_should_run(should_update_world)
             .with_system(update_tick)
             .with_system(update_melee_ai)
             .with_system(update_player_hp),
     );
     world.add_stage(
         SystemStage::new("post-update")
-            .with_should_run(should_update)
+            .with_should_run(should_update_world)
             .with_system(update_grid)
-            .with_system(update_fov)
-            .with_system(rotate_log),
+            .with_system(update_fov),
     );
     world.add_stage(SystemStage::new("render").with_system(update_output));
+    world.add_stage(
+        SystemStage::new("post-render")
+            .with_should_run(should_update_world)
+            .with_system(rotate_log),
+    );
 
     // Initialize the game world
     world.run_system(init_player);

@@ -9,7 +9,7 @@ use crate::{
     math::{walk_square, Vec2},
     pathfinder::find_path,
     CameraPos, Explored, GameTick, InputEvent, Output, OutputStuff, PlayerActions, PlayerId,
-    PlayerOutput, RenderedOutput, ShouldUpdateAi, ShouldUpdatePlayer, Stuff, StuffPayload,
+    PlayerOutput, RenderedOutput, ShouldUpdatePlayer, ShouldUpdateWorld, Stuff, StuffPayload,
     Viewport, Visibility, Visible,
 };
 use cao_db::prelude::*;
@@ -45,7 +45,7 @@ pub fn update_player_item_use(
     heal_query: Query<&Heal>,
     target_query: Query<(&Pos, &mut Hp)>,
     item_query: Query<Option<&Ranged>>,
-    mut should_run: ResMut<ShouldUpdateAi>,
+    mut should_run: ResMut<ShouldUpdateWorld>,
 ) {
     let (player_id, pos, inventory) = player_query.iter().next().unwrap();
     if let Some(id) = actions.use_item_action() {
@@ -130,7 +130,7 @@ pub fn handle_player_move(
     stuff_tags: Query<&StuffTag>,
     hp: Query<&mut Hp>,
     mut grid: ResMut<Grid<Stuff>>,
-    mut should_run: ResMut<ShouldUpdateAi>,
+    mut should_run: ResMut<ShouldUpdateWorld>,
 ) {
     let delta = match actions.move_action() {
         Some(x) => x,
@@ -425,7 +425,7 @@ pub fn update_tick(mut t: ResMut<GameTick>) {
     t.0 += 1;
 }
 
-pub fn should_update(r: Res<ShouldUpdateAi>) -> bool {
+pub fn should_update_world(r: Res<ShouldUpdateWorld>) -> bool {
     r.0
 }
 
@@ -504,7 +504,7 @@ pub fn should_update_player(s: Res<ShouldUpdatePlayer>) -> bool {
 }
 
 pub fn player_prepare(
-    mut should_update: ResMut<ShouldUpdateAi>,
+    mut should_update: ResMut<ShouldUpdateWorld>,
     mut player_id: ResMut<PlayerId>,
     q: Query<EntityId, With<PlayerTag>>,
     mut should_update_player: ResMut<ShouldUpdatePlayer>,
