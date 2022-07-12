@@ -60,12 +60,12 @@ pub fn start() {
 
 #[wasm_bindgen(js_name = "initCore")]
 pub fn init_core() -> Core {
-    let dims = Vec2 { x: 64, y: 64 };
-    let mut world = World::new(dims.x as u32 * dims.y as u32);
-    let mut grid = Grid::<Stuff>::new(dims);
+    let world_dims = Vec2 { x: 64, y: 64 };
+    let mut world = World::new(world_dims.x as u32 * world_dims.y as u32);
+    let mut grid = Grid::<Stuff>::new(world_dims);
 
     init_entity(
-        dims / 2,
+        world_dims / 2,
         StuffTag::Player,
         &mut Commands::new(&world),
         &mut grid,
@@ -87,8 +87,8 @@ pub fn init_core() -> Core {
     world.insert_resource(PlayerId(player));
     world.insert_resource(Vec::<InputEvent>::with_capacity(16));
     world.insert_resource(PlayerActions::new());
-    world.insert_resource(Visible(Grid::new(dims)));
-    world.insert_resource(Explored(Grid::new(dims)));
+    world.insert_resource(Visible(Grid::new(world_dims)));
+    world.insert_resource(Explored(Grid::new(world_dims)));
     world.insert_resource(Viewport(Vec2::new(10, 10)));
     world.insert_resource(CameraPos(Vec2::ZERO));
     world.insert_resource(Output(JsValue::null()));
