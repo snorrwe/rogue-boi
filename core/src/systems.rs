@@ -1,5 +1,4 @@
 use crate::{
-    archetypes::ICONS,
     components::{
         Ai, Heal, Hp, Icon, Inventory, Leash, Melee, PathCache, PlayerTag, Pos, Ranged, StuffTag,
         Walkable,
@@ -12,6 +11,7 @@ use crate::{
     RenderedOutput, ShouldUpdate, Stuff, StuffPayload, Viewport, Visible,
 };
 use cao_db::prelude::*;
+use icons::ICONS;
 use rand::Rng;
 use tracing::{debug, error, info};
 use wasm_bindgen::JsValue;
@@ -439,7 +439,7 @@ pub fn update_player_hp(
         if hp.current <= 0 {
             info!("Player died");
             game_log!("Player died");
-            *icon = ICONS["tombstone"];
+            icon.0 = ICONS["tombstone"];
             cmd.entity(player_id).remove::<PlayerTag>();
         }
     }

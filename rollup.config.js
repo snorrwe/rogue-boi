@@ -45,6 +45,7 @@ export default [
 				verbose: true,
 				serverPath: '/build/'
 			}),
+            icons(),
 
 			// In dev mode, call `npm run start` once
 			// the bundle has been generated
@@ -63,6 +64,17 @@ export default [
 		}
 	}
 ];
+
+function icons() {
+	return {
+		writeBundle() {
+			require('child_process').spawn('cargo', ['xtask', 'copy-icons'], {
+				stdio: ['ignore', 'inherit', 'inherit'],
+				shell: true
+			});
+		}
+	};
+}
 
 function serve() {
 	let started = false;

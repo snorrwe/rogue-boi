@@ -15,7 +15,7 @@
 	<img
 		class="selected icon"
 		alt={selected.tag}
-		src="/icons/ffffff/transparent/1x1/{selected.icon}"
+		src="/icons/{selected.icon}.svg"
 	/>
 	<div>
 		{selected.description}

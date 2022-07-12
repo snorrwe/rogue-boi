@@ -1,28 +1,8 @@
-use std::collections::HashMap;
-
 use cao_db::prelude::*;
 use serde_json::json;
 use wasm_bindgen::JsValue;
 
 use crate::{components::*, grid::Grid, math::Vec2, Stuff};
-
-lazy_static::lazy_static! {
-    pub static ref ICONS: HashMap<&'static str, Icon> = {
-        [
-            ("wall", Icon("delapouite/brick-wall.svg")),
-            ("troll", Icon("skoll/troll.svg")),
-            ("orc-head", Icon("delapouite/orc-head.svg")),
-            ("person", Icon("delapouite/person.svg")),
-            ("tombstone", Icon("lorc/tombstone.svg")),
-            ("sword", Icon("lorc/pointy-sword.svg")),
-            ("hp_potion", Icon("delapouite/health-potion.svg")),
-            ("scroll", Icon("lorc/scroll-unfurled.svg")),
-        ]
-            .iter()
-            .map(|x|*x)
-            .collect()
-    };
-}
 
 pub const ENEMY_TAGS: &[StuffTag] = &[StuffTag::Troll, StuffTag::Orc];
 pub const ENEMY_WEIGHTS: &[i32] = &[1, 10];
@@ -34,6 +14,11 @@ pub const ITEM_TAGS: &[StuffTag] = &[
 ];
 pub const ITEM_WEIGHTS: &[i32] = &[2, 2, 1];
 
+pub fn icon(key: &'static str) -> Icon {
+    assert!(icons::ICONS.contains_key(key));
+    Icon(key)
+}
+
 pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid<Stuff>) {
     let cmd = cmd.spawn();
     grid[pos] = Some(Default::default());
@@ -42,7 +27,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         StuffTag::Player => {
             cmd.insert(StuffTag::Player)
                 .insert(pos)
-                .insert(ICONS["person"])
+                .insert(icon("person"))
                 .insert(Hp::new(10))
                 .insert(PlayerTag)
                 .insert(Inventory::new(16))
@@ -50,11 +35,11 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         }
 
         StuffTag::Wall => {
-            cmd.insert(ICONS["wall"]);
+            cmd.insert(icon("wall"));
         }
         StuffTag::Troll => {
             cmd.insert(Hp::new(6))
-                .insert(ICONS["troll"])
+                .insert(icon("troll"))
                 .insert(Ai)
                 .insert(PathCache::default())
                 .insert(Melee { power: 4, skill: 5 })
@@ -68,7 +53,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         }
         StuffTag::Orc => {
             cmd.insert(Hp::new(4))
-                .insert(ICONS["orc-head"])
+                .insert(icon("orc-head"))
                 .insert(Ai)
                 .insert(Melee { power: 1, skill: 3 })
                 .insert(PathCache::default())
@@ -80,19 +65,19 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         }
 
         StuffTag::Sword => {
-            cmd.insert(ICONS["sword"])
+            cmd.insert(icon("sword"))
                 .insert(Melee { power: 1, skill: 0 })
                 .insert(Item)
                 .insert(Description("Simple sword. Power 1".to_string()));
         }
         StuffTag::HpPotion => {
-            cmd.insert(ICONS["hp_potion"])
+            cmd.insert(icon("hp_potion"))
                 .insert(Heal { hp: 3 })
                 .insert(Item)
                 .insert(Description("Health potion. Heal 3".to_string()));
         }
         StuffTag::LightningScroll => {
-            cmd.insert(ICONS["scroll"])
+            cmd.insert(icon("scroll"))
                 .insert(Ranged {
                     power: 3,
                     range: 5,
@@ -149,7 +134,7 @@ pub fn stuff_to_js(
                     "id": id,
                     "tag": tag,
                     "description": "The resting place of the player",
-                    "icon": ICONS["tombstone"].0.clone(),
+                    "icon": icon("tombstone").0.clone(),
                 }}
             }
         }

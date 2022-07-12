@@ -39,7 +39,7 @@
 <svelte:head>
 	{#if core != null}
 		{#each core.icons() as icon}
-			<link rel="preload" href="/icons/ffffff/transparent/1x1/{icon}" as="image" />
+			<link rel="preload" href="/icons/{icon}.svg" as="image" />
 		{/each}
 	{/if}
 </svelte:head>

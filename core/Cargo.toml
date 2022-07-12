@@ -28,6 +28,7 @@ lazy_static = "1.4.0"
 getrandom = { version = "0.2.7", features = ["js"] }
 thiserror = "1.0.31"
 serde_json = "1.0.82"
+icons = { version = "0.1.0", path = "../icons" }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.31"

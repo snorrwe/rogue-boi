@@ -10,10 +10,11 @@ mod utils;
 
 use std::pin::Pin;
 
-use archetypes::{init_entity, ICONS};
+use archetypes::init_entity;
 use cao_db::prelude::*;
 use components::*;
 use grid::Grid;
+use icons::ICONS;
 use math::Vec2;
 
 use systems::{
@@ -274,8 +275,9 @@ impl Core {
         self.tick(0);
     }
 
+    /// return the name of the icons (without the extension!)
     pub fn icons(&self) -> JsValue {
-        let entries: Vec<_> = ICONS.iter().map(|(_k, Icon(x))| x.to_string()).collect();
+        let entries: Vec<_> = ICONS.iter().map(|(k, _x)| k).collect();
         JsValue::from_serde(&entries).unwrap()
     }
 
