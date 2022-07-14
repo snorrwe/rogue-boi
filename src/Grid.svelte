@@ -19,6 +19,6 @@
 	});
 </script>
 
-<canvas on:click={onClick} width="800" height="800" bind:this={canvas} />
+<canvas on:click={onClick} width="600" height="600" bind:this={canvas} />
 
 <style></style>
