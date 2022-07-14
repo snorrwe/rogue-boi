@@ -31,6 +31,10 @@ jobs:
       - name: Install deps
         run: |
           yarn
+      - name: Build xtask
+        run: |
+          cargo build --bin xtask
+
       - name: Build
         run: |
           yarn build
@@ -39,6 +43,6 @@ jobs:
         with:
           butlerApiKey: ${{secrets.BUTLER_API_KEY}}
           gameData: bundle.zip
-          itchUsername: ${{env.ITCH_USERNAME}}
+          itchUsername: ${{ env.ITCH_USERNAME }}
           itchGameId: ${{ env.ITCH_GAME_ID }}
           buildChannel: wasm
