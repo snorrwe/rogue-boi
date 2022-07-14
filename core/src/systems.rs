@@ -10,7 +10,7 @@ use crate::{
 use cao_db::prelude::*;
 use rand::Rng;
 use tracing::{debug, error, info};
-use wasm_bindgen::JsValue;
+use wasm_bindgen::{prelude::*, JsCast, JsValue};
 
 pub fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<PlayerActions>) {
     let mut delta = Vec2::new(0, 0);
@@ -435,42 +435,12 @@ pub fn update_camera_pos(mut camera: ResMut<CameraPos>, q: Query<&Pos, With<Play
 }
 
 pub fn update_output(
-    grid: Res<Grid<Stuff>>,
-    viewport: Res<Viewport>,
-    camera_pos: Res<CameraPos>,
-    visible: Res<Visible>,
-    explored: Res<Explored>,
-    stuff: Query<&StuffTag>,
-    icons: Query<&Icon>,
     q_player: Query<(&Pos, &Hp, &Melee), With<PlayerTag>>,
     game_tick: Res<GameTick>,
     mut output_cache: ResMut<Output>,
 ) {
     let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
 
-    let mut result = Grid::new(viewport.0 * 2);
-    let min = camera_pos.0 - viewport.0;
-    let max = camera_pos.0 + viewport.0;
-    for y in min.y.max(0)..max.y.min(grid.height()) {
-        for x in min.x.max(0)..max.x.min(grid.width()) {
-            let pos = Vec2::new(x, y);
-            let mut output = OutputStuff::default();
-            output.explored = explored.0[pos];
-            output.visible = visible.0[pos];
-            if output.explored {
-                if let Some((id, ty)) = grid[pos].and_then(|id| {
-                    let id = id;
-                    stuff.fetch(id).map(|ty| (id, ty))
-                }) {
-                    if output.visible || ty.static_visiblity() {
-                        output.payload = StuffPayload::new(id, Some(*ty));
-                        output.icon = icons.fetch(id).map(|icon| icon.0);
-                    }
-                }
-            }
-            result[pos - min] = output;
-        }
-    }
     let player = q_player
         .iter()
         .next()
@@ -480,12 +450,7 @@ pub fn update_output(
             player_pos: pos.0,
         });
     let log = crate::logging::compute_log(game_tick.0 as usize);
-    let result = RenderedOutput {
-        player,
-        log,
-        grid: result,
-        offset: min,
-    };
+    let result = RenderedOutput { player, log };
     output_cache.0 = JsValue::from_serde(&result).unwrap();
 }
 
@@ -518,6 +483,100 @@ pub fn player_prepare(
             game_log!("Waiting...");
             should_update_player.0 = false;
             return;
+        }
+    }
+}
+
+pub fn render_into_canvas(
+    mut res: ResMut<RenderResources>,
+    grid: Res<Grid<Stuff>>,
+    viewport: Res<Viewport>,
+    camera_pos: Res<CameraPos>,
+    visible: Res<Visible>,
+    explored: Res<Explored>,
+    stuff: Query<(&StuffTag, &Icon, Option<&Color>)>,
+    icons: Res<IconCollection>,
+) {
+    let width = res.width as f64;
+    let height = res.height as f64;
+    let ctx = match res.ctx.as_mut() {
+        Some(x) => x,
+        None => {
+            debug!("No rendering context, skipping render");
+            return;
+        }
+    };
+
+    ctx.set_fill_style(&"gray".into());
+    ctx.fill_rect(0.0, 0.0, width, height);
+    let min = camera_pos.0 - viewport.0;
+    let max = camera_pos.0 + viewport.0;
+    let cell_size = height.min(width) / (viewport.0.y * 2) as f64;
+    let icon_scale = cell_size / 512.0;
+    for y in min.y.max(0)..max.y.min(grid.height()) {
+        for x in min.x.max(0)..max.x.min(grid.width()) {
+            let pos = Vec2::new(x, y);
+            let visible = visible.0[pos];
+            let explored = explored.0[pos];
+
+            let render_pos = pos - min;
+            let render_x = render_pos.x as f64 * cell_size;
+            let render_y = render_pos.y as f64 * cell_size;
+
+            if visible {
+                ctx.set_fill_style(&"yellow".into());
+            } else {
+                ctx.set_fill_style(&"darkgray".into());
+            }
+
+            if explored {
+                match grid[pos].and_then(|id| stuff.fetch(id).map(|x| (id, x.clone()))) {
+                    Some((_id, (tag, icon, color))) => {
+                        // icon background
+                        if visible {
+                            ctx.set_fill_style(&"black".into());
+                        } else {
+                            ctx.set_fill_style(&"darkgray".into());
+                        }
+                        ctx.fill_rect(render_x, render_y, cell_size, cell_size);
+                        // render icon
+                        if visible || tag.static_visiblity() {
+                            ctx.fill_rect(render_x, render_y, cell_size, cell_size);
+                            match icons.0.get(icon.0) {
+                                Some(icon) => {
+                                    match color {
+                                        Some(Color(ref color)) => {
+                                            ctx.set_fill_style(color);
+                                        }
+                                        None => {
+                                            ctx.set_fill_style(&"white".into());
+                                        }
+                                    }
+                                    ctx.save();
+                                    ctx.translate(render_x, render_y).unwrap();
+                                    ctx.scale(icon_scale, icon_scale).unwrap();
+                                    ctx.fill_with_path_2d(&icon);
+                                    ctx.restore();
+                                }
+                                None => {
+                                    // if icon can not be fetched
+                                    if let Some(Color(ref color)) = color {
+                                        ctx.set_fill_style(color);
+                                    }
+                                    ctx.fill_rect(render_x, render_y, cell_size, cell_size);
+                                }
+                            }
+                        }
+                    }
+                    None => {
+                        // empty space
+                        if visible {
+                            ctx.set_fill_style(&"black".into());
+                        }
+                        ctx.fill_rect(render_x, render_y, cell_size, cell_size);
+                    }
+                }
+            }
         }
     }
 }

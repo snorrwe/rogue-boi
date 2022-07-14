@@ -1,5 +1,7 @@
 <script>
+	import { canvasStore, svgStore } from './store.js';
 	import { writable } from 'svelte/store';
+	import { onMount } from 'svelte';
 	import Grid from './Grid.svelte';
 	import Highlight from './Highlight.svelte';
 	import Log from './Log.svelte';
@@ -11,6 +13,11 @@
 	const selected = writable(null);
 	const inventory = writable(core.getInventory());
 	let last = new Date().getTime();
+
+	canvasStore.subscribe((canvas) => {
+		console.log(canvas);
+		core.setCanvas(canvas);
+	});
 
 	document.addEventListener('keydown', (event) => {
 		core.pushEvent({
@@ -34,15 +41,25 @@
 		requestAnimationFrame(gameLoop);
 	};
 	requestAnimationFrame(gameLoop);
+
+	onMount(() => {
+		const icons = core.icons();
+		icons.forEach((key) =>
+			fetch(`icons/${key}.svg`)
+				.then((resp) => resp.text())
+				.then((pl) => {
+					svgStore.update((s) => ({ ...s, [key]: pl }));
+					const parser = new DOMParser();
+					const doc = parser.parseFromString(pl, 'application/xml');
+					const paths = doc.querySelectorAll('path');
+					// TODO: multiple paths?
+					const inner = paths[0].attributes.d;
+					core.setIconPayload(key, inner.nodeValue);
+				})
+		);
+	});
 </script>
 
-<svelte:head>
-	{#if core != null}
-		{#each core.icons() as icon}
-			<link rel="preload" href="icons/{icon}.svg" as="image" />
-		{/each}
-	{/if}
-</svelte:head>
 <main>
 	<div class="content">
 		<div>

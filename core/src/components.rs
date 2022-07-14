@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{grid::Grid, math::Vec2};
 use cao_db::entity_id::EntityId;
 use serde::Serialize;
@@ -138,6 +140,9 @@ pub struct Leash {
     pub radius: i32,
 }
 
+#[derive(Debug, Clone)]
+pub struct Color(pub JsValue);
+
 #[derive(Clone)]
 pub struct Visible(pub Grid<bool>);
 #[derive(Clone)]
@@ -158,3 +163,14 @@ pub struct Visibility(pub Vec2);
 pub struct ShouldUpdateWorld(pub bool);
 #[derive(Clone, Copy)]
 pub struct ShouldUpdatePlayer(pub bool);
+
+#[derive(Clone, Default)]
+pub struct IconCollection(pub HashMap<String, web_sys::Path2d>);
+
+#[derive(Clone, Default)]
+pub struct RenderResources {
+    pub canvas: Option<web_sys::HtmlCanvasElement>,
+    pub ctx: Option<web_sys::CanvasRenderingContext2d>,
+    pub width: u32,
+    pub height: u32,
+}

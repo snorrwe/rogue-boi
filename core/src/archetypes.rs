@@ -31,11 +31,12 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 .insert(Hp::new(10))
                 .insert(PlayerTag)
                 .insert(Inventory::new(16))
-                .insert(Melee { power: 1, skill: 2 });
+                .insert(Melee { power: 1, skill: 2 })
+                .insert(Color("green".into()));
         }
 
         StuffTag::Wall => {
-            cmd.insert(icon("wall"));
+            cmd.insert(icon("wall")).insert(Color("white".into()));
         }
         StuffTag::Troll => {
             cmd.insert(Hp::new(6))
