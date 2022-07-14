@@ -51,7 +51,7 @@
 				.then((pl) => {
 					svgStore.update((s) => ({ ...s, [key]: pl }));
 					const parser = new DOMParser();
-					const doc = parser.parseFromString(pl, 'application/xml');
+					const doc = parser.parseFromString(pl, 'text/xml');
 					const paths = doc.querySelectorAll('path');
 					// TODO: multiple paths?
 					const inner = paths[0].attributes.d;
