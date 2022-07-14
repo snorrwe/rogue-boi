@@ -42,9 +42,3 @@ jobs:
           itchUsername: ${{env.ITCH_USERNAME}}
           itchGameId: ${{ env.ITCH_GAME_ID }}
           buildChannel: wasm
-
-      - name: Archive bundle
-        uses: actions/upload-artifact@v3
-        with:
-          name: bundle
-          path: bundle.zip
