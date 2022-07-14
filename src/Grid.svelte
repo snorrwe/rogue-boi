@@ -16,7 +16,6 @@
 	};
 
     const cellSize = `${1+ 10 / grid.grid.dims.x}em`;
-    console.log(cellSize, grid.grid.dims);
 </script>
 
 <div class="grid" style="--cell-size: {cellSize}; --cols: {grid.grid.dims.x}; --rows: {grid.grid.dims.y}">
