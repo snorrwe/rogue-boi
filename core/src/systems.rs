@@ -3,14 +3,14 @@ use crate::{
     components::*,
     game_log,
     grid::Grid,
-    math::{walk_square, Vec2},
+    math::{remap_f64, walk_square, Vec2},
     pathfinder::find_path,
-    InputEvent, OutputStuff, PlayerActions, PlayerOutput, RenderedOutput, Stuff, StuffPayload,
+    InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff,
 };
 use cao_db::prelude::*;
 use rand::Rng;
 use tracing::{debug, error, info};
-use wasm_bindgen::{prelude::*, JsCast, JsValue};
+use wasm_bindgen::JsValue;
 
 pub fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<PlayerActions>) {
     let mut delta = Vec2::new(0, 0);
@@ -438,6 +438,7 @@ pub fn update_output(
     q_player: Query<(&Pos, &Hp, &Melee), With<PlayerTag>>,
     game_tick: Res<GameTick>,
     mut output_cache: ResMut<Output>,
+    selected: Res<Selected>,
 ) {
     let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
 
@@ -450,7 +451,11 @@ pub fn update_output(
             player_pos: pos.0,
         });
     let log = crate::logging::compute_log(game_tick.0 as usize);
-    let result = RenderedOutput { player, log };
+    let result = RenderedOutput {
+        player,
+        log,
+        selected: selected.0.clone(),
+    };
     output_cache.0 = JsValue::from_serde(&result).unwrap();
 }
 
@@ -487,6 +492,10 @@ pub fn player_prepare(
     }
 }
 
+pub fn canvas_cell_size(width: f64, height: f64, viewport: Vec2) -> f64 {
+    height.min(width) / (viewport.y * 2) as f64
+}
+
 pub fn render_into_canvas(
     mut res: ResMut<RenderResources>,
     grid: Res<Grid<Stuff>>,
@@ -511,10 +520,10 @@ pub fn render_into_canvas(
     ctx.fill_rect(0.0, 0.0, width, height);
     let min = camera_pos.0 - viewport.0;
     let max = camera_pos.0 + viewport.0;
-    let cell_size = height.min(width) / (viewport.0.y * 2) as f64;
+    let cell_size = canvas_cell_size(width, height, viewport.0);
     let icon_scale = cell_size / 512.0;
-    for y in min.y.max(0)..max.y.min(grid.height()) {
-        for x in min.x.max(0)..max.x.min(grid.width()) {
+    for y in min.y.max(0)..(max.y + 1).min(grid.height()) {
+        for x in min.x.max(0)..(max.x + 1).min(grid.width()) {
             let pos = Vec2::new(x, y);
             let visible = visible.0[pos];
             let explored = explored.0[pos];
@@ -579,4 +588,45 @@ pub fn render_into_canvas(
             }
         }
     }
+}
+
+pub fn handle_click(
+    mut target: ResMut<Selected>,
+    grid: Res<Grid<Stuff>>,
+    viewport: Res<Viewport>,
+    camera_pos: Res<CameraPos>,
+    visible: Res<Visible>,
+    res: Res<RenderResources>,
+    click: Res<ClickPosition>,
+) {
+    if click.0.is_none() {
+        return;
+    }
+    let width = res.width as f64;
+    let height = res.height as f64;
+    let cell_size = canvas_cell_size(width, height, viewport.0);
+
+    let [x, y] = click.0.unwrap();
+
+    let pos = Vec2::new(
+        remap_f64(0.0, width, 0.0, viewport.0.x as f64 * 2.0, x) as i32,
+        remap_f64(0.0, height, 0.0, viewport.0.y as f64 * 2.0, y) as i32,
+    ) + camera_pos.0
+        - viewport.0;
+
+    debug!(
+        pos = tracing::field::debug(pos),
+        camera_pos = tracing::field::debug(camera_pos.0),
+        viewport = tracing::field::debug(viewport.0),
+        cell_size = tracing::field::debug(cell_size),
+        "clicked on grid position",
+    );
+    if !visible.0.at(pos.x, pos.y).copied().unwrap_or(false) {
+        return;
+    }
+
+    let result = grid[pos];
+    target.0 = result;
+
+    debug!("targeting entity {:?}", result);
 }

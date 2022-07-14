@@ -7,7 +7,8 @@
 	let canvas;
 
 	const onClick = (event) => {
-		// TODO: onCanvasClick in core
+		let rect = event.target.getBoundingClientRect();
+		core.canvasClicked(event.clientX - rect.left, event.clientY - rect.top);
 	};
 
 	onMount(() => {
