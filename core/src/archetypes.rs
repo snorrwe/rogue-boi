@@ -32,7 +32,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 .insert(PlayerTag)
                 .insert(Inventory::new(16))
                 .insert(Melee { power: 1, skill: 2 })
-                .insert(Color("green".into()));
+                .insert(Color("white".into()));
         }
 
         StuffTag::Wall => {
@@ -62,7 +62,8 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 .insert(Leash {
                     origin: pos,
                     radius: 20,
-                });
+                })
+                .insert(Color("green".into()));
         }
 
         StuffTag::Sword => {
