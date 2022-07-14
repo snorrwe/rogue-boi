@@ -174,3 +174,9 @@ pub struct RenderResources {
     pub width: u32,
     pub height: u32,
 }
+
+#[derive(Clone, Default)]
+pub struct Selected(pub Option<EntityId>);
+
+#[derive(Clone, Default)]
+pub struct ClickPosition(pub Option<[f64; 2]>);

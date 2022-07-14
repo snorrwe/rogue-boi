@@ -17,10 +17,11 @@ use icons::ICONS;
 use math::Vec2;
 
 use systems::{
-    handle_player_move, init_player, player_prepare, render_into_canvas, rotate_log,
+    handle_click, handle_player_move, init_player, player_prepare, render_into_canvas, rotate_log,
     should_update_player, should_update_world, update_ai_hp, update_camera_pos, update_fov,
     update_grid, update_output, update_player_inventory, update_player_item_use, update_tick,
 };
+use tracing::debug;
 use wasm_bindgen::{prelude::*, JsCast};
 
 use crate::systems::{update_input_events, update_melee_ai, update_player_hp};
@@ -48,7 +49,9 @@ pub fn init_core() -> Core {
     let mut world = World::new(world_dims.x as u32 * world_dims.y as u32);
 
     world.insert_resource(Grid::<Stuff>::new(world_dims));
-
+    world.insert_resource(GameTick(0));
+    world.insert_resource(ClickPosition(None));
+    world.insert_resource(Selected::default());
     world.insert_resource(map_gen::MapGenProps {
         room_min_size: 6,
         room_max_size: 10,
@@ -56,7 +59,6 @@ pub fn init_core() -> Core {
         max_monsters_per_room: 2,
         max_items_per_room: 2,
     });
-    world.insert_resource(GameTick(0));
     world.insert_resource(IconCollection::default());
     world.insert_resource(ShouldUpdateWorld(false));
     world.insert_resource(ShouldUpdatePlayer(false));
@@ -168,6 +170,7 @@ pub enum InputEvent {
 
 #[derive(serde::Serialize)]
 pub struct RenderedOutput {
+    pub selected: Option<EntityId>,
     pub player: Option<PlayerOutput>,
     pub log: String,
 }
@@ -179,15 +182,6 @@ pub struct PlayerOutput {
     pub player_attack: i32,
     #[serde(rename = "playerPosition")]
     pub player_pos: Vec2,
-}
-
-#[derive(serde::Serialize, Default, Clone)]
-pub struct OutputStuff {
-    pub visible: bool,
-    pub explored: bool,
-    pub icon: Option<&'static str>,
-    #[serde(flatten)]
-    pub payload: StuffPayload,
 }
 
 #[derive(Default, Clone)]
@@ -367,10 +361,21 @@ impl Core {
     #[wasm_bindgen(js_name = "setTarget")]
     pub fn set_target(&mut self, id: JsValue) {
         let id: EntityId = JsValue::into_serde(&id).unwrap();
+        debug!("set_target {}", id);
         self.world
             .get_resource_mut::<PlayerActions>()
             .unwrap()
             .set_target(id);
+    }
+
+    #[wasm_bindgen(js_name = "setSelection")]
+    pub fn set_selection(&mut self, id: JsValue) {
+        let id: EntityId = JsValue::into_serde(&id).unwrap();
+        debug!("set_selection {}", id);
+        if self.world.is_id_valid(id) {
+            self.world.get_resource_mut::<Selected>().unwrap().0 = Some(id);
+            self.world.run_system(update_output);
+        }
     }
 
     #[wasm_bindgen(js_name = "fetchEntity")]
@@ -392,7 +397,7 @@ impl Core {
 
     #[wasm_bindgen(js_name = "setCanvas")]
     pub fn set_canvas(&mut self, canvas: Option<web_sys::HtmlCanvasElement>) {
-        tracing::debug!("Setting canvas to: {:?}", canvas);
+        debug!("Setting canvas to: {:?}", canvas);
 
         let dims = canvas
             .as_ref()
@@ -420,6 +425,15 @@ impl Core {
         let path = web_sys::Path2d::new_with_path_string(&svg_path).unwrap();
         collection.0.insert(key, path);
         self.world.run_system(render_into_canvas);
+    }
+
+    /// canvas relative coordinates
+    #[wasm_bindgen(js_name = "canvasClicked")]
+    pub fn canvas_clicked(&mut self, x: f64, y: f64) {
+        debug!("click on {} {}", x, y);
+        self.world.insert_resource(ClickPosition(Some([x, y])));
+        self.world.run_system(handle_click);
+        self.world.run_system(update_output);
     }
 }
 

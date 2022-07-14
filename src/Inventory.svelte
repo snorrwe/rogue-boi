@@ -1,14 +1,9 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
-
 	export let inventory;
 	export let core;
 
-	const dispatch = createEventDispatcher();
-
 	const useItem = (item) => {
-		const response = core.fetchEntity(item.id);
-		dispatch('selected', response);
+		core.setSelection(item.id);
 	};
 </script>
 

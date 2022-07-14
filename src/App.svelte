@@ -10,7 +10,8 @@
 	export let core;
 
 	const coreOutput = writable(core.getOutput());
-	const selected = writable(null);
+	let selected = writable(null);
+	coreOutput.subscribe((c) => selected.set(c && c.selected && core.fetchEntity(c.selected)));
 	const inventory = writable(core.getInventory());
 	let last = new Date().getTime();
 
@@ -64,7 +65,7 @@
 	<div class="content">
 		<div>
 			{#if core != null && $coreOutput != null}
-				<Grid coreOutput={$coreOutput} {core} on:selected={(event) => selected.set(event.detail)} />
+				<Grid coreOutput={$coreOutput} {core} />
 			{/if}
 		</div>
 		<div>
@@ -79,7 +80,6 @@
 					pos={$coreOutput.player && $coreOutput.player.playerPosition}
 					attack={$coreOutput.player && $coreOutput.player.playerAttack}
 					{core}
-					on:selected={(event) => selected.set(event.detail)}
 				/>
 			</div>
 		</div>

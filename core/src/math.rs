@@ -158,3 +158,16 @@ pub fn walk_square(from: Vec2, to: Vec2) -> impl Iterator<Item = Vec2> {
     let tx = to.x;
     (from.y..=to.y).flat_map(move |y| (fx..=tx).map(move |x| Vec2::new(x, y)))
 }
+
+pub fn lerp_f64(a: f64, b: f64, t: f64) -> f64 {
+    a * (1.0 - t) + t * b
+}
+
+pub fn inv_lerp_f64(a: f64, b: f64, val: f64) -> f64 {
+    (val - a) / (b - a)
+}
+
+pub fn remap_f64(from_a: f64, to_a: f64, from_b: f64, to_b: f64, val: f64) -> f64 {
+    let t = inv_lerp_f64(from_a, to_a, val);
+    lerp_f64(from_b, to_b, t)
+}
