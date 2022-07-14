@@ -42,6 +42,10 @@ fn main() {
                 let src_path = src_root.join(path);
                 let dst_path = dst_root.join(format!("{}.svg", name));
 
+                // TODO: copy is not enough, when deploying on Itch, the DOMParser is not available
+                // action: parse the svg here and copy only the relevant part to the file
+                // (first <path> element d attribute)
+
                 std::fs::copy(src_path, dst_path).unwrap();
             });
         }

@@ -50,10 +50,11 @@
 				.then((resp) => resp.text())
 				.then((pl) => {
 					svgStore.update((s) => ({ ...s, [key]: pl }));
+					// TODO: can't expect to have DOMParser
+					// do the parsing offline and bundle pre-processed files instead
 					const parser = new DOMParser();
 					const doc = parser.parseFromString(pl, 'text/xml');
 					const paths = doc.querySelectorAll('path');
-					// TODO: multiple paths?
 					const inner = paths[0].attributes.d;
 					core.setIconPayload(key, inner.nodeValue);
 				})
