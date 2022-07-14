@@ -17,11 +17,11 @@ use icons::ICONS;
 use math::Vec2;
 
 use systems::{
-    handle_player_move, init_player, player_prepare, rotate_log, should_update_player,
-    should_update_world, update_ai_hp, update_camera_pos, update_fov, update_grid, update_output,
-    update_player_inventory, update_player_item_use, update_tick,
+    handle_player_move, init_player, player_prepare, render_into_canvas, rotate_log,
+    should_update_player, should_update_world, update_ai_hp, update_camera_pos, update_fov,
+    update_grid, update_output, update_player_inventory, update_player_item_use, update_tick,
 };
-use wasm_bindgen::prelude::*;
+use wasm_bindgen::{prelude::*, JsCast};
 
 use crate::systems::{update_input_events, update_melee_ai, update_player_hp};
 
@@ -57,6 +57,7 @@ pub fn init_core() -> Core {
         max_items_per_room: 2,
     });
     world.insert_resource(GameTick(0));
+    world.insert_resource(IconCollection::default());
     world.insert_resource(ShouldUpdateWorld(false));
     world.insert_resource(ShouldUpdatePlayer(false));
     world.insert_resource(Vec::<InputEvent>::with_capacity(16));
@@ -67,6 +68,7 @@ pub fn init_core() -> Core {
     world.insert_resource(Visibility(Vec2::new(10, 10)));
     world.insert_resource(CameraPos(Vec2::ZERO));
     world.insert_resource(Output(JsValue::null()));
+    world.insert_resource(RenderResources::default());
 
     world.add_stage(SystemStage::new("player-update-pre").with_system(player_prepare));
     world.add_stage(
@@ -94,7 +96,11 @@ pub fn init_core() -> Core {
             .with_system(update_grid)
             .with_system(update_fov),
     );
-    world.add_stage(SystemStage::new("render").with_system(update_output));
+    world.add_stage(
+        SystemStage::new("render")
+            .with_system(update_output)
+            .with_system(render_into_canvas),
+    );
     world.add_stage(
         SystemStage::new("post-render")
             .with_should_run(should_update_world)
@@ -164,8 +170,6 @@ pub enum InputEvent {
 pub struct RenderedOutput {
     pub player: Option<PlayerOutput>,
     pub log: String,
-    pub grid: Grid<OutputStuff>,
-    pub offset: Vec2,
 }
 #[derive(serde::Serialize)]
 pub struct PlayerOutput {
@@ -284,8 +288,6 @@ impl Core {
         {
             return;
         }
-        let _span = tracing::span!(tracing::Level::DEBUG, "game_update").entered();
-
         self.time = 0;
         self.world.tick();
 
@@ -386,6 +388,38 @@ impl Core {
             Query::new(&self.world),
             Query::new(&self.world),
         )
+    }
+
+    #[wasm_bindgen(js_name = "setCanvas")]
+    pub fn set_canvas(&mut self, canvas: Option<web_sys::HtmlCanvasElement>) {
+        tracing::debug!("Setting canvas to: {:?}", canvas);
+
+        let dims = canvas
+            .as_ref()
+            .map(|canvas| (canvas.width(), canvas.height()));
+        let (width, height) = dims.unwrap_or_default();
+        let resources = RenderResources {
+            ctx: canvas
+                .as_ref()
+                .and_then(|c| c.get_context("2d").ok())
+                .and_then(|x| x) // unwrap the inner optional
+                .and_then(|x| x.dyn_into().ok()),
+            canvas,
+            width,
+            height,
+        };
+
+        self.world.insert_resource(resources);
+        self.world.run_system(render_into_canvas);
+    }
+
+    #[wasm_bindgen(js_name = "setIconPayload")]
+    pub fn set_icon_payload(&mut self, key: String, svg_path: String) {
+        let collection = self.world.get_resource_mut::<IconCollection>().unwrap();
+
+        let path = web_sys::Path2d::new_with_path_string(&svg_path).unwrap();
+        collection.0.insert(key, path);
+        self.world.run_system(render_into_canvas);
     }
 }
 
