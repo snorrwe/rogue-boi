@@ -7,7 +7,7 @@
 
 	export let core;
 
-	const grid = writable(core.getGrid());
+	const coreOutput = writable(core.getOutput());
 	const selected = writable(null);
 	const inventory = writable(core.getInventory());
 	let last = new Date().getTime();
@@ -24,7 +24,7 @@
 
 		core.tick(now - last);
 
-		grid.set(core.getGrid());
+		coreOutput.set(core.getOutput());
 		inventory.set(core.getInventory());
 		last = now;
 		if ($selected && $selected.id) {
@@ -46,8 +46,8 @@
 <main>
 	<div class="content">
 		<div>
-			{#if core != null && $grid != null}
-				<Grid grid={$grid} {core} on:selected={(event) => selected.set(event.detail)} />
+			{#if core != null && $coreOutput != null}
+				<Grid coreOutput={$coreOutput} {core} on:selected={(event) => selected.set(event.detail)} />
 			{/if}
 		</div>
 		<div>
@@ -57,10 +57,10 @@
 			<div>
 				<Player
 					inventory={$inventory}
-					alive={$grid.player != null}
-					hp={$grid.player && $grid.player.playerHp}
-					pos={$grid.player && $grid.player.playerPosition}
-					attack={$grid.player && $grid.player.playerAttack}
+					alive={$coreOutput.player != null}
+					hp={$coreOutput.player && $coreOutput.player.playerHp}
+					pos={$coreOutput.player && $coreOutput.player.playerPosition}
+					attack={$coreOutput.player && $coreOutput.player.playerAttack}
 					{core}
 					on:selected={(event) => selected.set(event.detail)}
 				/>
@@ -68,7 +68,7 @@
 		</div>
 		<div class="log">
 			<h2>Logs</h2>
-			<Log log={$grid.log} />
+			<Log log={$coreOutput.log} />
 		</div>
 	</div>
 </main>

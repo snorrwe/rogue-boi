@@ -1,7 +1,7 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
 
-	export let grid;
+	export let coreOutput;
 	export let core;
 
 	const dispatch = createEventDispatcher();
@@ -15,11 +15,11 @@
 		}
 	};
 
-    const cellSize = `${1+ 10 / grid.grid.dims.x}em`;
+    const cellSize = `${1+ 10 / coreOutput.grid.dims.x}em`;
 </script>
 
-<div class="grid" style="--cell-size: {cellSize}; --cols: {grid.grid.dims.x}; --rows: {grid.grid.dims.y}">
-	{#each grid.grid.data as item}
+<div class="grid" style="--cell-size: {cellSize}; --cols: {coreOutput.grid.dims.x}; --rows: {coreOutput.grid.dims.y}">
+	{#each coreOutput.grid.data as item}
 		<div class="grid-item" on:click={() => onClick(item)}>
 			<div class:grid_visible={item.visible}>
 				{#if item.icon && item.explored}

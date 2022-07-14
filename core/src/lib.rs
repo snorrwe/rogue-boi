@@ -308,8 +308,8 @@ impl Core {
         inputs.push(event);
     }
 
-    #[wasm_bindgen(js_name = "getGrid")]
-    pub fn get_grid(&self) -> JsValue {
+    #[wasm_bindgen(js_name = "getOutput")]
+    pub fn get_output(&self) -> JsValue {
         self.world.get_resource::<Output>().unwrap().0.clone()
     }
 
