@@ -634,7 +634,7 @@ pub fn handle_click(
         cell_size = tracing::field::debug(cell_size),
         "clicked on grid position",
     );
-    if !visible.0.at(pos.x, pos.y).copied().unwrap_or(false) {
+    if !visible.0.at(pos.x, pos.y).unwrap_or(&false) {
         target.0 = None;
         return;
     }
