@@ -143,9 +143,7 @@ pub struct Leash {
 #[derive(Debug, Clone)]
 pub struct Color(pub JsValue);
 
-#[derive(Clone)]
 pub struct Visible(pub Grid<bool>);
-#[derive(Clone)]
 pub struct Explored(pub Grid<bool>);
 #[derive(Clone, Copy)]
 pub struct PlayerId(pub EntityId);
@@ -155,19 +153,15 @@ pub struct GameTick(pub i32);
 pub struct Viewport(pub Vec2);
 #[derive(Clone, Copy)]
 pub struct CameraPos(pub Vec2);
-#[derive(Clone)]
 pub struct Output(pub JsValue);
-#[derive(Clone, Copy)]
 pub struct Visibility(pub Vec2);
-#[derive(Clone, Copy)]
 pub struct ShouldUpdateWorld(pub bool);
-#[derive(Clone, Copy)]
 pub struct ShouldUpdatePlayer(pub bool);
 
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub struct IconCollection(pub HashMap<&'static str, web_sys::Path2d>);
 
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub struct RenderResources {
     pub canvas: Option<web_sys::HtmlCanvasElement>,
     pub ctx: Option<web_sys::CanvasRenderingContext2d>,
@@ -175,8 +169,8 @@ pub struct RenderResources {
     pub height: u32,
 }
 
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub struct Selected(pub Option<EntityId>);
 
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub struct ClickPosition(pub Option<[f64; 2]>);
