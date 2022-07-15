@@ -21,6 +21,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          lfs: 'true'
       - uses: Swatinem/rust-cache@v1
       - name: wasm-pack-action
         uses: jetli/wasm-pack-action@v0.3.0
@@ -28,16 +30,11 @@ jobs:
         uses: actions/setup-node@v2.4.1
         with:
           node-version: 14.x
-      - name: Tool version
-        run: |
-          cargo --version
-          rustup --version
-          yarn --version
-          node --version
 
       - name: Install deps
         run: |
           yarn
+
       - name: Build xtask
         run: |
           cargo build --bin xtask
