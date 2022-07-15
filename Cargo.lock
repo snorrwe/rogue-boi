@@ -109,7 +109,7 @@ dependencies = [
 [[package]]
 name = "cecs"
 version = "0.1.0"
-source = "git+https://github.com/caolo-game/cecs#ac2e7640ccc668a8820494f6afb0f421a9febc46"
+source = "git+https://github.com/caolo-game/cecs#a6901c342b0f6169c26057a2028b7bc756bdf0ee"
 dependencies = [
  "parking_lot",
  "serde",
@@ -830,9 +830,9 @@ checksum = "dcf81ac59edc17cc8697ff311e8f5ef2d99fcbd9817b34cec66f90b6c3dfd987"
 
 [[package]]
 name = "unicode-ident"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5bd2fe26506023ed7b5e1e315add59d6f584c621d037f9368fea9cfb988f368c"
+checksum = "15c61ba63f9235225a22310255a29b806b907c9b8c964bcbd0a2c70f3f2deea7"
 
 [[package]]
 name = "version_check"

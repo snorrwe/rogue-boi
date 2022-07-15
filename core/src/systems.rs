@@ -31,18 +31,18 @@ pub fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<Pla
     }
 }
 
-pub fn update_player_item_use(
+pub fn update_player_item_use<'a>(
     actions: Res<PlayerActions>,
     mut cmd: Commands,
-    player_query: Query<(EntityId, &mut Inventory), With<PlayerTag>>,
+    mut player_query: Query<(EntityId, &'a mut Inventory), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
-    hp_query: Query<&mut Hp>,
-    pos_query: Query<&mut Pos>,
+    mut hp_query: Query<&mut Hp>,
+    pos_query: Query<&Pos>,
     heal_query: Query<&Heal>,
     item_query: Query<Option<&Ranged>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
 ) {
-    let (player_id, inventory) = player_query.iter().next().unwrap();
+    let (player_id, inventory) = player_query.iter_mut().next().unwrap();
     let pos = *pos_query.fetch(player_id).unwrap();
 
     if let Some(id) = actions.use_item_action() {
@@ -51,7 +51,7 @@ pub fn update_player_item_use(
             Some(StuffTag::HpPotion) => {
                 game_log!("Drink a health potion.");
                 inventory.remove(id);
-                let hp = hp_query.fetch(player_id).unwrap();
+                let hp = hp_query.fetch_mut(player_id).unwrap();
                 if hp.full() {
                     game_log!("The potion has no effect");
                 }
@@ -62,7 +62,7 @@ pub fn update_player_item_use(
             Some(StuffTag::LightningScroll) => match actions.target() {
                 Some(target_id) => {
                     debug!("Use lightning scroll {}", id);
-                    let target_hp = match hp_query.fetch(target_id) {
+                    let target_hp = match hp_query.fetch_mut(target_id) {
                         Some(x) => x,
                         None => {
                             game_log!("Invalid target for lightning bolt");
@@ -114,7 +114,7 @@ pub fn update_player_item_use(
 }
 
 pub fn update_player_inventory(
-    q_melee: Query<&mut Melee>,
+    mut q_melee: Query<&mut Melee>,
     q_inventory: Query<(EntityId, &Inventory), With<PlayerTag>>,
 ) {
     for (player_id, inventory) in q_inventory.iter() {
@@ -124,16 +124,16 @@ pub fn update_player_inventory(
                 power += melee_weapon.power;
             }
         }
-        q_melee.fetch(player_id).unwrap().power = power;
+        q_melee.fetch_mut(player_id).unwrap().power = power;
     }
 }
 
-pub fn handle_player_move(
+pub fn handle_player_move<'a>(
     actions: Res<PlayerActions>,
     mut cmd: Commands,
-    player_q: Query<(&mut Inventory, &Melee, &mut Pos), With<PlayerTag>>,
+    mut player_q: Query<(&'a mut Inventory, &'a Melee, &'a mut Pos), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
-    hp: Query<&mut Hp>,
+    mut hp: Query<&mut Hp>,
     mut grid: ResMut<Grid<Stuff>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
 ) {
@@ -143,7 +143,7 @@ pub fn handle_player_move(
             return;
         }
     };
-    for (inventory, power, pos) in player_q.iter() {
+    for (inventory, power, pos) in player_q.iter_mut() {
         let pos = &mut pos.0;
         let new_pos: Vec2 = *pos + delta;
         match grid.at(new_pos.x, new_pos.y).unwrap().and_then(|id| {
@@ -159,7 +159,7 @@ pub fn handle_player_move(
                     }
                     StuffTag::Troll | StuffTag::Orc => {
                         if skill_check(power.skill) {
-                            let hp = hp.fetch(stuff_id).expect("Enemy has no hp");
+                            let hp = hp.fetch_mut(stuff_id).expect("Enemy has no hp");
                             let power = power.power;
                             hp.current -= power;
                             debug!("kick enemy {}: {:?}", stuff_id, hp);
@@ -324,15 +324,15 @@ pub fn update_grid(q: Query<(EntityId, &Pos)>, mut grid: ResMut<Grid<Stuff>>) {
     }
 }
 
-pub fn update_melee_ai(
-    q_player: Query<(EntityId, &mut Hp), With<PlayerTag>>,
-    q_enemy: Query<(EntityId, &Melee, &mut PathCache, Option<&Leash>), (With<Pos>, With<Ai>)>,
-    q_pos: Query<&mut Pos>,
+pub fn update_melee_ai<'a>(
+    mut q_player: Query<(EntityId, &mut Hp), With<PlayerTag>>,
+    mut q_enemy: Query<(EntityId, &'a Melee, &'a mut PathCache, Option<&'a Leash>), (With<Pos>, With<Ai>)>,
+    mut q_pos: Query<&mut Pos>,
     q_tag: Query<&StuffTag>,
     q_walk: Query<&Walkable>,
     mut grid: ResMut<Grid<Stuff>>,
 ) {
-    let (player_id, player_hp) = match q_player.iter().next() {
+    let (player_id, player_hp) = match q_player.iter_mut().next() {
         Some(x) => x,
         None => {
             debug!("No player on the map! Skipping melee update");
@@ -341,8 +341,8 @@ pub fn update_melee_ai(
     };
     let Pos(player_pos) = *q_pos.fetch(player_id).unwrap();
 
-    for (id, Melee { power, skill }, cache, leash) in q_enemy.iter() {
-        let Pos(pos) = q_pos.fetch(id).unwrap();
+    for (id, Melee { power, skill }, cache, leash) in q_enemy.iter_mut() {
+        let Pos(pos) = q_pos.fetch_mut(id).unwrap();
         if pos.manhatten(player_pos) <= 1 {
             if !skill_check(*skill) {
                 game_log!("{} misses", id);
@@ -394,11 +394,12 @@ pub fn update_melee_ai(
     }
 }
 
-pub fn update_player_hp(
+pub fn update_player_hp<'a>(
     mut cmd: Commands,
-    query_player: Query<(EntityId, &Hp, &mut Icon), With<PlayerTag>>,
+    mut
+    query_player: Query<(EntityId, &'a Hp, &'a mut Icon), With<PlayerTag>>,
 ) {
-    for (player_id, hp, i) in query_player.iter() {
+    for (player_id, hp, i) in query_player.iter_mut() {
         if hp.current <= 0 {
             info!("Player died");
             game_log!("Player died");
