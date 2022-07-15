@@ -13,5 +13,5 @@ build="build.rs"
 lazy_static = "1.4.0"
 
 [build-dependencies]
-serde={version="*", features=["derive"]}
-serde-xml-rs="*"
+serde={ version = "1.0.139", features = ["derive"] }
+serde-xml-rs= "0.5.1"
