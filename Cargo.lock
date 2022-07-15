@@ -109,7 +109,7 @@ dependencies = [
 [[package]]
 name = "cecs"
 version = "0.1.0"
-source = "git+https://github.com/caolo-game/cecs#09411ee26a4e8b638d148f96bd0f768e3b91a1cb"
+source = "git+https://github.com/caolo-game/cecs#e5ea09465176974e54108f29aea1203b3f95f21c"
 dependencies = [
  "parking_lot",
  "serde",
