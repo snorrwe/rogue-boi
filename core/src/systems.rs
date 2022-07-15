@@ -34,15 +34,17 @@ pub fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<Pla
 pub fn update_player_item_use(
     actions: Res<PlayerActions>,
     mut cmd: Commands,
-    player_query: Query<(EntityId, &mut Pos, &mut Inventory), With<PlayerTag>>,
+    player_query: Query<(EntityId, &mut Inventory), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
     hp_query: Query<&mut Hp>,
+    pos_query: Query<&mut Pos>,
     heal_query: Query<&Heal>,
-    target_query: Query<(&Pos, &mut Hp)>,
     item_query: Query<Option<&Ranged>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
 ) {
-    let (player_id, pos, inventory) = player_query.iter().next().unwrap();
+    let (player_id, inventory) = player_query.iter().next().unwrap();
+    let pos = *pos_query.fetch(player_id).unwrap();
+
     if let Some(id) = actions.use_item_action() {
         let tag = stuff_tags.fetch(id);
         match tag {
@@ -60,7 +62,15 @@ pub fn update_player_item_use(
             Some(StuffTag::LightningScroll) => match actions.target() {
                 Some(target_id) => {
                     debug!("Use lightning scroll {}", id);
-                    let (target_pos, target_hp) = match target_query.fetch(target_id) {
+                    let target_hp = match hp_query.fetch(target_id) {
+                        Some(x) => x,
+                        None => {
+                            game_log!("Invalid target for lightning bolt");
+                            should_run.0 = false;
+                            return;
+                        }
+                    };
+                    let target_pos = match pos_query.fetch(target_id) {
                         Some(x) => x,
                         None => {
                             game_log!("Invalid target for lightning bolt");
@@ -315,22 +325,25 @@ pub fn update_grid(q: Query<(EntityId, &Pos)>, mut grid: ResMut<Grid<Stuff>>) {
 }
 
 pub fn update_melee_ai(
-    q_player: Query<(&mut Hp, &Pos), With<PlayerTag>>,
-    q_enemy: Query<(EntityId, &Melee, &mut Pos, &mut PathCache, Option<&Leash>), With<Ai>>,
+    q_player: Query<(EntityId, &mut Hp), With<PlayerTag>>,
+    q_enemy: Query<(EntityId, &Melee, &mut PathCache, Option<&Leash>), (With<Pos>, With<Ai>)>,
+    q_pos: Query<&mut Pos>,
     q_tag: Query<&StuffTag>,
     q_walk: Query<&Walkable>,
     mut grid: ResMut<Grid<Stuff>>,
 ) {
-    let (player_hp, Pos(player_pos)) = match q_player.iter().next() {
+    let (player_id, player_hp) = match q_player.iter().next() {
         Some(x) => x,
         None => {
             debug!("No player on the map! Skipping melee update");
             return;
         }
     };
+    let Pos(player_pos) = *q_pos.fetch(player_id).unwrap();
 
-    for (id, Melee { power, skill }, Pos(pos), cache, leash) in q_enemy.iter() {
-        if pos.manhatten(*player_pos) <= 1 {
+    for (id, Melee { power, skill }, cache, leash) in q_enemy.iter() {
+        let Pos(pos) = q_pos.fetch(id).unwrap();
+        if pos.manhatten(player_pos) <= 1 {
             if !skill_check(*skill) {
                 game_log!("{} misses", id);
                 continue;
@@ -339,12 +352,12 @@ pub fn update_melee_ai(
             player_hp.current -= power;
             game_log!("{} hits you for {} damage", id, power);
             cache.path.clear();
-        } else if walk_grid_on_segment(*pos, *player_pos, &grid, &q_tag).is_none() {
+        } else if walk_grid_on_segment(*pos, player_pos, &grid, &q_tag).is_none() {
             debug!("Player is visible, finding path");
             cache.path.clear();
-            cache.path.push(*player_pos); // push the last pos, so entities can follow players
-                                          // across corridors
-            if !find_path(*pos, *player_pos, &grid, &q_walk, &mut cache.path) {
+            cache.path.push(player_pos); // push the last pos, so entities can follow players
+                                         // across corridors
+            if !find_path(*pos, player_pos, &grid, &q_walk, &mut cache.path) {
                 // finding path failed, pop the player pos
                 cache.path.clear();
             }
