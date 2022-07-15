@@ -635,6 +635,7 @@ pub fn handle_click(
         "clicked on grid position",
     );
     if !visible.0.at(pos.x, pos.y).copied().unwrap_or(false) {
+        target.0 = None;
         return;
     }
 
