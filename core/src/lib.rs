@@ -10,7 +10,7 @@ mod utils;
 
 use std::{cell::RefCell, rc::Rc};
 
-use cao_db::prelude::*;
+use cecs::prelude::*;
 use components::*;
 use grid::Grid;
 use icons::ICONS;

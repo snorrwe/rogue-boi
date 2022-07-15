@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{grid::Grid, math::Vec2};
-use cao_db::entity_id::EntityId;
+use cecs::entity_id::EntityId;
 use serde::Serialize;
 use smallvec::SmallVec;
 use wasm_bindgen::JsValue;

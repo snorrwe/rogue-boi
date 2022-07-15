@@ -98,23 +98,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "cao-db"
-version = "0.1.0"
-source = "git+https://github.com/caolo-game/caolo-entities#9c3af27deb93631e59324ca54198a5132df4b4e1"
-dependencies = [
- "parking_lot",
- "serde",
- "thiserror",
- "tracing",
-]
-
-[[package]]
 name = "cc"
 version = "1.0.73"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2fff2a6927b3bb87f9595d67196a70493f627687a71d87a0d692242c33f58c11"
 dependencies = [
  "jobserver",
+]
+
+[[package]]
+name = "cecs"
+version = "0.1.0"
+source = "git+https://github.com/caolo-game/cecs#09411ee26a4e8b638d148f96bd0f768e3b91a1cb"
+dependencies = [
+ "parking_lot",
+ "serde",
+ "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -559,7 +559,7 @@ name = "rogue-boi-core"
 version = "0.1.0"
 dependencies = [
  "arrayvec",
- "cao-db",
+ "cecs",
  "console_error_panic_hook",
  "getrandom",
  "icons",

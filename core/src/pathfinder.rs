@@ -1,7 +1,7 @@
 use std::collections::{BinaryHeap, HashMap};
 
 use arrayvec::ArrayVec;
-use cao_db::query::Query;
+use cecs::query::Query;
 use smallvec::SmallVec;
 use tracing::debug;
 

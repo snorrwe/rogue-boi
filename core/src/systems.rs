@@ -7,7 +7,7 @@ use crate::{
     pathfinder::find_path,
     InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff,
 };
-use cao_db::prelude::*;
+use cecs::prelude::*;
 use rand::Rng;
 use tracing::{debug, error, info};
 use wasm_bindgen::JsValue;

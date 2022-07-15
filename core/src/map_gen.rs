@@ -3,7 +3,7 @@ mod tunnel_iter;
 
 use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
-use cao_db::prelude::*;
+use cecs::prelude::*;
 use rand::{
     prelude::{Distribution, SliceRandom},
     Rng,
