@@ -165,7 +165,7 @@ pub struct ShouldUpdateWorld(pub bool);
 pub struct ShouldUpdatePlayer(pub bool);
 
 #[derive(Clone, Default)]
-pub struct IconCollection(pub HashMap<String, web_sys::Path2d>);
+pub struct IconCollection(pub HashMap<&'static str, web_sys::Path2d>);
 
 #[derive(Clone, Default)]
 pub struct RenderResources {

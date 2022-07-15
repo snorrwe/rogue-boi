@@ -46,12 +46,7 @@ pub fn start() {
 fn compute_icons() -> IconCollection {
     let inner = icons::ICONS_SVG
         .iter()
-        .map(|(k, svg)| {
-            (
-                k.to_string(),
-                web_sys::Path2d::new_with_path_string(&svg).unwrap(),
-            )
-        })
+        .map(|(k, svg)| (*k, web_sys::Path2d::new_with_path_string(&svg).unwrap()))
         .collect();
     IconCollection(inner)
 }
