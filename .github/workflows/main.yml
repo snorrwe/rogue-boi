@@ -28,6 +28,13 @@ jobs:
         uses: actions/setup-node@v2.4.1
         with:
           node-version: 14.x
+      - name: Tool version
+        run: |
+          cargo --version
+          rustup --version
+          yarn --version
+          node --version
+
       - name: Install deps
         run: |
           yarn
