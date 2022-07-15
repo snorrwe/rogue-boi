@@ -8,7 +8,7 @@ mod pathfinder;
 mod systems;
 mod utils;
 
-use std::pin::Pin;
+use std::{cell::RefCell, rc::Rc};
 
 use cao_db::prelude::*;
 use components::*;
@@ -29,7 +29,7 @@ use crate::systems::{update_input_events, update_melee_ai, update_player_hp};
 /// State object
 #[wasm_bindgen]
 pub struct Core {
-    world: Pin<Box<World>>,
+    world: Rc<RefCell<World>>,
     time: i32,
 }
 
@@ -135,6 +135,7 @@ pub fn init_core() -> Core {
     );
     world.run_system(update_output);
 
+    let world = Rc::new(RefCell::new(world));
     let mut core = Core { world, time: 0 };
     core.init();
     core
@@ -283,11 +284,12 @@ impl Core {
 
     pub fn tick(&mut self, dt_ms: i32) {
         self.time += dt_ms;
-        self.world.run_system(update_input_events);
+        self.world.borrow_mut().run_system(update_input_events);
 
         // min cooldown
         if self
             .world
+            .borrow_mut()
             .get_resource::<PlayerActions>()
             .unwrap()
             .is_empty()
@@ -296,7 +298,7 @@ impl Core {
             return;
         }
         self.time = 0;
-        self.world.tick();
+        self.world.borrow_mut().tick();
 
         self.cleanup();
     }
@@ -307,26 +309,32 @@ impl Core {
             actions.clear();
         }
 
-        self.world.run_system(clean);
+        self.world.borrow_mut().run_system(clean);
     }
 
     #[wasm_bindgen(js_name = "pushEvent")]
     pub fn push_event(&mut self, event: JsValue) {
         let event: InputEvent = event.into_serde().unwrap();
-        let mut inputs = ResMut::<Vec<InputEvent>>::new(&self.world);
+        let world = self.world.borrow();
+        let mut inputs = ResMut::<Vec<InputEvent>>::new(&world);
         inputs.push(event);
     }
 
     #[wasm_bindgen(js_name = "getOutput")]
     pub fn get_output(&self) -> JsValue {
-        self.world.get_resource::<Output>().unwrap().0.clone()
+        self.world
+            .borrow()
+            .get_resource::<Output>()
+            .unwrap()
+            .0
+            .clone()
     }
 
     #[wasm_bindgen(js_name = "getInventory")]
     pub fn get_inventory(&self) -> JsValue {
-        let item_props =
-            Query::<(&Icon, &Description, &StuffTag, Option<&Ranged>)>::new(&self.world);
-        let inventory = Query::<&Inventory, With<PlayerTag>>::new(&self.world)
+        let world = self.world.borrow();
+        let item_props = Query::<(&Icon, &Description, &StuffTag, Option<&Ranged>)>::new(&world);
+        let inventory = Query::<&Inventory, With<PlayerTag>>::new(&world)
             .iter()
             .next()
             .map(|inv| {
@@ -358,6 +366,7 @@ impl Core {
     pub fn use_item(&mut self, id: JsValue) {
         let id: EntityId = JsValue::into_serde(&id).unwrap();
         self.world
+            .borrow_mut()
             .get_resource_mut::<PlayerActions>()
             .unwrap()
             .insert_use_item(id);
@@ -366,6 +375,7 @@ impl Core {
     #[wasm_bindgen]
     pub fn wait(&mut self) {
         self.world
+            .borrow_mut()
             .get_resource_mut::<PlayerActions>()
             .unwrap()
             .insert_wait();
@@ -376,6 +386,7 @@ impl Core {
         let id: EntityId = JsValue::into_serde(&id).unwrap();
         debug!("set_target {}", id);
         self.world
+            .borrow_mut()
             .get_resource_mut::<PlayerActions>()
             .unwrap()
             .set_target(id);
@@ -385,26 +396,28 @@ impl Core {
     pub fn set_selection(&mut self, id: JsValue) {
         let id: EntityId = JsValue::into_serde(&id).unwrap();
         debug!("set_selection {}", id);
-        if self.world.is_id_valid(id) {
-            self.world.get_resource_mut::<Selected>().unwrap().0 = Some(id);
-            self.world.run_system(update_output);
+        let mut world = self.world.borrow_mut();
+        if world.is_id_valid(id) {
+            world.get_resource_mut::<Selected>().unwrap().0 = Some(id);
+            world.run_system(update_output);
         }
     }
 
     #[wasm_bindgen(js_name = "fetchEntity")]
     pub fn fetch_entity(&self, id: JsValue) -> JsValue {
         let id: EntityId = JsValue::into_serde(&id).unwrap();
-        if !self.world.is_id_valid(id) {
+        let world = self.world.borrow_mut();
+        if !world.is_id_valid(id) {
             return JsValue::null();
         }
-        let tag = Query::<&StuffTag>::new(&self.world).fetch(id).unwrap();
+        let tag = Query::<&StuffTag>::new(&world).fetch(id).unwrap();
         archetypes::stuff_to_js(
             id,
             *tag,
-            Query::new(&self.world),
-            Query::new(&self.world),
-            Query::new(&self.world),
-            Query::new(&self.world),
+            Query::new(&world),
+            Query::new(&world),
+            Query::new(&world),
+            Query::new(&world),
         )
     }
 
@@ -427,17 +440,23 @@ impl Core {
             height,
         };
 
-        self.world.insert_resource(resources);
-        self.world.run_system(render_into_canvas);
-    }
+        if let Some(canvas) = resources.canvas.as_ref() {
+            let world = Rc::clone(&self.world);
+            let closure = Closure::<dyn FnMut(_)>::new(move |event: web_sys::MouseEvent| {
+                let [x, y] = [event.offset_x() as f64, event.offset_y() as f64];
+                let mut world = world.borrow_mut();
+                world.insert_resource(ClickPosition(Some([x, y])));
+                world.run_system(handle_click);
+                world.run_system(update_output);
+            });
+            canvas
+                .add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())
+                .unwrap();
+            closure.forget();
+        }
 
-    /// canvas relative coordinates
-    #[wasm_bindgen(js_name = "canvasClicked")]
-    pub fn canvas_clicked(&mut self, x: f64, y: f64) {
-        debug!("click on {} {}", x, y);
-        self.world.insert_resource(ClickPosition(Some([x, y])));
-        self.world.run_system(handle_click);
-        self.world.run_system(update_output);
+        self.world.borrow_mut().insert_resource(resources);
+        self.world.borrow_mut().run_system(render_into_canvas);
     }
 }
 

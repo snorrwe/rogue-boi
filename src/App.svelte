@@ -14,10 +14,7 @@
 	const inventory = writable(core.getInventory());
 	let last = new Date().getTime();
 
-	canvasStore.subscribe((canvas) => {
-		console.log(canvas);
-		core.setCanvas(canvas);
-	});
+	canvasStore.subscribe((canvas) => core.setCanvas(canvas));
 
 	document.addEventListener('keydown', (event) => {
 		core.pushEvent({
@@ -44,32 +41,32 @@
 </script>
 
 <main>
-	<div class="content">
-		<div>
-			{#if core != null && $coreOutput != null}
-				<Grid coreOutput={$coreOutput} {core} />
-			{/if}
-		</div>
-		<div>
-			{#if $selected != null}
-				<Highlight selected={$selected} {core} />
-			{/if}
+	{#if core != null}
+		<div class="content">
 			<div>
-				<Player
-					inventory={$inventory}
-					alive={$coreOutput.player != null}
-					hp={$coreOutput.player && $coreOutput.player.playerHp}
-					pos={$coreOutput.player && $coreOutput.player.playerPosition}
-					attack={$coreOutput.player && $coreOutput.player.playerAttack}
-					{core}
-				/>
+				<Grid />
+			</div>
+			<div>
+				{#if $selected != null}
+					<Highlight selected={$selected} {core} />
+				{/if}
+				<div>
+					<Player
+						inventory={$inventory}
+						alive={$coreOutput.player != null}
+						hp={$coreOutput.player && $coreOutput.player.playerHp}
+						pos={$coreOutput.player && $coreOutput.player.playerPosition}
+						attack={$coreOutput.player && $coreOutput.player.playerAttack}
+						{core}
+					/>
+				</div>
+			</div>
+			<div class="log">
+				<h2>Logs</h2>
+				<Log log={$coreOutput.log} />
 			</div>
 		</div>
-		<div class="log">
-			<h2>Logs</h2>
-			<Log log={$coreOutput.log} />
-		</div>
-	</div>
+	{/if}
 </main>
 
 <style>
