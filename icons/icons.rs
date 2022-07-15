@@ -2,7 +2,12 @@
 //!
 use std::collections::HashMap;
 
+mod svg_paths {
+    include!(concat!(env!("OUT_DIR"), "/icons_svg.rs"));
+}
+
 lazy_static::lazy_static! {
+    // return relative paths
     pub static ref ICONS: HashMap<&'static str, &'static str> = {
         [
             ("wall", "delapouite/brick-wall.svg"),
@@ -14,6 +19,13 @@ lazy_static::lazy_static! {
             ("hp_potion", "delapouite/health-potion.svg"),
             ("scroll", "lorc/scroll-unfurled.svg"),
         ]
+            .iter()
+            .map(|x|*x)
+            .collect()
+    };
+
+    pub static ref ICONS_SVG: HashMap<&'static str, &'static str> = {
+        svg_paths::SVG_PATHS
             .iter()
             .map(|x|*x)
             .collect()

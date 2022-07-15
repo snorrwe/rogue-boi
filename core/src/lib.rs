@@ -43,6 +43,19 @@ pub fn start() {
     );
 }
 
+fn compute_icons() -> IconCollection {
+    let inner = icons::ICONS_SVG
+        .iter()
+        .map(|(k, svg)| {
+            (
+                k.to_string(),
+                web_sys::Path2d::new_with_path_string(&svg).unwrap(),
+            )
+        })
+        .collect();
+    IconCollection(inner)
+}
+
 #[wasm_bindgen(js_name = "initCore")]
 pub fn init_core() -> Core {
     let world_dims = Vec2 { x: 64, y: 64 };
@@ -59,7 +72,7 @@ pub fn init_core() -> Core {
         max_monsters_per_room: 2,
         max_items_per_room: 2,
     });
-    world.insert_resource(IconCollection::default());
+    world.insert_resource(compute_icons());
     world.insert_resource(ShouldUpdateWorld(false));
     world.insert_resource(ShouldUpdatePlayer(false));
     world.insert_resource(Vec::<InputEvent>::with_capacity(16));
@@ -415,15 +428,6 @@ impl Core {
         };
 
         self.world.insert_resource(resources);
-        self.world.run_system(render_into_canvas);
-    }
-
-    #[wasm_bindgen(js_name = "setIconPayload")]
-    pub fn set_icon_payload(&mut self, key: String, svg_path: String) {
-        let collection = self.world.get_resource_mut::<IconCollection>().unwrap();
-
-        let path = web_sys::Path2d::new_with_path_string(&svg_path).unwrap();
-        collection.0.insert(key, path);
         self.world.run_system(render_into_canvas);
     }
 
