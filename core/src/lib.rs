@@ -51,22 +51,12 @@ fn compute_icons() -> IconCollection {
     IconCollection(inner)
 }
 
-#[wasm_bindgen(js_name = "initCore")]
-pub fn init_core() -> Core {
-    let world_dims = Vec2 { x: 64, y: 64 };
-    let mut world = World::new(world_dims.x as u32 * world_dims.y as u32);
-
+pub fn init_world(world_dims: Vec2, map_gen_props: map_gen::MapGenProps, world: &mut World) {
     world.insert_resource(Grid::<Stuff>::new(world_dims));
     world.insert_resource(GameTick(0));
     world.insert_resource(ClickPosition(None));
     world.insert_resource(Selected::default());
-    world.insert_resource(map_gen::MapGenProps {
-        room_min_size: 6,
-        room_max_size: 10,
-        max_rooms: 50,
-        max_monsters_per_room: 2,
-        max_items_per_room: 2,
-    });
+    world.insert_resource(map_gen_props);
     world.insert_resource(compute_icons());
     world.insert_resource(ShouldUpdateWorld(false));
     world.insert_resource(ShouldUpdatePlayer(false));
@@ -129,6 +119,24 @@ pub fn init_core() -> Core {
             .with_system(update_fov),
     );
     world.run_system(update_output);
+}
+
+#[wasm_bindgen(js_name = "initCore")]
+pub fn init_core() -> Core {
+    let world_dims = Vec2 { x: 64, y: 64 };
+    let mut world = World::new(world_dims.x as u32 * world_dims.y as u32);
+
+    init_world(
+        world_dims,
+        map_gen::MapGenProps {
+            room_min_size: 6,
+            room_max_size: 10,
+            max_rooms: 50,
+            max_monsters_per_room: 2,
+            max_items_per_room: 2,
+        },
+        &mut world,
+    );
 
     let world = Rc::new(RefCell::new(world));
     let mut core = Core { world, time: 0 };
