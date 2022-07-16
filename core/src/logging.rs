@@ -28,7 +28,7 @@ pub(crate) fn rotate_log() {
 pub(crate) fn compute_log(current_tick: usize) -> String {
     let mut output = String::with_capacity(1024 * 4);
 
-    let from = current_tick.checked_sub(HISTORY_LEN).unwrap_or(0);
+    let from = current_tick.checked_sub(HISTORY_LEN).unwrap_or(0).max(1);
 
     let mut j = CURRENT_IND.load(Ordering::Relaxed);
     let indices = (from..current_tick)
