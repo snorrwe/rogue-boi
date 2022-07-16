@@ -40,6 +40,14 @@
 	requestAnimationFrame(gameLoop);
 </script>
 
+<svelte:head>
+	{#if core != null}
+		{#each core.icons() as icon}
+			<link rel="preload" href="icons/{icon}.svg" as="image" />
+		{/each}
+	{/if}
+</svelte:head>
+
 <main>
 	{#if core != null}
 		<div class="content">
