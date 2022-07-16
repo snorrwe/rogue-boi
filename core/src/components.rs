@@ -149,6 +149,13 @@ pub struct Explored(pub Grid<bool>);
 pub struct PlayerId(pub EntityId);
 #[derive(Clone, Copy)]
 pub struct GameTick(pub i32);
+
+impl Default for GameTick {
+    fn default() -> Self {
+        GameTick(1)
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct Viewport(pub Vec2);
 #[derive(Clone, Copy)]
@@ -174,3 +181,11 @@ pub struct Selected(pub Option<EntityId>);
 
 #[derive(Default)]
 pub struct ClickPosition(pub Option<[f64; 2]>);
+
+#[derive(Clone, Copy)]
+pub struct DungeonLevel(pub u32);
+impl Default for DungeonLevel {
+    fn default() -> Self {
+        Self(1)
+    }
+}

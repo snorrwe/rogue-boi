@@ -11,7 +11,7 @@ use rand::{
 
 use crate::{
     archetypes::{init_entity, ENEMY_TAGS, ENEMY_WEIGHTS, ITEM_TAGS, ITEM_WEIGHTS},
-    components::{PlayerTag, Pos, StuffTag},
+    components::{DungeonLevel, PlayerTag, Pos, StuffTag},
     grid::Grid,
     math::Vec2,
     Stuff,
@@ -24,6 +24,19 @@ pub struct MapGenProps {
     pub max_rooms: u32,
     pub max_monsters_per_room: u32,
     pub max_items_per_room: u32,
+}
+
+impl MapGenProps {
+    pub fn from_level(_level: DungeonLevel) -> Self {
+        // TODO: use level
+        MapGenProps {
+            room_min_size: 6,
+            room_max_size: 10,
+            max_rooms: 50,
+            max_monsters_per_room: 2,
+            max_items_per_room: 2,
+        }
+    }
 }
 
 fn place_entities(
@@ -74,20 +87,23 @@ fn place_items(
 
 pub fn generate_map(
     player_q: Query<EntityId, With<PlayerTag>>,
+    entities: Query<EntityId>,
     mut cmd: Commands,
     mut grid: ResMut<Grid<Stuff>>,
     props: Res<MapGenProps>,
 ) {
-    let player_id = player_q.one();
-    grid.fill(None); // reset the grid
+    // player may or may not exist at this point
+    let player_id = player_q.iter().next();
     let mut working_set = Grid::new(grid.dims());
     // fill the map with walls and delete old entities
     //
     for (p, stuff) in grid.iter_mut() {
         if let Some(id) = stuff {
             // delete all but player entities from the database
-            let id: EntityId = (*id).into();
-            if id != player_id {
+            // player is preserved between levels
+            // ignore stale ids
+            let id = *id;
+            if entities.fetch(id).is_some() && Some(id) != player_id {
                 cmd.delete(id);
             }
         }
@@ -102,9 +118,13 @@ pub fn generate_map(
     for (pos, tag) in working_set.iter().filter_map(|(p, t)| t.map(|t| (p, t))) {
         match tag {
             StuffTag::Player => {
-                // update player pos
-                cmd.entity(player_id).insert(Pos(pos));
-                grid[pos] = Some(player_id.into());
+                if let Some(player_id) = player_id {
+                    // update player pos
+                    cmd.entity(player_id).insert(Pos(pos));
+                    grid[pos] = Some(player_id.into());
+                } else {
+                    init_entity(pos, tag, &mut cmd, &mut grid);
+                }
             }
             _ => {
                 init_entity(pos, tag, &mut cmd, &mut grid);

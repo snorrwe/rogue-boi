@@ -51,12 +51,18 @@ fn compute_icons() -> IconCollection {
     IconCollection(inner)
 }
 
-pub fn init_world(world_dims: Vec2, map_gen_props: map_gen::MapGenProps, world: &mut World) {
+pub fn init_world(world_dims: Vec2, world: &mut World) {
+    let player = Query::<EntityId, With<PlayerTag>>::new(&world)
+        .iter()
+        .next();
+    assert!(
+        player.is_none(),
+        "re-initializing exiting World will cause inconsistencies"
+    );
     world.insert_resource(Grid::<Stuff>::new(world_dims));
-    world.insert_resource(GameTick(0));
+    world.insert_resource(GameTick::default());
     world.insert_resource(ClickPosition(None));
     world.insert_resource(Selected::default());
-    world.insert_resource(map_gen_props);
     world.insert_resource(compute_icons());
     world.insert_resource(ShouldUpdateWorld(false));
     world.insert_resource(ShouldUpdatePlayer(false));
@@ -106,12 +112,27 @@ pub fn init_world(world_dims: Vec2, map_gen_props: map_gen::MapGenProps, world: 
             .with_should_run(should_update_world)
             .with_system(rotate_log),
     );
+}
 
-    // Initialize the game world
-    world.run_system(init_player);
-    let player = Query::<EntityId, With<PlayerTag>>::new(&world).one();
-    world.insert_resource(PlayerId(player));
+fn init_dungeon(world: &mut World) {
+    // reset visibility
+    world.get_resource_mut::<Visible>().unwrap().0.fill(false);
+    world.get_resource_mut::<Explored>().unwrap().0.fill(false);
+    let level = world
+        .get_resource::<DungeonLevel>()
+        .cloned()
+        .unwrap_or_default();
+
+    // reset some resources
+    world.insert_resource(level);
+    world.insert_resource(map_gen::MapGenProps::from_level(level));
+    world.insert_resource(PlayerActions::new());
+
     world.run_system(map_gen::generate_map);
+    world.insert_resource(PlayerId(
+        Query::<EntityId, With<PlayerTag>>::new(&world).one(),
+    ));
+
     world.run_system(update_camera_pos);
     world.run_stage(
         SystemStage::new("initial-post-process")
@@ -126,17 +147,8 @@ pub fn init_core() -> Core {
     let world_dims = Vec2 { x: 64, y: 64 };
     let mut world = World::new(world_dims.x as u32 * world_dims.y as u32);
 
-    init_world(
-        world_dims,
-        map_gen::MapGenProps {
-            room_min_size: 6,
-            room_max_size: 10,
-            max_rooms: 50,
-            max_monsters_per_room: 2,
-            max_items_per_room: 2,
-        },
-        &mut world,
-    );
+    init_world(world_dims, &mut world);
+    init_dungeon(&mut world);
 
     let world = Rc::new(RefCell::new(world));
     let mut core = Core { world, time: 0 };
@@ -277,6 +289,17 @@ impl Core {
     pub fn init(&mut self) {
         game_log!("Hello wanderer!");
         self.tick(0);
+    }
+
+    pub fn restart(&mut self) {
+        self.time = 0;
+        let mut world = self.world.borrow_mut();
+        world.insert_resource(GameTick::default());
+        world.insert_resource(DungeonLevel::default());
+        init_dungeon(&mut world);
+        // trigger an initial render, otherwise we'll only see updated output when the player
+        // interacts with something
+        world.run_system(render_into_canvas);
     }
 
     /// return the name of the icons (without the extension!)

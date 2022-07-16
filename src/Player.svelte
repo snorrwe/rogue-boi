@@ -37,6 +37,7 @@
 
 	{#if !alive}
 		<p>You died!</p>
+		<button on:click={() => core.restart()}>Restart</button>
 	{/if}
 </div>
 
