@@ -1,5 +1,5 @@
 use crate::{
-    archetypes::{icon, init_entity},
+    archetypes::icon,
     components::*,
     game_log,
     grid::Grid,
@@ -326,7 +326,10 @@ pub fn update_grid(q: Query<(EntityId, &Pos)>, mut grid: ResMut<Grid<Stuff>>) {
 
 pub fn update_melee_ai<'a>(
     mut q_player: Query<(EntityId, &mut Hp), With<PlayerTag>>,
-    mut q_enemy: Query<(EntityId, &'a Melee, &'a mut PathCache, Option<&'a Leash>), (With<Pos>, With<Ai>)>,
+    mut q_enemy: Query<
+        (EntityId, &'a Melee, &'a mut PathCache, Option<&'a Leash>),
+        (With<Pos>, With<Ai>),
+    >,
     mut q_pos: Query<&mut Pos>,
     q_tag: Query<&StuffTag>,
     q_walk: Query<&Walkable>,
@@ -396,8 +399,7 @@ pub fn update_melee_ai<'a>(
 
 pub fn update_player_hp<'a>(
     mut cmd: Commands,
-    mut
-    query_player: Query<(EntityId, &'a Hp, &'a mut Icon), With<PlayerTag>>,
+    mut query_player: Query<(EntityId, &'a Hp, &'a mut Icon), With<PlayerTag>>,
 ) {
     for (player_id, hp, i) in query_player.iter_mut() {
         if hp.current <= 0 {
@@ -471,11 +473,6 @@ pub fn update_output(
         selected: selected.0.clone(),
     };
     output_cache.0 = JsValue::from_serde(&result).unwrap();
-}
-
-pub fn init_player(mut cmd: Commands, mut grid: ResMut<Grid<Stuff>>) {
-    let dims = grid.dims() / 2;
-    init_entity(dims, StuffTag::Player, &mut cmd, &mut grid);
 }
 
 pub fn should_update_player(s: Res<ShouldUpdatePlayer>) -> bool {

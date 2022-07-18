@@ -17,7 +17,7 @@ use icons::ICONS;
 use math::Vec2;
 
 use systems::{
-    handle_click, handle_player_move, init_player, player_prepare, render_into_canvas, rotate_log,
+    handle_click, handle_player_move, player_prepare, render_into_canvas, rotate_log,
     should_update_player, should_update_world, update_ai_hp, update_camera_pos, update_fov,
     update_grid, update_output, update_player_inventory, update_player_item_use, update_tick,
 };
