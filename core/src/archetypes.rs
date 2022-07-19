@@ -88,6 +88,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 Item,
                 Description("Heal 3".to_string()),
                 Name("Health Potion".into()),
+                Color("rgb(255, 0, 127)".into()),
             ));
         }
         StuffTag::LightningScroll => {
