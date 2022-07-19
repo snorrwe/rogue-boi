@@ -41,6 +41,7 @@ pub fn update_player_item_use<'a>(
     heal_query: Query<&Heal>,
     item_query: Query<Option<&Ranged>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
+    names: Query<&Name>,
 ) {
     let (player_id, inventory) = player_query.iter_mut().next().unwrap();
     let pos = *pos_query.fetch(player_id).unwrap();
@@ -88,7 +89,10 @@ pub fn update_player_item_use<'a>(
                     if skill_check(range.skill) {
                         let dmg = range.power;
                         target_hp.current -= dmg;
-                        game_log!("Lightning bolt hits {} for {} damage!", target_id, dmg);
+                        debug!("Lightning bolt hits {} for {} damage!", target_id, dmg);
+                        if let Some(Name(name)) = names.fetch(target_id) {
+                            game_log!("Lightning Bolt hits {} for {} damage!", name, dmg);
+                        }
                     } else {
                         game_log!("Lightning bolt misses!");
                     }
@@ -136,6 +140,7 @@ pub fn handle_player_move<'a>(
     mut hp: Query<&mut Hp>,
     mut grid: ResMut<Grid<Stuff>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
+    names: Query<&Name>,
 ) {
     let delta = match actions.move_action() {
         Some(x) => x,
@@ -163,7 +168,9 @@ pub fn handle_player_move<'a>(
                             let power = power.power;
                             hp.current -= power;
                             debug!("kick enemy {}: {:?}", stuff_id, hp);
-                            game_log!("Bonk enemy {} for {} damage", stuff_id, power);
+                            if let Some(Name(name)) = names.fetch(stuff_id) {
+                                game_log!("Bonk {} for {} damage", name, power);
+                            }
                         } else {
                             debug!("miss enemy {}", stuff_id);
                             game_log!("Your attack misses");
@@ -182,7 +189,8 @@ pub fn handle_player_move<'a>(
                         grid_step(pos, new_pos, &mut grid);
                         // remove the position component of the item
                         cmd.entity(stuff_id).remove::<Pos>();
-                        game_log!("Picked up a {:?}", tag);
+                        let Name(ref name) = names.fetch(stuff_id).unwrap();
+                        game_log!("Picked up a {}", name);
                     }
                 }
             }
@@ -327,7 +335,13 @@ pub fn update_grid(q: Query<(EntityId, &Pos)>, mut grid: ResMut<Grid<Stuff>>) {
 pub fn update_melee_ai<'a>(
     mut q_player: Query<(EntityId, &mut Hp), With<PlayerTag>>,
     mut q_enemy: Query<
-        (EntityId, &'a Melee, &'a mut PathCache, Option<&'a Leash>),
+        (
+            EntityId,
+            Option<&'a Name>,
+            &'a Melee,
+            &'a mut PathCache,
+            Option<&'a Leash>,
+        ),
         (With<Pos>, With<Ai>),
     >,
     mut q_pos: Query<&mut Pos>,
@@ -344,16 +358,19 @@ pub fn update_melee_ai<'a>(
     };
     let Pos(player_pos) = *q_pos.fetch(player_id).unwrap();
 
-    for (id, Melee { power, skill }, cache, leash) in q_enemy.iter_mut() {
+    for (id, name, Melee { power, skill }, cache, leash) in q_enemy.iter_mut() {
+        let name = name
+            .map(|name| name.0.clone())
+            .unwrap_or_else(|| id.to_string());
         let Pos(pos) = q_pos.fetch_mut(id).unwrap();
         if pos.manhatten(player_pos) <= 1 {
             if !skill_check(*skill) {
-                game_log!("{} misses", id);
+                game_log!("{} misses", name);
                 continue;
             }
 
             player_hp.current -= power;
-            game_log!("{} hits you for {} damage", id, power);
+            game_log!("{} hits you for {} damage", name, power);
             cache.path.clear();
         } else if walk_grid_on_segment(*pos, player_pos, &grid, &q_tag).is_none() {
             debug!("Player is visible, finding path");
@@ -413,14 +430,13 @@ pub fn update_player_hp<'a>(
 
 pub fn update_ai_hp(
     mut cmd: Commands,
-    query_hp: Query<(EntityId, &Hp), (With<Ai>, WithOut<PlayerTag>)>,
+    query_hp: Query<(EntityId, &Hp, Option<&Name>), (With<Ai>, WithOut<PlayerTag>)>,
 ) {
-    for id in query_hp
-        .iter()
-        .filter_map(|(id, hp)| (hp.current <= 0).then_some(id))
-    {
+    for (id, _hp, name) in query_hp.iter().filter(|(_, hp, _)| (hp.current <= 0)) {
         debug!("Entity {} died", id);
-        game_log!("{} died", id);
+        if let Some(Name(name)) = name {
+            game_log!("{} died", name);
+        }
 
         cmd.delete(id);
     }

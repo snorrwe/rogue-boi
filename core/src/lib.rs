@@ -359,27 +359,28 @@ impl Core {
     #[wasm_bindgen(js_name = "getInventory")]
     pub fn get_inventory(&self) -> JsValue {
         let world = self.world.borrow();
-        let item_props = Query::<(&Icon, &Description, &StuffTag, Option<&Ranged>)>::new(&world);
+        let item_props = Query::<(
+            Option<&Icon>,
+            Option<&Description>,
+            Option<&Name>,
+            &StuffTag,
+            Option<&Ranged>,
+        )>::new(&world);
         let inventory = Query::<&Inventory, With<PlayerTag>>::new(&world)
             .iter()
             .next()
             .map(|inv| {
                 inv.iter()
                     .map(|id| {
-                        let props = item_props.fetch(id);
+                        let (icon, desc, name, tag, ranged) = item_props.fetch(id).unwrap();
                         ItemDesc {
                             id,
-                            description: props.map(|p| p.1 .0.clone()),
-                            icon: props.map(|p| p.0 .0.to_string()),
-                            usable: props
-                                .map(|p| {
-                                    matches!(p.2, StuffTag::HpPotion | StuffTag::LightningScroll)
-                                })
-                                .unwrap_or(false),
-                            target_enemy: props
-                                .map(|p| matches!(p.2, StuffTag::LightningScroll))
-                                .unwrap_or(false),
-                            range: props.and_then(|p| p.3).map(|r| r.range).unwrap_or(-1),
+                            name: name.map(|n| n.0.clone()),
+                            description: desc.map(|desc| desc.0.clone()),
+                            icon: icon.map(|icon| icon.0.to_string()),
+                            usable: matches!(tag, StuffTag::HpPotion | StuffTag::LightningScroll),
+                            target_enemy: matches!(tag, StuffTag::LightningScroll),
+                            range: ranged.map(|r| r.range).unwrap_or(0),
                         }
                     })
                     .collect::<Vec<_>>()
@@ -490,6 +491,7 @@ impl Core {
 #[serde(rename_all = "camelCase")]
 struct ItemDesc {
     pub id: EntityId,
+    pub name: Option<String>,
     pub description: Option<String>,
     pub icon: Option<String>,
     pub usable: bool,

@@ -189,3 +189,5 @@ impl Default for DungeonLevel {
         Self(1)
     }
 }
+
+pub struct Name(pub String);

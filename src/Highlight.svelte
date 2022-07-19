@@ -12,11 +12,12 @@
 </script>
 
 <div class="selected">
-	<img
-		class="selected icon"
-		alt={selected.tag}
-		src="icons/{selected.icon}.svg"
-	/>
+	<img class="selected icon" alt={selected.tag} src="icons/{selected.icon}.svg" />
+	{#if selected.name}
+		<h3>
+			{selected.name}
+		</h3>
+	{/if}
 	<div>
 		{selected.description}
 	</div>

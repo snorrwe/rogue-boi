@@ -34,6 +34,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 Inventory::new(16),
                 Melee { power: 1, skill: 2 },
                 Color("white".into()),
+                Name("Player".into()),
             ));
         }
 
@@ -52,6 +53,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                     origin: pos,
                     radius: 20,
                 },
+                Name("Troll".into()),
             ));
         }
         StuffTag::Orc => {
@@ -61,21 +63,22 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 Ai,
                 Melee { power: 1, skill: 3 },
                 PathCache::default(),
-                Description("An orc. Cunning, but brutal".to_string()),
+                Description("Cunning, but brutal".to_string()),
                 Leash {
                     origin: pos,
                     radius: 20,
                 },
                 Color("green".into()),
+                Name("Orc".into()),
             ));
         }
-
         StuffTag::Sword => {
             cmd.insert_bundle((
                 icon("sword"),
                 Melee { power: 1, skill: 0 },
                 Item,
-                Description("Simple sword. Power 1".to_string()),
+                Description("Power 1".to_string()),
+                Name("Simple Sword".into()),
             ));
         }
         StuffTag::HpPotion => {
@@ -83,7 +86,8 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 icon("hp_potion"),
                 Heal { hp: 3 },
                 Item,
-                Description("Health potion. Heal 3".to_string()),
+                Description("Heal 3".to_string()),
+                Name("Health Potion".into()),
             ));
         }
         StuffTag::LightningScroll => {
@@ -96,6 +100,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 },
                 Item,
                 Description("Hurl a lightning bolt at your foe for 3 damage.".to_string()),
+                Name("Lightning Bolt".to_string()),
             ));
         }
     }
@@ -108,6 +113,7 @@ pub fn stuff_to_js(
     q_item: Query<
         (
             &Icon,
+            &Name,
             &Description,
             Option<&Ranged>,
             Option<&Heal>,
@@ -119,6 +125,7 @@ pub fn stuff_to_js(
     q_ai: Query<
         (
             &Icon,
+            &Name,
             Option<&Ranged>,
             Option<&Melee>,
             &Hp,
@@ -134,7 +141,8 @@ pub fn stuff_to_js(
                 json! {{
                     "id": id,
                     "tag": tag,
-                    "description": "The player",
+                    "name": "The player",
+                    "description": "Yourself",
                     "icon": icon.0.clone(),
                     "hp": hp,
                     "melee": melee.clone(),
@@ -143,7 +151,7 @@ pub fn stuff_to_js(
                 json! {{
                     "id": id,
                     "tag": tag,
-                    "description": "The resting place of the player",
+                    "description": "Your resting place",
                     "icon": icon("tombstone").0.clone(),
                 }}
             }
@@ -158,9 +166,10 @@ pub fn stuff_to_js(
             }}
         }
         StuffTag::Troll | StuffTag::Orc => {
-            let (icon, ranged, melee, hp, description) = q_ai.fetch(id).unwrap();
+            let (icon, name, ranged, melee, hp, description) = q_ai.fetch(id).unwrap();
             json! {{
                 "id": id,
+                "name": name.0.clone(),
                 "tag": tag,
                 "ranged": ranged.clone(),
                 "melee": melee.clone(),
@@ -171,12 +180,13 @@ pub fn stuff_to_js(
             }}
         }
         StuffTag::HpPotion | StuffTag::Sword | StuffTag::LightningScroll => {
-            let (icon, desc, ranged, heal, melee, pos) = q_item.fetch(id).unwrap();
+            let (icon, name, desc, ranged, heal, melee, pos) = q_item.fetch(id).unwrap();
             let usable =
                 pos.is_none() && matches!(tag, StuffTag::HpPotion | StuffTag::LightningScroll);
             json! {{
                 "id": id,
                 "tag": tag,
+                "name": name.0.clone(),
                 "range": ranged.clone(),
                 "heal": heal.clone(),
                 "melee": melee.clone(),
