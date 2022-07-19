@@ -1,4 +1,6 @@
 <script>
+	import { iconStore } from './store.js';
+
 	export let inventory;
 	export let core;
 
@@ -12,8 +14,8 @@
 	<ul>
 		{#each inventory ?? [] as item}
 			<li class="item" on:click={() => useItem(item)}>
-				<div title={item.description}>
-					<img src="icons/{item.icon}.svg" alt={item.description} />
+				<div title={item.description} style="--fill-color: {item.color}">
+					{@html $iconStore[item.icon]}
 				</div>
 			</li>
 		{/each}

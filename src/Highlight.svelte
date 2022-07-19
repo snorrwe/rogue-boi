@@ -1,4 +1,6 @@
 <script>
+	import { iconStore } from './store.js';
+
 	export let selected;
 	export let core;
 
@@ -12,7 +14,9 @@
 </script>
 
 <div class="selected">
-	<img class="selected icon" alt={selected.tag} src="icons/{selected.icon}.svg" />
+	<div class="icon" style="--fill-color: {selected.color || 'white'}">
+		{@html $iconStore[selected.icon]}
+	</div>
 	{#if selected.name}
 		<h3>
 			{selected.name}
@@ -46,7 +50,8 @@
 	.selected {
 		color: white;
 	}
-	.selected.icon {
+	.icon {
 		height: 3.2rem;
+		width: 3.2rem;
 	}
 </style>

@@ -5,8 +5,16 @@
 	import Highlight from './Highlight.svelte';
 	import Log from './Log.svelte';
 	import Player from './Player.svelte';
+	import { onMount } from 'svelte';
+	import { fetchIcon } from './store.js';
 
 	export let core;
+
+	onMount(() => {
+		core.icons().forEach((icon) => {
+			fetchIcon({ src: `icons/${icon}.svg`, name: icon });
+		});
+	});
 
 	const coreOutput = writable(core.getOutput());
 	let selected = writable(null);
@@ -39,14 +47,6 @@
 	};
 	requestAnimationFrame(gameLoop);
 </script>
-
-<svelte:head>
-	{#if core != null}
-		{#each core.icons() as icon}
-			<link rel="preload" href="icons/{icon}.svg" as="image" />
-		{/each}
-	{/if}
-</svelte:head>
 
 <main>
 	{#if core != null}

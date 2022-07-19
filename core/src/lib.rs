@@ -365,6 +365,7 @@ impl Core {
             Option<&Name>,
             &StuffTag,
             Option<&Ranged>,
+            Option<&Color>,
         )>::new(&world);
         let inventory = Query::<&Inventory, With<PlayerTag>>::new(&world)
             .iter()
@@ -372,9 +373,10 @@ impl Core {
             .map(|inv| {
                 inv.iter()
                     .map(|id| {
-                        let (icon, desc, name, tag, ranged) = item_props.fetch(id).unwrap();
+                        let (icon, desc, name, tag, ranged, color) = item_props.fetch(id).unwrap();
                         ItemDesc {
                             id,
+                            color: color.and_then(|c| c.0.as_string()),
                             name: name.map(|n| n.0.clone()),
                             description: desc.map(|desc| desc.0.clone()),
                             icon: icon.map(|icon| icon.0.to_string()),
@@ -494,6 +496,7 @@ struct ItemDesc {
     pub name: Option<String>,
     pub description: Option<String>,
     pub icon: Option<String>,
+    pub color: Option<String>,
     pub usable: bool,
     pub target_enemy: bool,
     pub range: i32,
