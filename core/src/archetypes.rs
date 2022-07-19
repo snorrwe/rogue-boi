@@ -22,73 +22,81 @@ pub fn icon(key: &'static str) -> Icon {
 pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid<Stuff>) {
     let cmd = cmd.spawn();
     grid[pos] = Some(Default::default());
-    cmd.insert(tag).insert(Pos(pos));
+    cmd.insert_bundle((tag, Pos(pos)));
     match tag {
         StuffTag::Player => {
-            cmd.insert(StuffTag::Player)
-                .insert(pos)
-                .insert(icon("person"))
-                .insert(Hp::new(10))
-                .insert(PlayerTag)
-                .insert(Inventory::new(16))
-                .insert(Melee { power: 1, skill: 2 })
-                .insert(Color("white".into()));
+            cmd.insert_bundle((
+                StuffTag::Player,
+                pos,
+                icon("person"),
+                Hp::new(10),
+                PlayerTag,
+                Inventory::new(16),
+                Melee { power: 1, skill: 2 },
+                Color("white".into()),
+            ));
         }
 
         StuffTag::Wall => {
-            cmd.insert(icon("wall")).insert(Color("white".into()));
+            cmd.insert_bundle((icon("wall"), Color("white".into())));
         }
         StuffTag::Troll => {
-            cmd.insert(Hp::new(6))
-                .insert(icon("troll"))
-                .insert(Ai)
-                .insert(PathCache::default())
-                .insert(Melee { power: 4, skill: 5 })
-                .insert(Description(
-                    "Large brutish troll. Clumsy, but hits hard".to_string(),
-                ))
-                .insert(Leash {
+            cmd.insert_bundle((
+                Hp::new(6),
+                icon("troll"),
+                Ai,
+                PathCache::default(),
+                Melee { power: 4, skill: 5 },
+                Description("Large brutish troll. Clumsy, but hits hard".to_string()),
+                Leash {
                     origin: pos,
                     radius: 20,
-                });
+                },
+            ));
         }
         StuffTag::Orc => {
-            cmd.insert(Hp::new(4))
-                .insert(icon("orc-head"))
-                .insert(Ai)
-                .insert(Melee { power: 1, skill: 3 })
-                .insert(PathCache::default())
-                .insert(Description("An orc. Cunning, but brutal".to_string()))
-                .insert(Leash {
+            cmd.insert_bundle((
+                Hp::new(4),
+                icon("orc-head"),
+                Ai,
+                Melee { power: 1, skill: 3 },
+                PathCache::default(),
+                Description("An orc. Cunning, but brutal".to_string()),
+                Leash {
                     origin: pos,
                     radius: 20,
-                })
-                .insert(Color("green".into()));
+                },
+                Color("green".into()),
+            ));
         }
 
         StuffTag::Sword => {
-            cmd.insert(icon("sword"))
-                .insert(Melee { power: 1, skill: 0 })
-                .insert(Item)
-                .insert(Description("Simple sword. Power 1".to_string()));
+            cmd.insert_bundle((
+                icon("sword"),
+                Melee { power: 1, skill: 0 },
+                Item,
+                Description("Simple sword. Power 1".to_string()),
+            ));
         }
         StuffTag::HpPotion => {
-            cmd.insert(icon("hp_potion"))
-                .insert(Heal { hp: 3 })
-                .insert(Item)
-                .insert(Description("Health potion. Heal 3".to_string()));
+            cmd.insert_bundle((
+                icon("hp_potion"),
+                Heal { hp: 3 },
+                Item,
+                Description("Health potion. Heal 3".to_string()),
+            ));
         }
         StuffTag::LightningScroll => {
-            cmd.insert(icon("scroll"))
-                .insert(Ranged {
+            cmd.insert_bundle((
+                icon("scroll"),
+                Ranged {
                     power: 3,
                     range: 5,
                     skill: 2,
-                })
-                .insert(Item)
-                .insert(Description(
-                    "Hurl a lightning bolt at your foe for 3 damage.".to_string(),
-                ));
+                },
+                Item,
+                Description("Hurl a lightning bolt at your foe for 3 damage.".to_string()),
+            ));
         }
     }
 }
