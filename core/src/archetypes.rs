@@ -68,7 +68,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                     origin: pos,
                     radius: 20,
                 },
-                Color("green".into()),
+                Color("#06b306".into()),
                 Name("Orc".into()),
             ));
         }

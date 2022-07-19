@@ -10,7 +10,7 @@ lazy_static::lazy_static! {
     // return relative paths
     pub static ref ICONS: HashMap<&'static str, &'static str> = {
         [
-            ("wall", "delapouite/brick-wall.svg"),
+            ("wall", "delapouite/stone-wall.svg"),
             ("troll", "skoll/troll.svg"),
             ("orc-head", "delapouite/orc-head.svg"),
             ("person", "delapouite/person.svg"),
