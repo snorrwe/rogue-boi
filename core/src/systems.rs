@@ -20,6 +20,7 @@ pub fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<Pla
             InputEvent::KeyDown { key } if key == "s" || key == "ArrowDown" => delta.y = 1,
             InputEvent::KeyDown { key } if key == "a" || key == "ArrowLeft" => delta.x = -1,
             InputEvent::KeyDown { key } if key == "d" || key == "ArrowRight" => delta.x = 1,
+            InputEvent::KeyDown { key } if key == "e" => actions.insert_interact(),
             _ => {}
         }
     }
@@ -117,6 +118,51 @@ pub fn update_player_item_use<'a>(
     }
 }
 
+pub fn update_player_world_interact<'a>(
+    mut q_player: Query<(EntityId, &'a mut Inventory, &'a Pos), With<PlayerTag>>,
+    mut cmd: Commands,
+    q_item: Query<(&StuffTag, Option<&Name>)>,
+    grid: Res<Grid<Stuff>>,
+    mut should_run: ResMut<ShouldUpdateWorld>,
+    actions: Res<PlayerActions>,
+) {
+    if !actions.interact() {
+        return;
+    }
+    for (id, inventory, pos) in q_player.iter_mut() {
+        if grid[pos.0] != Some(id) {
+            let stuff_id = grid[pos.0].unwrap();
+            let (tag, name) = q_item.fetch(stuff_id).unwrap();
+            debug!(
+                id = tracing::field::display(stuff_id),
+                "Interacting with {:?}", tag
+            );
+            match tag {
+                StuffTag::Sword | StuffTag::HpPotion | StuffTag::LightningScroll => {
+                    // pick up item
+                    match inventory.add(stuff_id) {
+                        Ok(_) => {
+                            cmd.entity(stuff_id).remove::<Pos>();
+                            let Name(ref name) = name.unwrap();
+                            game_log!("Picked up a {}", name);
+                        }
+                        Err(err) => match err {
+                            crate::components::InventoryError::Full => {
+                                game_log!("Inventory is full");
+                                should_run.0 = false;
+                            }
+                        },
+                    }
+                }
+                _ => unreachable!(),
+            }
+        } else {
+            game_log!("Nothing to do...");
+            should_run.0 = false;
+        }
+    }
+}
+
 pub fn update_player_inventory(
     mut q_melee: Query<&mut Melee>,
     q_inventory: Query<(EntityId, &Inventory), With<PlayerTag>>,
@@ -134,8 +180,7 @@ pub fn update_player_inventory(
 
 pub fn handle_player_move<'a>(
     actions: Res<PlayerActions>,
-    mut cmd: Commands,
-    mut player_q: Query<(&'a mut Inventory, &'a Melee, &'a mut Pos), With<PlayerTag>>,
+    mut player_q: Query<(&'a Melee, &'a mut Pos), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
     mut hp: Query<&mut Hp>,
     mut grid: ResMut<Grid<Stuff>>,
@@ -148,7 +193,7 @@ pub fn handle_player_move<'a>(
             return;
         }
     };
-    for (inventory, power, pos) in player_q.iter_mut() {
+    for (power, pos) in player_q.iter_mut() {
         let pos = &mut pos.0;
         let new_pos: Vec2 = *pos + delta;
         match grid.at(new_pos.x, new_pos.y).unwrap().and_then(|id| {
@@ -178,19 +223,7 @@ pub fn handle_player_move<'a>(
                     }
                     StuffTag::LightningScroll | StuffTag::HpPotion | StuffTag::Sword => {
                         // pick up item
-                        if let Err(err) = inventory.add(stuff_id) {
-                            match err {
-                                crate::components::InventoryError::Full => {
-                                    game_log!("Inventory is full");
-                                    should_run.0 = false;
-                                }
-                            }
-                        }
                         grid_step(pos, new_pos, &mut grid);
-                        // remove the position component of the item
-                        cmd.entity(stuff_id).remove::<Pos>();
-                        let Name(ref name) = names.fetch(stuff_id).unwrap();
-                        game_log!("Picked up a {}", name);
                     }
                 }
             }
@@ -323,12 +356,23 @@ pub fn update_fov(
     }
 }
 
-pub fn update_grid(q: Query<(EntityId, &Pos)>, mut grid: ResMut<Grid<Stuff>>) {
+pub fn update_grid(
+    player: Query<(EntityId, &Pos), With<PlayerTag>>,
+    q: Query<(EntityId, &Pos), WithOut<PlayerTag>>,
+    mut grid: ResMut<Grid<Stuff>>,
+) {
     // zero out the map
     grid.fill(Default::default());
+    // write player id first so player is always rendered on the bottom
+    if let Some((id, pos)) = player.iter().next() {
+        let pos = pos.0;
+        grid[pos] = Some(id);
+    }
+
+    // write ids
     for (id, pos) in q.iter() {
         let pos = pos.0;
-        grid[pos] = Some(id.into());
+        grid[pos] = Some(id);
     }
 }
 

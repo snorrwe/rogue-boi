@@ -9,7 +9,7 @@ use std::{
 
 use arrayvec::ArrayVec;
 
-const HISTORY_LEN: usize = 16;
+const HISTORY_LEN: usize = 10;
 
 static CURRENT_IND: AtomicUsize = AtomicUsize::new(0);
 lazy_static::lazy_static! {

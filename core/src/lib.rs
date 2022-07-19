@@ -24,7 +24,9 @@ use systems::{
 use tracing::debug;
 use wasm_bindgen::{prelude::*, JsCast};
 
-use crate::systems::{update_input_events, update_melee_ai, update_player_hp};
+use crate::systems::{
+    update_input_events, update_melee_ai, update_player_hp, update_player_world_interact,
+};
 
 /// State object
 #[wasm_bindgen]
@@ -82,6 +84,7 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
             .with_should_run(should_update_player)
             .with_system(update_player_item_use)
             .with_system(handle_player_move)
+            .with_system(update_player_world_interact)
             .with_system(update_player_inventory),
     );
     world.add_stage(
@@ -219,6 +222,7 @@ pub struct PlayerActions {
     move_action: Option<Vec2>,
     use_item_action: Option<EntityId>,
     target: Option<EntityId>,
+    interact: bool,
     wait: bool,
 }
 
@@ -234,6 +238,7 @@ impl PlayerActions {
     pub fn len(&self) -> usize {
         self.len
     }
+
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -244,6 +249,7 @@ impl PlayerActions {
         self.target = None;
         self.wait = false;
         self.len = 0;
+        self.interact = false;
     }
 
     pub fn insert_move(&mut self, delta: Vec2) {
@@ -281,6 +287,17 @@ impl PlayerActions {
             self.len += 1;
         }
         self.wait = true;
+    }
+
+    pub fn interact(&self) -> bool {
+        self.interact
+    }
+
+    pub fn insert_interact(&mut self) {
+        if !self.interact {
+            self.len += 1;
+        }
+        self.interact = true;
     }
 }
 
