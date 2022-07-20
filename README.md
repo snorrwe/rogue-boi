@@ -1,9 +1,11 @@
 ## Start local
 
-### Install deps
+### Install dependencies
 
 - [rust](https://www.rust-lang.org/tools/install)
 - [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)
+- [nodejs](https://nodejs.org/en/)
+- yarn `npm install -g yarn`
 - Run `yarn`
 
 ### Run
