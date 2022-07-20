@@ -32,7 +32,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 Hp::new(10),
                 PlayerTag,
                 Inventory::new(16),
-                Melee { power: 1, skill: 2 },
+                Melee { power: 1, skill: 4 },
                 Color("white".into()),
                 Name("Player".into()),
             ));
@@ -47,7 +47,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 icon("troll"),
                 Ai,
                 PathCache::default(),
-                Melee { power: 4, skill: 5 },
+                Melee { power: 4, skill: 1 },
                 Description("Large brutish troll. Clumsy, but hits hard".to_string()),
                 Leash {
                     origin: pos,
@@ -97,7 +97,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 Ranged {
                     power: 3,
                     range: 5,
-                    skill: 2,
+                    skill: 4,
                 },
                 Item,
                 Description("Hurl a lightning bolt at your foe for 3 damage.".to_string()),
