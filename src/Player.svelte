@@ -41,10 +41,4 @@
 	{/if}
 </div>
 
-<style>
-	div {
-		color: white;
-		text-align: left;
-		margin: 2em;
-	}
-</style>
+<style></style>

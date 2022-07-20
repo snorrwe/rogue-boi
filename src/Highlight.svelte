@@ -13,43 +13,38 @@
 	};
 </script>
 
-<div class="selected">
-	<div class="icon" style="--fill-color: {selected.color || 'white'}">
-		{@html $iconStore[selected.icon]}
-	</div>
-	{#if selected.name}
-		<h3>
-			{selected.name}
-		</h3>
-	{/if}
-	<div>
-		{selected.description}
-	</div>
-	{#if selected.hp}
-		<div>
-			Health: {selected.hp.current} / {selected.hp.max}
-		</div>
-	{/if}
-	{#if selected.melee}
-		<div>Melee Power: {selected.melee.power}</div>
-		<div>Melee Skill: {selected.melee.skill}</div>
-	{/if}
-	{#if selected.ranged}
-		<div>Ranged Power: {selected.ranged.power}</div>
-		<div>Ranged Skill: {selected.ranged.skill}</div>
-	{/if}
-	{#if selected.usable}
-		<button on:click={useItem(selected)}>Use</button>
-	{/if}
-	{#if selected.targetable}
-		<button on:click={target(selected)}>Target</button>
-	{/if}
+<div class="icon" style="--fill-color: {selected.color || 'white'}">
+	{@html $iconStore[selected.icon]}
 </div>
+{#if selected.name}
+	<h3>
+		{selected.name}
+	</h3>
+{/if}
+<div>
+	{selected.description}
+</div>
+{#if selected.hp}
+	<div>
+		Health: {selected.hp.current} / {selected.hp.max}
+	</div>
+{/if}
+{#if selected.melee}
+	<div>Melee Power: {selected.melee.power}</div>
+	<div>Melee Skill: {selected.melee.skill}</div>
+{/if}
+{#if selected.ranged}
+	<div>Ranged Power: {selected.ranged.power}</div>
+	<div>Ranged Skill: {selected.ranged.skill}</div>
+{/if}
+{#if selected.usable}
+	<button on:click={useItem(selected)}>Use</button>
+{/if}
+{#if selected.targetable}
+	<button on:click={target(selected)}>Target</button>
+{/if}
 
 <style>
-	.selected {
-		color: white;
-	}
 	.icon {
 		height: 3.2rem;
 		width: 3.2rem;

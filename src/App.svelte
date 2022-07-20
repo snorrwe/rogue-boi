@@ -54,7 +54,7 @@
 			<div>
 				<Grid />
 			</div>
-			<div>
+			<div class="mid-panel">
 				{#if $selected != null}
 					<Highlight selected={$selected} {core} />
 				{/if}
@@ -93,5 +93,11 @@
 	.log {
 		max-height: 100%;
 		overflow: auto;
+	}
+
+	.mid-panel {
+		color: white;
+		text-align: left;
+		margin: 2em;
 	}
 </style>
