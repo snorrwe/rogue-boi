@@ -377,7 +377,7 @@ pub fn update_grid(
 }
 
 pub fn update_melee_ai<'a>(
-    mut q_player: Query<(EntityId, &'a mut Hp, &'a LastPos), With<PlayerTag>>,
+    mut q_player: Query<(EntityId, &'a mut Hp, &'a LastPos), (With<Pos>, With<PlayerTag>)>,
     mut q_enemy: Query<
         (
             EntityId,
