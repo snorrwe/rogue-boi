@@ -358,21 +358,21 @@ pub fn update_fov(
 
 pub fn update_grid(
     player: Query<(EntityId, &Pos), With<PlayerTag>>,
-    q: Query<(EntityId, &Pos), WithOut<PlayerTag>>,
+    mid_stuff: Query<(EntityId, &Pos), (WithOut<PlayerTag>, WithOut<Ai>)>,
+    ais: Query<(EntityId, &Pos), With<Ai>>,
     mut grid: ResMut<Grid<Stuff>>,
 ) {
     // zero out the map
     grid.fill(Default::default());
-    // write player id first so player is always rendered on the bottom
-    if let Some((id, pos)) = player.iter().next() {
-        let pos = pos.0;
-        grid[pos] = Some(id);
-    }
 
-    // write ids
-    for (id, pos) in q.iter() {
-        let pos = pos.0;
-        grid[pos] = Some(id);
+    // layer back to front, in case multiple entities sit on the same position
+    let iterators: [&mut dyn Iterator<Item = (EntityId, &Pos)>; 3] =
+        [&mut player.iter(), &mut mid_stuff.iter(), &mut ais.iter()];
+    for iter in iterators {
+        for (id, pos) in iter {
+            let pos = pos.0;
+            grid[pos] = Some(id);
+        }
     }
 }
 
