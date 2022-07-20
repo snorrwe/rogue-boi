@@ -486,7 +486,7 @@ pub fn update_ai_hp(
     }
 }
 
-/// Throw a D6, if result is <= skill then the check passes
+/// Throw a 1D6, if result is <= skill then the check passes
 pub fn skill_check(skill: i32) -> bool {
     let mut rng = rand::thread_rng();
     rng.gen_range(1..=6) <= skill
