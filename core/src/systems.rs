@@ -498,12 +498,8 @@ pub fn update_tick(mut t: ResMut<GameTick>) {
     t.0 += 1;
 }
 
-pub fn should_update_world(r: Res<ShouldUpdateWorld>) -> bool {
-    r.0
-}
-
-pub fn rotate_log() {
-    crate::logging::rotate_log();
+pub fn should_update_world(should_tick: Res<ShouldTick>, r: Res<ShouldUpdateWorld>) -> bool {
+    r.0 && should_tick.0
 }
 
 pub fn update_camera_pos(mut camera: ResMut<CameraPos>, q: Query<&Pos, With<PlayerTag>>) {
@@ -537,8 +533,8 @@ pub fn update_output(
     output_cache.0 = JsValue::from_serde(&result).unwrap();
 }
 
-pub fn should_update_player(s: Res<ShouldUpdatePlayer>) -> bool {
-    s.0
+pub fn should_update_player(should_tick: Res<ShouldTick>, s: Res<ShouldUpdatePlayer>) -> bool {
+    s.0 && should_tick.0
 }
 
 pub fn player_prepare(
@@ -546,7 +542,13 @@ pub fn player_prepare(
     q: Query<&(), With<PlayerTag>>,
     mut should_update_player: ResMut<ShouldUpdatePlayer>,
     actions: Res<PlayerActions>,
+    should_tick: Res<ShouldTick>,
 ) {
+    if !should_tick.0 {
+        should_update_player.0 = false;
+        should_update.0 = false;
+        return;
+    }
     // if no player is found then don't update player logic
     should_update_player.0 = false;
     should_update.0 = true;
@@ -716,5 +718,37 @@ pub fn init_static_grid(
     grid.0.fill(None);
     for (id, Pos(p)) in q.iter() {
         grid.0[*p] = Some(id);
+    }
+}
+
+pub fn handle_deltatime(
+    mut dt: ResMut<DeltaTime>,
+    mut time: ResMut<Time>,
+    mut should_tick: ResMut<ShouldTick>,
+    actions: Res<PlayerActions>,
+    tick_time: Res<TickInMs>,
+) {
+    time.0 += dt.0;
+    dt.0 = 0;
+    should_tick.0 = !actions.is_empty() && time.0 >= tick_time.0;
+    if should_tick.0 {
+        time.0 = 0;
+    }
+}
+
+pub fn clean_inputs(
+    should_tick: Res<ShouldTick>,
+    mut inputs: ResMut<Vec<InputEvent>>,
+    mut actions: ResMut<PlayerActions>,
+) {
+    if should_tick.0 {
+        inputs.clear();
+        actions.clear();
+    }
+}
+
+pub fn rotate_log(should_update: Res<ShouldUpdateWorld>, should_tick: Res<ShouldTick>) {
+    if should_tick.0 && should_update.0 {
+        crate::logging::rotate_log()
     }
 }

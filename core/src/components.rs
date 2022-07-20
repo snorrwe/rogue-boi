@@ -199,3 +199,16 @@ pub struct StaticStuff;
 
 /// Holds the static stuff
 pub struct StaticGrid(pub Grid<Stuff>);
+
+#[derive(Debug, Clone, Copy)]
+pub struct Time(pub i32);
+
+#[derive(Default, Debug, Clone, Copy)]
+pub struct ShouldTick(pub bool);
+
+#[derive(Debug, Clone, Copy)]
+pub struct DeltaTime(pub i32);
+
+/// Number of real-world milliseconds a tick should take
+#[derive(Debug, Clone, Copy)]
+pub struct TickInMs(pub i32);

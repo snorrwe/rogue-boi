@@ -17,15 +17,15 @@ use icons::ICONS;
 use math::Vec2;
 
 use systems::{
-    handle_click, handle_player_move, player_prepare, render_into_canvas, rotate_log,
-    should_update_player, should_update_world, update_ai_hp, update_camera_pos, update_fov,
-    update_grid, update_output, update_player_inventory, update_player_item_use, update_tick,
+    handle_click, handle_player_move, player_prepare, render_into_canvas, should_update_player,
+    should_update_world, update_ai_hp, update_camera_pos, update_fov, update_grid, update_output,
+    update_player_inventory, update_player_item_use, update_tick,
 };
 use tracing::debug;
 use wasm_bindgen::{prelude::*, JsCast};
 
 use crate::systems::{
-    record_last_pos, update_input_events, update_melee_ai, update_player_hp,
+    handle_deltatime, record_last_pos, update_input_events, update_melee_ai, update_player_hp,
     update_player_world_interact,
 };
 
@@ -33,7 +33,6 @@ use crate::systems::{
 #[wasm_bindgen]
 pub struct Core {
     world: Rc<RefCell<World>>,
-    time: i32,
 }
 
 #[wasm_bindgen(start)]
@@ -79,9 +78,19 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     world.insert_resource(CameraPos(Vec2::ZERO));
     world.insert_resource(Output(JsValue::null()));
     world.insert_resource(RenderResources::default());
+    world.insert_resource(Time(0));
+    world.insert_resource(ShouldTick(false));
+    world.insert_resource(DeltaTime(0));
+    world.insert_resource(TickInMs(120));
 
     world.add_stage(
+        SystemStage::new("handle-tick")
+            .with_system(update_input_events)
+            .with_system(handle_deltatime),
+    );
+    world.add_stage(
         SystemStage::new("pre-update")
+            .with_should_run(|should_tick: Res<ShouldTick>| should_tick.0)
             .with_system(record_last_pos)
             .with_system(player_prepare),
     );
@@ -95,6 +104,7 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     );
     world.add_stage(
         SystemStage::new("player-post-update")
+            .with_should_run(should_update_player)
             .with_system(update_ai_hp)
             .with_system(update_camera_pos),
     );
@@ -118,8 +128,8 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     );
     world.add_stage(
         SystemStage::new("post-render")
-            .with_should_run(should_update_world)
-            .with_system(rotate_log),
+            .with_system(systems::rotate_log)
+            .with_system(systems::clean_inputs),
     );
 }
 
@@ -158,7 +168,7 @@ pub fn init_core() -> Core {
     init_dungeon(&mut world);
 
     let world = Rc::new(RefCell::new(world));
-    let mut core = Core { world, time: 0 };
+    let mut core = Core { world };
     core.init();
     core
 }
@@ -313,8 +323,8 @@ impl Core {
     }
 
     pub fn restart(&mut self) {
-        self.time = 0;
         let mut world = self.world.borrow_mut();
+        world.insert_resource(DeltaTime(0));
         world.insert_resource(GameTick::default());
         world.insert_resource(DungeonLevel::default());
         init_dungeon(&mut world);
@@ -330,33 +340,9 @@ impl Core {
     }
 
     pub fn tick(&mut self, dt_ms: i32) {
-        self.time += dt_ms;
-        self.world.borrow_mut().run_system(update_input_events);
-
-        // min cooldown
-        if self
-            .world
-            .borrow_mut()
-            .get_resource::<PlayerActions>()
-            .unwrap()
-            .is_empty()
-            || self.time < 120
-        {
-            return;
-        }
-        self.time = 0;
-        self.world.borrow_mut().tick();
-
-        self.cleanup();
-    }
-
-    fn cleanup(&mut self) {
-        fn clean(mut inputs: ResMut<Vec<InputEvent>>, mut actions: ResMut<PlayerActions>) {
-            inputs.clear();
-            actions.clear();
-        }
-
-        self.world.borrow_mut().run_system(clean);
+        let mut world = self.world.borrow_mut();
+        world.insert_resource(DeltaTime(dt_ms));
+        world.tick();
     }
 
     #[wasm_bindgen(js_name = "pushEvent")]

@@ -8,6 +8,7 @@ use std::{
 };
 
 use arrayvec::ArrayVec;
+use tracing::debug;
 
 const HISTORY_LEN: usize = 10;
 
@@ -17,6 +18,7 @@ lazy_static::lazy_static! {
 }
 
 pub(crate) fn rotate_log() {
+    debug!("Rotating log");
     let ind = CURRENT_IND.load(Ordering::Relaxed);
     let new_ind = (ind + 1) % HISTORY_LEN;
     LOG_BUFFER[new_ind].lock().unwrap().clear();
@@ -28,7 +30,7 @@ pub(crate) fn rotate_log() {
 pub(crate) fn compute_log(current_tick: usize) -> String {
     let mut output = String::with_capacity(1024 * 4);
 
-    let from = current_tick.checked_sub(HISTORY_LEN).unwrap_or(0).max(1);
+    let from = current_tick.checked_sub(HISTORY_LEN).unwrap_or(0);
 
     let mut j = CURRENT_IND.load(Ordering::Relaxed);
     let indices = (from..current_tick)
