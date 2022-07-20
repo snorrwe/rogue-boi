@@ -82,6 +82,7 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     world.insert_resource(ShouldTick(false));
     world.insert_resource(DeltaTime(0));
     world.insert_resource(TickInMs(120));
+    world.insert_resource(LogHistory::default());
 
     world.add_stage(
         SystemStage::new("handle-tick")
@@ -111,7 +112,6 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     world.add_stage(
         SystemStage::new("ai-update")
             .with_should_run(should_update_world)
-            .with_system(update_tick)
             .with_system(update_melee_ai)
             .with_system(update_player_hp),
     );
@@ -124,12 +124,14 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     world.add_stage(
         SystemStage::new("render")
             .with_system(update_output)
-            .with_system(render_into_canvas),
+            .with_system(render_into_canvas)
+            .with_system(systems::clean_inputs),
     );
     world.add_stage(
         SystemStage::new("post-render")
+            .with_should_run(should_update_world)
             .with_system(systems::rotate_log)
-            .with_system(systems::clean_inputs),
+            .with_system(update_tick),
     );
 }
 

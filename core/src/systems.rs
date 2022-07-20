@@ -513,7 +513,10 @@ pub fn update_output(
     game_tick: Res<GameTick>,
     mut output_cache: ResMut<Output>,
     selected: Res<Selected>,
+    history: Res<LogHistory>,
 ) {
+    use std::fmt::Write;
+
     let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
 
     let player = q_player
@@ -524,7 +527,16 @@ pub fn update_output(
             player_attack: attack.power,
             player_pos: pos.0,
         });
-    let log = crate::logging::compute_log(game_tick.0 as usize);
+    let mut log = String::with_capacity(1024);
+    for (tick, payload) in history.0.iter() {
+        writeln!(&mut log, "------- {} -------", tick.0).unwrap();
+        writeln!(&mut log, "{}", payload).unwrap();
+    }
+    let current_log = crate::logging::get_log_buffer();
+    if !current_log.is_empty() {
+        writeln!(&mut log, "------- {} -------", game_tick.0).unwrap();
+        writeln!(&mut log, "{}", *current_log).unwrap();
+    }
     let result = RenderedOutput {
         player,
         log,
@@ -747,8 +759,10 @@ pub fn clean_inputs(
     }
 }
 
-pub fn rotate_log(should_update: Res<ShouldUpdateWorld>, should_tick: Res<ShouldTick>) {
-    if should_tick.0 && should_update.0 {
-        crate::logging::rotate_log()
+pub fn rotate_log(mut history: ResMut<LogHistory>, tick: Res<GameTick>) {
+    let mut buff = crate::logging::get_log_buffer();
+    history.0.push_back((*tick, std::mem::take(&mut buff)));
+    while history.0.len() > 10 {
+        history.0.pop_front();
     }
 }
