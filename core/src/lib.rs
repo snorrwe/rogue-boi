@@ -81,7 +81,7 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     world.insert_resource(RenderResources::default());
 
     world.add_stage(
-        SystemStage::new("player-update-pre")
+        SystemStage::new("pre-update")
             .with_system(record_last_pos)
             .with_system(player_prepare),
     );
@@ -94,7 +94,7 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
             .with_system(update_player_inventory),
     );
     world.add_stage(
-        SystemStage::new("player-update-post")
+        SystemStage::new("player-post-update")
             .with_system(update_ai_hp)
             .with_system(update_camera_pos),
     );
