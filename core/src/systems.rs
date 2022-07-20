@@ -703,7 +703,7 @@ pub fn handle_click(
     debug!("targeting entity {:?}", result);
 }
 
-pub fn record_player_last_pos<'a>(mut q: Query<(&'a mut LastPos, &'a Pos), With<PlayerTag>>) {
+pub fn record_last_pos<'a>(mut q: Query<(&'a mut LastPos, &'a Pos)>) {
     for (last, current) in q.iter_mut() {
         last.0 = current.0
     }
