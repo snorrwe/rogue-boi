@@ -32,7 +32,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 Hp::new(10),
                 PlayerTag,
                 Inventory::new(16),
-                Melee { power: 1, skill: 4 },
+                Melee { power: 1, skill: 5 },
                 Color("white".into()),
                 Name("Player".into()),
             ));
