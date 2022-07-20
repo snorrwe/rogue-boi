@@ -39,7 +39,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         }
 
         StuffTag::Wall => {
-            cmd.insert_bundle((icon("wall"), Color("#d4dfd7".into())));
+            cmd.insert_bundle((icon("wall"), Color("#d4dfd7".into()), StaticStuff));
         }
         StuffTag::Troll => {
             cmd.insert_bundle((

@@ -358,12 +358,13 @@ pub fn update_fov(
 
 pub fn update_grid(
     player: Query<(EntityId, &Pos), With<PlayerTag>>,
-    mid_stuff: Query<(EntityId, &Pos), (WithOut<PlayerTag>, WithOut<Ai>)>,
+    mid_stuff: Query<(EntityId, &Pos), (WithOut<PlayerTag>, WithOut<Ai>, WithOut<StaticStuff>)>,
     ais: Query<(EntityId, &Pos), With<Ai>>,
     mut grid: ResMut<Grid<Stuff>>,
+    static_stuff: Res<StaticGrid>,
 ) {
     // zero out the map
-    grid.fill(Default::default());
+    grid.copy(&static_stuff.0);
 
     // layer back to front, in case multiple entities sit on the same position
     let iterators: [&mut dyn Iterator<Item = (EntityId, &Pos)>; 3] =
@@ -542,16 +543,14 @@ pub fn should_update_player(s: Res<ShouldUpdatePlayer>) -> bool {
 
 pub fn player_prepare(
     mut should_update: ResMut<ShouldUpdateWorld>,
-    mut player_id: ResMut<PlayerId>,
-    q: Query<EntityId, With<PlayerTag>>,
+    q: Query<&(), With<PlayerTag>>,
     mut should_update_player: ResMut<ShouldUpdatePlayer>,
     actions: Res<PlayerActions>,
 ) {
     // if no player is found then don't update player logic
     should_update_player.0 = false;
     should_update.0 = true;
-    for id in q.iter() {
-        player_id.0 = id;
+    for _ in q.iter() {
         should_update_player.0 = true;
         break;
     }
@@ -707,5 +706,15 @@ pub fn handle_click(
 pub fn record_player_last_pos<'a>(mut q: Query<(&'a mut LastPos, &'a Pos), With<PlayerTag>>) {
     for (last, current) in q.iter_mut() {
         last.0 = current.0
+    }
+}
+
+pub fn init_static_grid(
+    q: Query<(EntityId, &Pos), With<StaticStuff>>,
+    mut grid: ResMut<StaticGrid>,
+) {
+    grid.0.fill(None);
+    for (id, Pos(p)) in q.iter() {
+        grid.0[*p] = Some(id);
     }
 }

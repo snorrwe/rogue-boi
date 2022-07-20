@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{grid::Grid, math::Vec2};
+use crate::{grid::Grid, math::Vec2, Stuff};
 use cecs::entity_id::EntityId;
 use serde::Serialize;
 use smallvec::SmallVec;
@@ -146,8 +146,6 @@ pub struct Color(pub JsValue);
 pub struct Visible(pub Grid<bool>);
 pub struct Explored(pub Grid<bool>);
 #[derive(Clone, Copy)]
-pub struct PlayerId(pub EntityId);
-#[derive(Clone, Copy)]
 pub struct GameTick(pub i32);
 
 impl Default for GameTick {
@@ -194,3 +192,10 @@ pub struct Name(pub String);
 
 #[derive(Debug, Clone, Copy)]
 pub struct LastPos(pub Vec2);
+
+/// Mark entities that can't move
+#[derive(Debug, Clone, Copy)]
+pub struct StaticStuff;
+
+/// Holds the static stuff
+pub struct StaticGrid(pub Grid<Stuff>);

@@ -63,6 +63,7 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
         "re-initializing exiting World will cause inconsistencies"
     );
     world.insert_resource(Grid::<Stuff>::new(world_dims));
+    world.insert_resource(StaticGrid(Grid::new(world_dims)));
     world.insert_resource(GameTick::default());
     world.insert_resource(ClickPosition(None));
     world.insert_resource(Selected::default());
@@ -137,9 +138,7 @@ fn init_dungeon(world: &mut World) {
     world.insert_resource(PlayerActions::new());
 
     world.run_system(map_gen::generate_map);
-    world.insert_resource(PlayerId(
-        Query::<EntityId, With<PlayerTag>>::new(&world).one(),
-    ));
+    world.run_system(systems::init_static_grid);
 
     world.run_system(update_camera_pos);
     world.run_stage(

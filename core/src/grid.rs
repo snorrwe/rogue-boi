@@ -37,6 +37,16 @@ impl<T: serde::Serialize> Grid<T> {
         0 <= x && 0 <= y && x < self.dims.x && y < self.dims.y
     }
 
+    pub fn copy(&mut self, src: &Self)
+    where
+        T: Clone,
+    {
+        let dims = self.dims;
+        assert_eq!(dims, src.dims);
+
+        self.data = src.data.clone();
+    }
+
     pub fn at(&self, x: i32, y: i32) -> Option<&T> {
         if !self.contains(x, y) {
             return None;
