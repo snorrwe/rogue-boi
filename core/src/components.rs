@@ -191,3 +191,6 @@ impl Default for DungeonLevel {
 }
 
 pub struct Name(pub String);
+
+#[derive(Debug, Clone, Copy)]
+pub struct LastPos(pub Vec2);

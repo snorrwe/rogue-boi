@@ -25,7 +25,8 @@ use tracing::debug;
 use wasm_bindgen::{prelude::*, JsCast};
 
 use crate::systems::{
-    update_input_events, update_melee_ai, update_player_hp, update_player_world_interact,
+    record_player_last_pos, update_input_events, update_melee_ai, update_player_hp,
+    update_player_world_interact,
 };
 
 /// State object
@@ -78,7 +79,11 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     world.insert_resource(Output(JsValue::null()));
     world.insert_resource(RenderResources::default());
 
-    world.add_stage(SystemStage::new("player-update-pre").with_system(player_prepare));
+    world.add_stage(
+        SystemStage::new("player-update-pre")
+            .with_system(record_player_last_pos)
+            .with_system(player_prepare),
+    );
     world.add_stage(
         SystemStage::new("player-update")
             .with_should_run(should_update_player)

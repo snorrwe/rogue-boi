@@ -26,6 +26,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
     match tag {
         StuffTag::Player => {
             cmd.insert_bundle((
+                LastPos(pos),
                 StuffTag::Player,
                 icon("person"),
                 Hp::new(10),

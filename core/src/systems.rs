@@ -377,7 +377,7 @@ pub fn update_grid(
 }
 
 pub fn update_melee_ai<'a>(
-    mut q_player: Query<(EntityId, &mut Hp), With<PlayerTag>>,
+    mut q_player: Query<(EntityId, &'a mut Hp, &'a LastPos), With<PlayerTag>>,
     mut q_enemy: Query<
         (
             EntityId,
@@ -393,7 +393,7 @@ pub fn update_melee_ai<'a>(
     q_walk: Query<&Walkable>,
     mut grid: ResMut<Grid<Stuff>>,
 ) {
-    let (player_id, player_hp) = match q_player.iter_mut().next() {
+    let (player_id, player_hp, LastPos(last_player_pos)) = match q_player.iter_mut().next() {
         Some(x) => x,
         None => {
             debug!("No player on the map! Skipping melee update");
@@ -421,7 +421,8 @@ pub fn update_melee_ai<'a>(
             cache.path.clear();
             cache.path.push(player_pos); // push the last pos, so entities can follow players
                                          // across corridors
-            if !find_path(*pos, player_pos, &grid, &q_walk, &mut cache.path) {
+            cache.path.push(*last_player_pos);
+            if !find_path(*pos, *last_player_pos, &grid, &q_walk, &mut cache.path) {
                 // finding path failed, pop the player pos
                 cache.path.clear();
             }
@@ -701,4 +702,10 @@ pub fn handle_click(
     target.0 = result;
 
     debug!("targeting entity {:?}", result);
+}
+
+pub fn record_player_last_pos<'a>(mut q: Query<(&'a mut LastPos, &'a Pos), With<PlayerTag>>) {
+    for (last, current) in q.iter_mut() {
+        last.0 = current.0
+    }
 }
