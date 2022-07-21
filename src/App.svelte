@@ -54,7 +54,11 @@
 			<div>
 				<Grid />
 			</div>
-			<div class="mid-panel">
+			<div class="log">
+				<h2>Log</h2>
+				<Log log={$coreOutput.log} />
+			</div>
+			<div class="game-ui">
 				{#if $selected != null}
 					<Highlight selected={$selected} {core} />
 				{/if}
@@ -68,10 +72,6 @@
 						{core}
 					/>
 				</div>
-			</div>
-			<div class="log">
-				<h2>Logs</h2>
-				<Log log={$coreOutput.log} />
 			</div>
 		</div>
 	{/if}
@@ -95,7 +95,7 @@
 		overflow: auto;
 	}
 
-	.mid-panel {
+	.game-ui {
 		color: white;
 		text-align: left;
 		margin: 2em;
