@@ -85,18 +85,18 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     world.insert_resource(LogHistory::default());
 
     world.add_stage(
-        SystemStage::new("handle-tick")
+        SystemStage::serial("handle-tick")
             .with_system(update_input_events)
             .with_system(handle_deltatime),
     );
     world.add_stage(
-        SystemStage::new("pre-update")
+        SystemStage::serial("pre-update")
             .with_should_run(|should_tick: Res<ShouldTick>| should_tick.0)
             .with_system(record_last_pos)
             .with_system(player_prepare),
     );
     world.add_stage(
-        SystemStage::new("player-update")
+        SystemStage::serial("player-update")
             .with_should_run(should_update_player)
             .with_system(update_player_item_use)
             .with_system(handle_player_move)
@@ -104,31 +104,31 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
             .with_system(update_player_inventory),
     );
     world.add_stage(
-        SystemStage::new("player-post-update")
+        SystemStage::serial("player-post-update")
             .with_should_run(should_update_player)
             .with_system(update_ai_hp)
             .with_system(update_camera_pos),
     );
     world.add_stage(
-        SystemStage::new("ai-update")
+        SystemStage::serial("ai-update")
             .with_should_run(should_update_world)
             .with_system(update_melee_ai)
             .with_system(update_player_hp),
     );
     world.add_stage(
-        SystemStage::new("post-update")
+        SystemStage::serial("post-update")
             .with_should_run(should_update_world)
             .with_system(update_grid)
             .with_system(update_fov),
     );
     world.add_stage(
-        SystemStage::new("render")
+        SystemStage::serial("render")
             .with_system(update_output)
             .with_system(render_into_canvas)
             .with_system(systems::clean_inputs),
     );
     world.add_stage(
-        SystemStage::new("post-render")
+        SystemStage::serial("post-render")
             .with_should_run(should_update_world)
             .with_system(systems::rotate_log)
             .with_system(update_tick),
@@ -154,7 +154,7 @@ fn init_dungeon(world: &mut World) {
 
     world.run_system(update_camera_pos);
     world.run_stage(
-        SystemStage::new("initial-post-process")
+        SystemStage::serial("initial-post-process")
             .with_system(update_grid)
             .with_system(update_fov),
     );
