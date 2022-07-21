@@ -101,11 +101,7 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
             .with_system(update_player_item_use)
             .with_system(handle_player_move)
             .with_system(update_player_world_interact)
-            .with_system(update_player_inventory),
-    );
-    world.add_stage(
-        SystemStage::serial("player-post-update")
-            .with_should_run(should_update_player)
+            .with_system(update_player_inventory)
             .with_system(update_ai_hp)
             .with_system(update_camera_pos),
     );
@@ -113,11 +109,7 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
         SystemStage::serial("ai-update")
             .with_should_run(should_update_world)
             .with_system(update_melee_ai)
-            .with_system(update_player_hp),
-    );
-    world.add_stage(
-        SystemStage::serial("post-update")
-            .with_should_run(should_update_world)
+            .with_system(update_player_hp)
             .with_system(update_grid)
             .with_system(update_fov)
             .with_system(update_output),
