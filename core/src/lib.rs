@@ -119,11 +119,11 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
         SystemStage::serial("post-update")
             .with_should_run(should_update_world)
             .with_system(update_grid)
-            .with_system(update_fov),
+            .with_system(update_fov)
+            .with_system(update_output),
     );
     world.add_stage(
         SystemStage::serial("render")
-            .with_system(update_output)
             .with_system(render_into_canvas)
             .with_system(systems::clean_inputs),
     );
@@ -152,13 +152,13 @@ fn init_dungeon(world: &mut World) {
     world.run_system(map_gen::generate_map);
     world.run_system(systems::init_static_grid);
 
-    world.run_system(update_camera_pos);
     world.run_stage(
         SystemStage::serial("initial-post-process")
+            .with_system(update_camera_pos)
             .with_system(update_grid)
-            .with_system(update_fov),
+            .with_system(update_fov)
+            .with_system(update_output),
     );
-    world.run_system(update_output);
 }
 
 #[wasm_bindgen(js_name = "initCore")]
@@ -331,9 +331,6 @@ impl Core {
         world.insert_resource(DungeonLevel::default());
         world.insert_resource(LogHistory::default());
         init_dungeon(&mut world);
-        // trigger an initial render, otherwise we'll only see updated output when the player
-        // interacts with something
-        world.run_system(render_into_canvas);
     }
 
     /// return the name of the icons (without the extension!)
