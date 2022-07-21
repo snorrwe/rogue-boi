@@ -329,6 +329,7 @@ impl Core {
         world.insert_resource(DeltaTime(0));
         world.insert_resource(GameTick::default());
         world.insert_resource(DungeonLevel::default());
+        world.insert_resource(LogHistory::default());
         init_dungeon(&mut world);
         // trigger an initial render, otherwise we'll only see updated output when the player
         // interacts with something
