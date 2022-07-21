@@ -87,7 +87,8 @@
 
 	.content {
 		display: grid;
-		grid-template-columns: minmax(0, 2fr) repeat(2, 1fr);
+		grid-template-columns: 2fr repeat(2, 1fr);
+		column-gap: 2rem;
 	}
 
 	.log {
@@ -98,6 +99,5 @@
 	.game-ui {
 		color: white;
 		text-align: left;
-		margin: 2em;
 	}
 </style>

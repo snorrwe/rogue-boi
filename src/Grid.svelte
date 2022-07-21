@@ -12,5 +12,3 @@
 </script>
 
 <canvas width="600" height="600" bind:this={canvas} />
-
-<style></style>
