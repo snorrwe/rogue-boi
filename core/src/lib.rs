@@ -319,7 +319,7 @@ impl Core {
         world.insert_resource(DeltaTime(0));
         world.insert_resource(GameTick::default());
         world.insert_resource(DungeonLevel::default());
-        world.insert_resource(LogHistory::default());
+        world.get_resource_mut::<LogHistory>().unwrap().0.clear();
         init_dungeon(&mut world);
     }
 
