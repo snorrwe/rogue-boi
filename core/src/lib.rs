@@ -54,11 +54,9 @@ fn compute_icons() -> IconCollection {
 }
 
 pub fn init_world(world_dims: Vec2, world: &mut World) {
-    let player = Query::<EntityId, With<PlayerTag>>::new(&world)
-        .iter()
-        .next();
-    assert!(
-        player.is_none(),
+    let player_count = Query::<&(), With<PlayerTag>>::new(&world).count();
+    assert_eq!(
+        player_count, 0,
         "re-initializing exiting World will cause inconsistencies"
     );
     world.insert_resource(Grid::<Stuff>::new(world_dims));
