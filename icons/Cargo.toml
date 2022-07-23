@@ -13,5 +13,5 @@ path="icons.rs"
 lazy_static = "1.4.0"
 
 [build-dependencies]
-serde={ version = "1.0.139", features = ["derive"] }
+serde={ version = "1.0.140", features = ["derive"] }
 serde-xml-rs= "0.5.1"
