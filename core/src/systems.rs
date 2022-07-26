@@ -741,7 +741,7 @@ pub fn init_static_grid(
     }
 }
 
-pub fn handle_deltatime(
+pub fn update_should_tick(
     mut dt: ResMut<DeltaTime>,
     mut time: ResMut<Time>,
     mut should_tick: ResMut<ShouldTick>,

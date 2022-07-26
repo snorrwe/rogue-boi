@@ -77,7 +77,7 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     world.add_stage(
         SystemStage::serial("inputs")
             .with_system(update_input_events)
-            .with_system(handle_deltatime)
+            .with_system(update_should_tick)
             .with_system(handle_targeting)
             .with_system(player_prepare),
     );

@@ -30,7 +30,7 @@ impl Vec2 {
         Self { x, y }
     }
 
-    /// not really normalized, but reduces all dims to [-1‥1]
+    /// not really normalized, but reduces all dims to `[-1‥1]`
     pub fn as_direction(self) -> Self {
         let x = if self.x != 0 {
             self.x / self.x.abs()
