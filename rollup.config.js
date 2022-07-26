@@ -68,7 +68,7 @@ export default [
 
 function icons() {
 	return {
-		generateBundle() {
+		buildStart() {
 			require('child_process').spawn('cargo', ['xtask', 'copy-icons'], {
 				stdio: ['ignore', 'inherit', 'inherit'],
 				shell: true
