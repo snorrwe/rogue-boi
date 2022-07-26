@@ -10,24 +10,14 @@ mod utils;
 
 use std::{cell::RefCell, rc::Rc};
 
+use crate::systems::*;
 use cecs::prelude::*;
 use components::*;
 use grid::Grid;
 use icons::ICONS;
 use math::Vec2;
-
-use systems::{
-    handle_click, handle_player_move, player_prepare, render_into_canvas, should_update_player,
-    should_update_world, update_ai_hp, update_camera_pos, update_fov, update_grid, update_output,
-    update_player_inventory, update_player_item_use, update_tick,
-};
-use tracing::debug;
+use tracing::{debug, error};
 use wasm_bindgen::{prelude::*, JsCast};
-
-use crate::systems::{
-    handle_deltatime, record_last_pos, update_input_events, update_melee_ai, update_player_hp,
-    update_player_world_interact,
-};
 
 /// State object
 #[wasm_bindgen]
@@ -81,17 +71,20 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     world.insert_resource(DeltaTime(0));
     world.insert_resource(TickInMs(120));
     world.insert_resource(LogHistory::default());
+    world.insert_resource(AppMode::Game);
+    world.insert_resource(UseItem::default());
 
     world.add_stage(
-        SystemStage::serial("handle-tick")
+        SystemStage::serial("inputs")
             .with_system(update_input_events)
-            .with_system(handle_deltatime),
+            .with_system(handle_deltatime)
+            .with_system(handle_targeting)
+            .with_system(player_prepare),
     );
     world.add_stage(
         SystemStage::serial("pre-update")
             .with_should_run(|should_tick: Res<ShouldTick>| should_tick.0)
-            .with_system(record_last_pos)
-            .with_system(player_prepare),
+            .with_system(record_last_pos),
     );
     world.add_stage(
         SystemStage::serial("player-update")
@@ -222,11 +215,13 @@ pub struct PlayerOutput {
     pub player_pos: Vec2,
 }
 
+#[derive(Default, Clone, Copy)]
+pub struct UseItem(Option<EntityId>);
+
 #[derive(Default, Clone)]
 pub struct PlayerActions {
     len: usize,
     move_action: Option<Vec2>,
-    use_item_action: Option<EntityId>,
     target: Option<EntityId>,
     interact: bool,
     wait: bool,
@@ -251,7 +246,6 @@ impl PlayerActions {
 
     pub fn clear(&mut self) {
         self.move_action = None;
-        self.use_item_action = None;
         self.target = None;
         self.wait = false;
         self.len = 0;
@@ -267,17 +261,6 @@ impl PlayerActions {
 
     pub fn move_action(&self) -> Option<Vec2> {
         self.move_action
-    }
-
-    pub fn insert_use_item(&mut self, item: EntityId) {
-        let old = self.use_item_action.replace(item);
-        if old.is_none() {
-            self.len += 1;
-        }
-    }
-
-    pub fn use_item_action(&self) -> Option<EntityId> {
-        self.use_item_action
     }
 
     pub fn set_target(&mut self, target: EntityId) {
@@ -320,6 +303,8 @@ impl Core {
         world.insert_resource(GameTick::default());
         world.insert_resource(DungeonLevel::default());
         world.get_resource_mut::<LogHistory>().unwrap().0.clear();
+        world.insert_resource(AppMode::Game);
+        world.insert_resource(UseItem::default());
         init_dungeon(&mut world);
     }
 
@@ -391,11 +376,15 @@ impl Core {
     #[wasm_bindgen(js_name = "useItem")]
     pub fn use_item(&mut self, id: JsValue) {
         let id: EntityId = JsValue::into_serde(&id).unwrap();
+        if !self.world.borrow().is_id_valid(id) {
+            error!("use_item id is not valid");
+            return;
+        }
         self.world
             .borrow_mut()
-            .get_resource_mut::<PlayerActions>()
+            .get_resource_mut::<UseItem>()
             .unwrap()
-            .insert_use_item(id);
+            .0 = Some(id);
     }
 
     #[wasm_bindgen]

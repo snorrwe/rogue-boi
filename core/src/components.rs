@@ -215,3 +215,9 @@ pub struct TickInMs(pub i32);
 
 #[derive(Default)]
 pub struct LogHistory(pub VecDeque<(GameTick, String)>);
+
+#[derive(Debug, Clone, Copy)]
+pub enum AppMode {
+    Game,
+    Targeting,
+}

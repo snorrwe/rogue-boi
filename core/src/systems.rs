@@ -5,7 +5,7 @@ use crate::{
     grid::Grid,
     math::{remap_f64, walk_square, Vec2},
     pathfinder::find_path,
-    InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff,
+    InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff, UseItem,
 };
 use cecs::prelude::*;
 use rand::Rng;
@@ -42,24 +42,32 @@ pub fn update_player_item_use<'a>(
     heal_query: Query<&Heal>,
     item_query: Query<Option<&Ranged>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
+    mut app_mode: ResMut<AppMode>,
     names: Query<&Name>,
+    mut use_item: ResMut<UseItem>,
 ) {
     let (player_id, inventory) = player_query.iter_mut().next().unwrap();
     let pos = *pos_query.fetch(player_id).unwrap();
 
-    if let Some(id) = actions.use_item_action() {
+    let mut cleanup = |id, use_item: &mut UseItem| {
+        inventory.remove(id);
+        cmd.delete(id);
+        use_item.0 = None;
+    };
+
+    if let Some(id) = use_item.0 {
+        debug!("Using item {}", id);
         let tag = stuff_tags.fetch(id);
         match tag {
             Some(StuffTag::HpPotion) => {
                 game_log!("Drink a health potion.");
-                inventory.remove(id);
                 let hp = hp_query.fetch_mut(player_id).unwrap();
                 if hp.full() {
                     game_log!("The potion has no effect");
                 }
                 let heal = heal_query.fetch(id).unwrap();
                 hp.current = (hp.current + heal.hp).min(hp.max);
-                cmd.delete(id);
+                cleanup(id, &mut use_item);
             }
             Some(StuffTag::LightningScroll) => match actions.target() {
                 Some(target_id) => {
@@ -97,19 +105,19 @@ pub fn update_player_item_use<'a>(
                     } else {
                         game_log!("Lightning bolt misses!");
                     }
-                    inventory.remove(id);
-                    cmd.delete(id);
+                    cleanup(id, &mut use_item);
                 }
                 None => {
-                    game_log!("Lightning bolt has no target!");
-                    error!("Lightning bolt has no target!");
+                    game_log!("Select a target");
+                    debug!("Lightning bolt has no target!");
                     should_run.0 = false;
+                    *app_mode = AppMode::Targeting;
                     return;
                 }
             },
             None => {
                 error!("Item has no stuff tag");
-                inventory.remove(id);
+                cleanup(id, &mut use_item)
             }
             _ => {
                 unreachable!("Bad item use")
@@ -738,14 +746,31 @@ pub fn handle_deltatime(
     mut time: ResMut<Time>,
     mut should_tick: ResMut<ShouldTick>,
     actions: Res<PlayerActions>,
+    use_item: Res<UseItem>,
     tick_time: Res<TickInMs>,
 ) {
     time.0 += dt.0;
     dt.0 = 0;
-    should_tick.0 = !actions.is_empty() && time.0 >= tick_time.0;
+    should_tick.0 = (use_item.0.is_some() || !actions.is_empty()) && time.0 >= tick_time.0;
     if should_tick.0 {
         time.0 = 0;
     }
+}
+
+pub fn handle_targeting(
+    mut should_tick: ResMut<ShouldTick>,
+    actions: Res<PlayerActions>,
+    mut mode: ResMut<AppMode>,
+) {
+    match *mode {
+        AppMode::Game => {}
+        AppMode::Targeting => {
+            if actions.target().is_some() {
+                *mode = AppMode::Game;
+            }
+        }
+    }
+    should_tick.0 = should_tick.0 && matches!(*mode, AppMode::Game);
 }
 
 pub fn clean_inputs(
