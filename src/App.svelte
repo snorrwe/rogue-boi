@@ -69,6 +69,7 @@
 						hp={$coreOutput.player && $coreOutput.player.playerHp}
 						pos={$coreOutput.player && $coreOutput.player.playerPosition}
 						attack={$coreOutput.player && $coreOutput.player.playerAttack}
+						targeting={$coreOutput.targeting}
 						{core}
 					/>
 				</div>

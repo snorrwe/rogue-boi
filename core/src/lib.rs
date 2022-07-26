@@ -204,7 +204,9 @@ pub struct RenderedOutput {
     pub selected: Option<EntityId>,
     pub player: Option<PlayerOutput>,
     pub log: String,
+    pub targeting: bool,
 }
+
 #[derive(serde::Serialize)]
 pub struct PlayerOutput {
     #[serde(rename = "playerHp")]
@@ -472,6 +474,17 @@ impl Core {
 
         self.world.borrow_mut().insert_resource(resources);
         self.world.borrow_mut().run_system(render_into_canvas);
+    }
+
+    #[wasm_bindgen(js_name = "cancelItemUse")]
+    pub fn cancel_item_use(&mut self) {
+        let mut world = self.world.borrow_mut();
+        world.get_resource_mut::<UseItem>().unwrap().0 = None;
+        let mode = world.get_resource_mut::<AppMode>().unwrap();
+        if matches!(*mode, AppMode::Targeting) {
+            *mode = AppMode::Game;
+        }
+        game_log!("Cancel item use");
     }
 }
 

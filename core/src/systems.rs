@@ -522,6 +522,7 @@ pub fn update_output(
     mut output_cache: ResMut<Output>,
     selected: Res<Selected>,
     history: Res<LogHistory>,
+    app_mode: Res<AppMode>,
 ) {
     use std::fmt::Write;
 
@@ -545,10 +546,12 @@ pub fn update_output(
         writeln!(&mut log, "------- {} -------", game_tick.0).unwrap();
         writeln!(&mut log, "{}", *current_log).unwrap();
     }
+    let targeting = matches!(*app_mode, AppMode::Targeting);
     let result = RenderedOutput {
         player,
         log,
         selected: selected.0.clone(),
+        targeting,
     };
     output_cache.0 = JsValue::from_serde(&result).unwrap();
 }

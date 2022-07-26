@@ -10,11 +10,16 @@
 	export let attack;
 	export let inventory;
 	export let core;
+	export let targeting;
 </script>
 
 <div>
 	{#if alive}
 		<Inventory {inventory} {core} on:selected={(ev) => dispatch('selected', ev.detail)} />
+
+		{#if targeting}
+			<button on:click={() => core.cancelItemUse()}>Cancel item use</button>
+		{/if}
 
 		<h2>Player stats</h2>
 		{#if hp != null}
