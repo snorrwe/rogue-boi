@@ -97,14 +97,9 @@ impl<T: serde::Serialize> Grid<T> {
     where
         T: std::ops::BitOrAssign + Copy,
     {
-        let maxx = self.dims.x.min(rhs.dims.x);
-        let maxy = self.dims.y.min(rhs.dims.y);
-
-        for y in 0..maxy {
-            for x in 0..maxx {
-                let pos = Vec2::new(x, y);
-                self[pos] |= rhs[pos];
-            }
+        assert_eq!(self.dims, rhs.dims);
+        for (a, b) in self.data.iter_mut().zip(rhs.data.iter()) {
+            *a |= *b
         }
     }
 
