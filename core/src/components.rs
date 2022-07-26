@@ -221,3 +221,6 @@ pub enum AppMode {
     Game,
     Targeting,
 }
+
+#[derive(Default, Debug, Clone, Copy)]
+pub struct Velocity(pub Vec2);

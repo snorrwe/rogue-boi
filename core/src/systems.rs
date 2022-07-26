@@ -385,30 +385,55 @@ pub fn update_grid(
     }
 }
 
-pub fn update_ai_move<'a>(
-    q_player: Query<(EntityId, &'a LastPos), (With<Pos>, With<PlayerTag>)>,
+pub fn perform_move<'a>(
+    mut q: Query<(&'a mut Pos, &'a mut Velocity)>,
     mut grid: ResMut<Grid<Stuff>>,
-    mut melee: Query<(EntityId, &'a mut PathCache, Option<&'a Leash>), (With<Melee>, With<Pos>)>,
-    mut q_pos: Query<&mut Pos>,
+) {
+    for (pos, vel) in q.iter_mut() {
+        if vel.0 == Vec2::ZERO {
+            continue;
+        }
+        let new_pos = pos.0 + vel.0;
+        if grid[new_pos].is_none() {
+            let res = grid[pos.0].take();
+            grid[new_pos] = res;
+            pos.0 = new_pos;
+        } else {
+            debug!("Pos {} is occupied", new_pos);
+        }
+        vel.0 = Vec2::ZERO;
+    }
+}
+
+pub fn update_ai_move<'a>(
+    q_player: Query<(&'a Pos, &'a LastPos), (With<Pos>, With<PlayerTag>)>,
+    grid: Res<Grid<Stuff>>,
+    mut melee: Query<
+        (
+            &'a mut PathCache,
+            &'a Pos,
+            &'a mut Velocity,
+            Option<&'a Leash>,
+        ),
+        (With<Melee>, With<Pos>),
+    >,
     q_walk: Query<&Walkable>,
     q_tag: Query<&StuffTag>,
 ) {
-    let (player_id, LastPos(last_player_pos)) = match q_player.iter().next() {
+    let (Pos(player_pos), LastPos(last_player_pos)) = match q_player.iter().next() {
         Some(x) => x,
         None => {
             debug!("No player on the map! Skipping melee update");
             return;
         }
     };
-    let Pos(player_pos) = *q_pos.fetch(player_id).unwrap();
-    for (id, cache, leash) in melee.iter_mut() {
-        let Pos(pos) = q_pos.fetch_mut(id).unwrap();
-        if pos.manhatten(player_pos) > 1 {
-            if walk_grid_on_segment(*pos, player_pos, &grid, &q_tag).is_none() {
+    for (cache, Pos(pos), vel, leash) in melee.iter_mut() {
+        if pos.manhatten(*player_pos) > 1 {
+            if walk_grid_on_segment(*pos, *player_pos, &grid, &q_tag).is_none() {
                 debug!("Player is visible, finding path");
                 cache.path.clear();
-                cache.path.push(player_pos); // push the last pos, so entities can follow players
-                                             // across corridors
+                cache.path.push(*player_pos); // push the last pos, so entities can follow players
+                                              // across corridors
                 cache.path.push(*last_player_pos);
                 if !find_path(*pos, *last_player_pos, &grid, &q_walk, &mut cache.path) {
                     // finding path failed, pop the player pos
@@ -439,9 +464,7 @@ pub fn update_ai_move<'a>(
                     // taken
                     cache.path.clear();
                 } else {
-                    grid[*pos] = None;
-                    grid[new_pos] = Some(id);
-                    *pos = new_pos;
+                    vel.0 = new_pos - *pos;
                 }
             }
         } else {

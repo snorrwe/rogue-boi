@@ -105,6 +105,7 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
             .with_system(update_grid)
             .with_system(update_fov),
     );
+    world.add_stage(SystemStage::serial("update-pos").with_system(perform_move));
     world.add_stage(
         SystemStage::serial("render")
             .with_system(update_output)

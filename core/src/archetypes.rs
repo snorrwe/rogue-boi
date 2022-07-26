@@ -54,6 +54,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                     radius: 20,
                 },
                 Name("Troll".into()),
+                Velocity::default(),
             ));
         }
         StuffTag::Orc => {
@@ -70,6 +71,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 },
                 Color("#06b306".into()),
                 Name("Orc".into()),
+                Velocity::default(),
             ));
         }
         StuffTag::Sword => {
