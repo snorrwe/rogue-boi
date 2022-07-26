@@ -102,11 +102,11 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
             .with_system(update_melee_ai)
             .with_system(update_player_hp)
             .with_system(update_grid)
-            .with_system(update_fov)
-            .with_system(update_output),
+            .with_system(update_fov),
     );
     world.add_stage(
         SystemStage::serial("render")
+            .with_system(update_output)
             .with_system(render_into_canvas)
             .with_system(systems::clean_inputs),
     );
