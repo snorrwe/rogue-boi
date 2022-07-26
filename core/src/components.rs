@@ -85,6 +85,7 @@ pub enum StuffTag {
     Sword,
     HpPotion,
     LightningScroll,
+    ConfusionScroll,
 }
 
 impl StuffTag {
@@ -96,7 +97,11 @@ impl StuffTag {
     pub fn static_visiblity(self) -> bool {
         matches!(
             self,
-            StuffTag::Wall | StuffTag::Sword | StuffTag::HpPotion | StuffTag::LightningScroll
+            StuffTag::Wall
+                | StuffTag::Sword
+                | StuffTag::HpPotion
+                | StuffTag::LightningScroll
+                | StuffTag::ConfusionScroll
         )
     }
 }
@@ -224,3 +229,7 @@ pub enum AppMode {
 
 #[derive(Default, Debug, Clone, Copy)]
 pub struct Velocity(pub Vec2);
+#[derive(Debug, Clone, Copy)]
+pub struct ConfusedAi {
+    pub duration: i32,
+}

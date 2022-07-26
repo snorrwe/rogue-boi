@@ -93,14 +93,15 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
             .with_system(handle_player_move)
             .with_system(update_player_world_interact)
             .with_system(update_player_inventory)
-            .with_system(update_ai_hp)
             .with_system(update_camera_pos),
     );
+    world.add_stage(SystemStage::serial("update-ai-hp").with_system(update_ai_hp));
     world.add_stage(
         SystemStage::serial("ai-update")
             .with_should_run(should_update_world)
-            .with_system(update_melee_ai)
             .with_system(update_ai_move)
+            .with_system(update_melee_ai)
+            .with_system(update_confusion)
             .with_system(update_player_hp)
             .with_system(update_grid)
             .with_system(update_fov),
@@ -181,9 +182,10 @@ impl StuffPayload {
             Some(StuffTag::Player) => Self::Player { id },
             Some(StuffTag::Troll) => Self::Troll { id },
             Some(StuffTag::Orc) => Self::Orc { id },
-            Some(StuffTag::HpPotion) | Some(StuffTag::Sword) | Some(StuffTag::LightningScroll) => {
-                Self::Item { id }
-            }
+            Some(StuffTag::HpPotion)
+            | Some(StuffTag::Sword)
+            | Some(StuffTag::LightningScroll)
+            | Some(StuffTag::ConfusionScroll) => Self::Item { id },
         }
     }
 }

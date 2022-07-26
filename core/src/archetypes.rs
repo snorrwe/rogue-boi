@@ -11,8 +11,9 @@ pub const ITEM_TAGS: &[StuffTag] = &[
     StuffTag::Sword,
     StuffTag::HpPotion,
     StuffTag::LightningScroll,
+    StuffTag::ConfusionScroll,
 ];
-pub const ITEM_WEIGHTS: &[i32] = &[2, 2, 1];
+pub const ITEM_WEIGHTS: &[i32] = &[2, 2, 1, 1];
 
 pub fn icon(key: &'static str) -> Icon {
     assert!(icons::ICONS.contains_key(key));
@@ -94,17 +95,36 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
             ));
         }
         StuffTag::LightningScroll => {
+            let power = 3;
             cmd.insert_bundle((
                 icon("scroll"),
                 Ranged {
-                    power: 3,
+                    power,
                     range: 5,
                     skill: 4,
                 },
                 Item,
-                Description("Hurl a lightning bolt at your foe for 3 damage.".to_string()),
+                Description(format!(
+                    "Hurl a lightning bolt at your foe for {} damage.",
+                    power
+                )),
                 Name("Lightning Bolt".to_string()),
                 Color("#fee85d".into()),
+            ));
+        }
+        StuffTag::ConfusionScroll => {
+            let power = 10;
+            cmd.insert_bundle((
+                icon("scroll"),
+                Ranged {
+                    power,
+                    range: 5,
+                    skill: 4,
+                },
+                Item,
+                Description(format!("Confuse the target enemy for {} turns", power)),
+                Name("Confusion Bolt".to_string()),
+                Color("#800080".into()),
             ));
         }
     }
@@ -187,10 +207,16 @@ pub fn stuff_to_js(
                 "color": color.and_then(|c|c.0.as_string())
             }}
         }
-        StuffTag::HpPotion | StuffTag::Sword | StuffTag::LightningScroll => {
+        StuffTag::HpPotion
+        | StuffTag::Sword
+        | StuffTag::LightningScroll
+        | StuffTag::ConfusionScroll => {
             let (icon, name, desc, ranged, heal, melee, pos, color) = q_item.fetch(id).unwrap();
-            let usable =
-                pos.is_none() && matches!(tag, StuffTag::HpPotion | StuffTag::LightningScroll);
+            let usable = pos.is_none()
+                && matches!(
+                    tag,
+                    StuffTag::HpPotion | StuffTag::LightningScroll | StuffTag::ConfusionScroll
+                );
             json! {{
                 "id": id,
                 "tag": tag,

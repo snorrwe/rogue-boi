@@ -8,7 +8,7 @@ use crate::{
     InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff, UseItem,
 };
 use cecs::prelude::*;
-use rand::Rng;
+use rand::{prelude::SliceRandom, Rng};
 use tracing::{debug, error, info};
 use wasm_bindgen::JsValue;
 
@@ -45,11 +45,12 @@ pub fn update_player_item_use<'a>(
     mut app_mode: ResMut<AppMode>,
     names: Query<&Name>,
     mut use_item: ResMut<UseItem>,
+    mut confused: Query<&mut ConfusedAi>,
 ) {
     let (player_id, inventory) = player_query.iter_mut().next().unwrap();
     let pos = *pos_query.fetch(player_id).unwrap();
 
-    let mut cleanup = |id, use_item: &mut UseItem| {
+    let mut cleanup = |id, use_item: &mut UseItem, cmd: &mut Commands| {
         inventory.remove(id);
         cmd.delete(id);
         use_item.0 = None;
@@ -67,15 +68,60 @@ pub fn update_player_item_use<'a>(
                 }
                 let heal = heal_query.fetch(id).unwrap();
                 hp.current = (hp.current + heal.hp).min(hp.max);
-                cleanup(id, &mut use_item);
+                cleanup(id, &mut use_item, &mut cmd);
             }
+            Some(StuffTag::ConfusionScroll) => match actions.target() {
+                None => {
+                    game_log!("Select a target");
+                    debug!("Confusion Bolt has no target!");
+                    should_run.0 = false;
+                    *app_mode = AppMode::Targeting;
+                    return;
+                }
+                Some(target_id) => {
+                    debug!("Use ConfusionScroll");
+                    let target_pos = match pos_query.fetch(target_id) {
+                        Some(x) => x,
+                        None => {
+                            game_log!("Invalid target");
+                            should_run.0 = false;
+                            return;
+                        }
+                    };
+                    let range = item_query.fetch(id).unwrap();
+                    let range = range.unwrap();
+                    if target_pos.0.chebyshev(pos.0) > range.range {
+                        game_log!("Target is too far away");
+                        should_run.0 = false;
+                        return;
+                    }
+                    if skill_check(range.skill) {
+                        let duration = range.power;
+                        debug!("Confusion Bolt hits {} for {} turns!", target_id, duration);
+                        if let Some(confusion) = confused.fetch_mut(target_id) {
+                            confusion.duration += duration;
+                        } else {
+                            cmd.entity(target_id).insert(ConfusedAi { duration });
+                        }
+                        if let Some(Name(name)) = names.fetch(target_id) {
+                            game_log!(
+                                "The eyes of the {} look vacant, as it starts to stumble around!",
+                                name
+                            );
+                        }
+                    } else {
+                        game_log!("Confusion Bolt misses!");
+                    }
+                    cleanup(id, &mut use_item, &mut cmd);
+                }
+            },
             Some(StuffTag::LightningScroll) => match actions.target() {
                 Some(target_id) => {
                     debug!("Use lightning scroll {}", id);
                     let target_hp = match hp_query.fetch_mut(target_id) {
                         Some(x) => x,
                         None => {
-                            game_log!("Invalid target for lightning bolt");
+                            game_log!("Invalid target");
                             should_run.0 = false;
                             return;
                         }
@@ -83,7 +129,7 @@ pub fn update_player_item_use<'a>(
                     let target_pos = match pos_query.fetch(target_id) {
                         Some(x) => x,
                         None => {
-                            game_log!("Invalid target for lightning bolt");
+                            game_log!("Invalid target");
                             should_run.0 = false;
                             return;
                         }
@@ -98,18 +144,18 @@ pub fn update_player_item_use<'a>(
                     if skill_check(range.skill) {
                         let dmg = range.power;
                         target_hp.current -= dmg;
-                        debug!("Lightning bolt hits {} for {} damage!", target_id, dmg);
+                        debug!("Lightning Bolt hits {} for {} damage!", target_id, dmg);
                         if let Some(Name(name)) = names.fetch(target_id) {
                             game_log!("Lightning Bolt hits {} for {} damage!", name, dmg);
                         }
                     } else {
-                        game_log!("Lightning bolt misses!");
+                        game_log!("Lightning Bolt misses!");
                     }
-                    cleanup(id, &mut use_item);
+                    cleanup(id, &mut use_item, &mut cmd);
                 }
                 None => {
                     game_log!("Select a target");
-                    debug!("Lightning bolt has no target!");
+                    debug!("Lightning Bolt has no target!");
                     should_run.0 = false;
                     *app_mode = AppMode::Targeting;
                     return;
@@ -117,7 +163,7 @@ pub fn update_player_item_use<'a>(
             },
             None => {
                 error!("Item has no stuff tag");
-                cleanup(id, &mut use_item)
+                cleanup(id, &mut use_item, &mut cmd)
             }
             _ => {
                 unreachable!("Bad item use")
@@ -146,7 +192,10 @@ pub fn update_player_world_interact<'a>(
                 "Interacting with {:?}", tag
             );
             match tag {
-                StuffTag::Sword | StuffTag::HpPotion | StuffTag::LightningScroll => {
+                StuffTag::Sword
+                | StuffTag::HpPotion
+                | StuffTag::LightningScroll
+                | StuffTag::ConfusionScroll => {
                     // pick up item
                     match inventory.add(stuff_id) {
                         Ok(_) => {
@@ -229,7 +278,10 @@ pub fn handle_player_move<'a>(
                             game_log!("Your attack misses");
                         }
                     }
-                    StuffTag::LightningScroll | StuffTag::HpPotion | StuffTag::Sword => {
+                    StuffTag::LightningScroll
+                    | StuffTag::HpPotion
+                    | StuffTag::Sword
+                    | StuffTag::ConfusionScroll => {
                         // pick up item
                         grid_step(pos, new_pos, &mut grid);
                     }
@@ -405,18 +457,30 @@ pub fn perform_move<'a>(
     }
 }
 
+pub fn update_confusion<'a>(
+    mut cmd: Commands,
+    mut confused: Query<(EntityId, Option<&'a Name>, &'a mut ConfusedAi)>,
+) {
+    for (id, name, confusion) in confused.iter_mut() {
+        confusion.duration -= 1;
+        if confusion.duration <= 0 {
+            if let Some(Name(name)) = name {
+                game_log!("{} is no longer confused!", name);
+            }
+            cmd.entity(id).remove::<ConfusedAi>();
+        }
+    }
+}
+
 pub fn update_ai_move<'a>(
     q_player: Query<(&'a Pos, &'a LastPos), (With<Pos>, With<PlayerTag>)>,
     grid: Res<Grid<Stuff>>,
     mut melee: Query<
-        (
-            &'a mut PathCache,
-            &'a Pos,
-            &'a mut Velocity,
-            Option<&'a Leash>,
-        ),
-        (With<Melee>, With<Pos>),
+        (EntityId, &'a mut PathCache, &'a Pos, Option<&'a Leash>),
+        (With<Melee>, With<Velocity>, WithOut<ConfusedAi>),
     >,
+    mut confused: Query<EntityId, (With<ConfusedAi>, With<Velocity>)>,
+    mut q_vel: Query<&'a mut Velocity>,
     q_walk: Query<&Walkable>,
     q_tag: Query<&StuffTag>,
 ) {
@@ -427,7 +491,8 @@ pub fn update_ai_move<'a>(
             return;
         }
     };
-    for (cache, Pos(pos), vel, leash) in melee.iter_mut() {
+    for (id, cache, Pos(pos), leash) in melee.iter_mut() {
+        let vel = q_vel.fetch_mut(id).unwrap();
         if pos.manhatten(*player_pos) > 1 {
             if walk_grid_on_segment(*pos, *player_pos, &grid, &q_tag).is_none() {
                 debug!("Player is visible, finding path");
@@ -471,35 +536,72 @@ pub fn update_ai_move<'a>(
             cache.path.clear();
         }
     }
+
+    let delta = [Vec2::X, -Vec2::X, Vec2::Y, -Vec2::Y];
+    let mut rng = rand::thread_rng();
+    for id in confused.iter_mut() {
+        let vel = q_vel.fetch_mut(id).unwrap();
+        vel.0 = *delta.choose(&mut rng).unwrap();
+    }
 }
 
 pub fn update_melee_ai<'a>(
-    mut q_player: Query<(EntityId, &'a mut Hp), (With<Pos>, With<PlayerTag>)>,
-    mut q_enemy: Query<(EntityId, Option<&'a Name>, &'a Melee), (With<Pos>, With<Ai>)>,
-    mut q_pos: Query<&mut Pos>,
+    mut q_player: Query<(EntityId, &'a Pos), (With<Hp>, With<PlayerTag>)>,
+    mut q_target: Query<(&'a mut Hp, Option<&'a Name>)>,
+    mut q_enemy: Query<
+        (
+            EntityId,
+            Option<&'a Name>,
+            &'a Melee,
+            &'a Pos,
+            Option<&'a ConfusedAi>,
+            Option<&'a Velocity>,
+        ),
+        With<Ai>,
+    >,
+    grid: Res<Grid<Stuff>>,
 ) {
-    let (player_id, player_hp) = match q_player.iter_mut().next() {
+    let (player_id, Pos(player_pos)) = match q_player.iter_mut().next() {
         Some(x) => x,
         None => {
             debug!("No player on the map! Skipping melee update");
             return;
         }
     };
-    let Pos(player_pos) = *q_pos.fetch(player_id).unwrap();
 
-    for (id, name, Melee { power, skill }) in q_enemy.iter_mut() {
+    for (id, name, Melee { power, skill }, Pos(pos), confused, vel) in q_enemy.iter_mut() {
         let name = name
             .map(|name| name.0.clone())
             .unwrap_or_else(|| id.to_string());
-        let Pos(pos) = q_pos.fetch_mut(id).unwrap();
-        if pos.manhatten(player_pos) <= 1 {
+        let mut target = None;
+        if confused.is_some() {
+            if let Some(vel) = vel {
+                let target_pos = *pos + vel.0;
+                if let Some(t_id) = grid[target_pos] {
+                    if let Some(t) = q_target.fetch_mut(t_id) {
+                        target = Some((t.0, t.1.map(|n| n.0.as_str()), t_id));
+                    }
+                }
+            }
+        } else if pos.manhatten(*player_pos) <= 1 {
+            if let Some(t) = q_target.fetch_mut(player_id) {
+                target = Some((t.0, Some("you"), player_id));
+            }
+        }
+
+        if let Some((target_hp, target_name, target_id)) = target {
             if !skill_check(*skill) {
                 game_log!("{} misses", name);
                 continue;
             }
-
-            player_hp.current -= power;
-            game_log!("{} hits you for {} damage", name, power);
+            target_hp.current -= power;
+            let target_name = target_name.unwrap_or("");
+            debug!(
+                id = tracing::field::display(id),
+                target_id = tracing::field::display(target_id),
+                "melee hit"
+            );
+            game_log!("{} hits {} for {} damage", name, target_name, power);
         }
     }
 }
