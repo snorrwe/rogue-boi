@@ -1,3 +1,9 @@
+# Rogue Boi
+
+Loosely following http://rogueliketutorials.com/tutorials/tcod/v2/
+
+The game is available on [itch.io](https://snorrwe.itch.io/rogue-boi).
+
 ## Start local
 
 ### Install dependencies
