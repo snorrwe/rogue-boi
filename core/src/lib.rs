@@ -100,6 +100,7 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
         SystemStage::serial("ai-update")
             .with_should_run(should_update_world)
             .with_system(update_melee_ai)
+            .with_system(update_ai_move)
             .with_system(update_player_hp)
             .with_system(update_grid)
             .with_system(update_fov),

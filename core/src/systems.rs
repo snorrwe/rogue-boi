@@ -385,24 +385,77 @@ pub fn update_grid(
     }
 }
 
-pub fn update_melee_ai<'a>(
-    mut q_player: Query<(EntityId, &'a mut Hp, &'a LastPos), (With<Pos>, With<PlayerTag>)>,
-    mut q_enemy: Query<
-        (
-            EntityId,
-            Option<&'a Name>,
-            &'a Melee,
-            &'a mut PathCache,
-            Option<&'a Leash>,
-        ),
-        (With<Pos>, With<Ai>),
-    >,
-    mut q_pos: Query<&mut Pos>,
-    q_tag: Query<&StuffTag>,
-    q_walk: Query<&Walkable>,
+pub fn update_ai_move<'a>(
+    q_player: Query<(EntityId, &'a LastPos), (With<Pos>, With<PlayerTag>)>,
     mut grid: ResMut<Grid<Stuff>>,
+    mut melee: Query<(EntityId, &'a mut PathCache, Option<&'a Leash>), (With<Melee>, With<Pos>)>,
+    mut q_pos: Query<&mut Pos>,
+    q_walk: Query<&Walkable>,
+    q_tag: Query<&StuffTag>,
 ) {
-    let (player_id, player_hp, LastPos(last_player_pos)) = match q_player.iter_mut().next() {
+    let (player_id, LastPos(last_player_pos)) = match q_player.iter().next() {
+        Some(x) => x,
+        None => {
+            debug!("No player on the map! Skipping melee update");
+            return;
+        }
+    };
+    let Pos(player_pos) = *q_pos.fetch(player_id).unwrap();
+    for (id, cache, leash) in melee.iter_mut() {
+        let Pos(pos) = q_pos.fetch_mut(id).unwrap();
+        if pos.manhatten(player_pos) > 1 {
+            if walk_grid_on_segment(*pos, player_pos, &grid, &q_tag).is_none() {
+                debug!("Player is visible, finding path");
+                cache.path.clear();
+                cache.path.push(player_pos); // push the last pos, so entities can follow players
+                                             // across corridors
+                cache.path.push(*last_player_pos);
+                if !find_path(*pos, *last_player_pos, &grid, &q_walk, &mut cache.path) {
+                    // finding path failed, pop the player pos
+                    cache.path.clear();
+                }
+                // if the distance to the player is 1
+                // there is a bug in pathfinding that returns the current pos as the last
+                while cache.path.last() == Some(pos) {
+                    cache.path.pop();
+                }
+            } else if cache.path.is_empty() {
+                // if the enemy has a leash and the player is not visible, return to the origin
+                if let Some(leash) = leash {
+                    cache.path.clear();
+                    find_path(*pos, leash.origin, &grid, &q_walk, &mut cache.path);
+                }
+            }
+            if let Some(mut new_pos) = cache.path.pop() {
+                if let Some(leash) = leash {
+                    // if at the end of leash, don't move
+                    if new_pos.manhatten(leash.origin) > leash.radius {
+                        cache.path.clear();
+                        new_pos = *pos;
+                    }
+                }
+
+                if grid[new_pos].is_some() {
+                    // taken
+                    cache.path.clear();
+                } else {
+                    grid[*pos] = None;
+                    grid[new_pos] = Some(id);
+                    *pos = new_pos;
+                }
+            }
+        } else {
+            cache.path.clear();
+        }
+    }
+}
+
+pub fn update_melee_ai<'a>(
+    mut q_player: Query<(EntityId, &'a mut Hp), (With<Pos>, With<PlayerTag>)>,
+    mut q_enemy: Query<(EntityId, Option<&'a Name>, &'a Melee), (With<Pos>, With<Ai>)>,
+    mut q_pos: Query<&mut Pos>,
+) {
+    let (player_id, player_hp) = match q_player.iter_mut().next() {
         Some(x) => x,
         None => {
             debug!("No player on the map! Skipping melee update");
@@ -411,7 +464,7 @@ pub fn update_melee_ai<'a>(
     };
     let Pos(player_pos) = *q_pos.fetch(player_id).unwrap();
 
-    for (id, name, Melee { power, skill }, cache, leash) in q_enemy.iter_mut() {
+    for (id, name, Melee { power, skill }) in q_enemy.iter_mut() {
         let name = name
             .map(|name| name.0.clone())
             .unwrap_or_else(|| id.to_string());
@@ -424,46 +477,6 @@ pub fn update_melee_ai<'a>(
 
             player_hp.current -= power;
             game_log!("{} hits you for {} damage", name, power);
-            cache.path.clear();
-        } else if walk_grid_on_segment(*pos, player_pos, &grid, &q_tag).is_none() {
-            debug!("Player is visible, finding path");
-            cache.path.clear();
-            cache.path.push(player_pos); // push the last pos, so entities can follow players
-                                         // across corridors
-            cache.path.push(*last_player_pos);
-            if !find_path(*pos, *last_player_pos, &grid, &q_walk, &mut cache.path) {
-                // finding path failed, pop the player pos
-                cache.path.clear();
-            }
-            // if the distance to the player is 1
-            // there is a bug in pathfinding that returns the current pos as the last
-            while cache.path.last() == Some(pos) {
-                cache.path.pop();
-            }
-        } else if cache.path.is_empty() {
-            // if the enemy has a leash and the player is not visible, return to the origin
-            if let Some(leash) = leash {
-                cache.path.clear();
-                find_path(*pos, leash.origin, &grid, &q_walk, &mut cache.path);
-            }
-        }
-        if let Some(mut new_pos) = cache.path.pop() {
-            if let Some(leash) = leash {
-                // if at the end of leash, don't move
-                if new_pos.manhatten(leash.origin) > leash.radius {
-                    cache.path.clear();
-                    new_pos = *pos;
-                }
-            }
-
-            if grid[new_pos].is_some() {
-                // taken
-                cache.path.clear();
-            } else {
-                grid[*pos] = None;
-                grid[new_pos] = Some(id);
-                *pos = new_pos;
-            }
         }
     }
 }
