@@ -35,20 +35,22 @@ pub fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<Pla
 pub fn update_player_item_use<'a>(
     actions: Res<PlayerActions>,
     mut cmd: Commands,
-    mut player_query: Query<(EntityId, &'a mut Inventory), With<PlayerTag>>,
+    mut player_query: Query<(EntityId, &'a mut Inventory, &'a Pos), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
-    mut hp_query: Query<&mut Hp>,
-    pos_query: Query<&Pos>,
     heal_query: Query<&Heal>,
     item_query: Query<Option<&Ranged>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     mut app_mode: ResMut<AppMode>,
     names: Query<&Name>,
     mut use_item: ResMut<UseItem>,
-    mut confused: Query<&mut ConfusedAi>,
+    mut q_target: QuerySet<(
+        Query<(&'a Pos, Option<&'a mut ConfusedAi>)>,
+        Query<(&'a Pos, &'a mut Hp)>,
+        Query<&'a mut Hp>,
+    )>,
 ) {
-    let (player_id, inventory) = player_query.iter_mut().next().unwrap();
-    let pos = *pos_query.fetch(player_id).unwrap();
+    let (player_id, inventory, pos) = player_query.iter_mut().next().unwrap();
+    let pos = *pos;
 
     let mut cleanup = |id, use_item: &mut UseItem, cmd: &mut Commands| {
         inventory.remove(id);
@@ -62,7 +64,7 @@ pub fn update_player_item_use<'a>(
         match tag {
             Some(StuffTag::HpPotion) => {
                 game_log!("Drink a health potion.");
-                let hp = hp_query.fetch_mut(player_id).unwrap();
+                let hp = q_target.q2_mut().fetch_mut(player_id).unwrap();
                 if hp.full() {
                     game_log!("The potion has no effect");
                 }
@@ -80,14 +82,15 @@ pub fn update_player_item_use<'a>(
                 }
                 Some(target_id) => {
                     debug!("Use ConfusionScroll");
-                    let target_pos = match pos_query.fetch(target_id) {
-                        Some(x) => x,
-                        None => {
-                            game_log!("Invalid target");
-                            should_run.0 = false;
-                            return;
-                        }
-                    };
+                    let (target_pos, target_confusion) =
+                        match q_target.q0_mut().fetch_mut(target_id) {
+                            Some(x) => x,
+                            None => {
+                                game_log!("Invalid target");
+                                should_run.0 = false;
+                                return;
+                            }
+                        };
                     let range = item_query.fetch(id).unwrap();
                     let range = range.unwrap();
                     if target_pos.0.chebyshev(pos.0) > range.range {
@@ -98,7 +101,7 @@ pub fn update_player_item_use<'a>(
                     if skill_check(range.skill) {
                         let duration = range.power;
                         debug!("Confusion Bolt hits {} for {} turns!", target_id, duration);
-                        if let Some(confusion) = confused.fetch_mut(target_id) {
+                        if let Some(confusion) = target_confusion {
                             confusion.duration += duration;
                         } else {
                             cmd.entity(target_id).insert(ConfusedAi { duration });
@@ -118,15 +121,7 @@ pub fn update_player_item_use<'a>(
             Some(StuffTag::LightningScroll) => match actions.target() {
                 Some(target_id) => {
                     debug!("Use lightning scroll {}", id);
-                    let target_hp = match hp_query.fetch_mut(target_id) {
-                        Some(x) => x,
-                        None => {
-                            game_log!("Invalid target");
-                            should_run.0 = false;
-                            return;
-                        }
-                    };
-                    let target_pos = match pos_query.fetch(target_id) {
+                    let (target_pos, target_hp) = match q_target.q1_mut().fetch_mut(target_id) {
                         Some(x) => x,
                         None => {
                             game_log!("Invalid target");
