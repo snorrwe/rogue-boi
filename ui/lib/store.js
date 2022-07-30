@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
 
 export const coreStore = writable(null);
-export const coreOutputStore = writable(null);
+export const coreOutputStore = writable({});
 export const canvasStore = writable(null);
 export const iconStore = writable({});
 
