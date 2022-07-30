@@ -317,7 +317,11 @@ impl Core {
         world.insert_resource(DeltaTime(0));
         world.insert_resource(GameTick::default());
         world.insert_resource(DungeonLevel::default());
-        world.get_resource_mut::<LogHistory>().unwrap().0.clear();
+        world
+            .get_resource_mut::<LogHistory>()
+            .unwrap()
+            .items
+            .clear();
         world.insert_resource(AppMode::Game);
         world.insert_resource(UseItem::default());
         init_dungeon(&mut world);

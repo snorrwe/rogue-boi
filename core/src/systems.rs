@@ -708,12 +708,17 @@ pub fn update_output(
             player_attack: attack.power,
             player_pos: pos.0,
         });
+    let current_log = crate::logging::get_log_buffer();
+    let skip = if !current_log.is_empty() && history.items.len() >= history.capacity {
+        1
+    } else {
+        0
+    };
     let mut log = String::with_capacity(10 * 1024);
-    for (tick, payload) in history.0.iter() {
+    for (tick, payload) in history.items.iter().skip(skip) {
         writeln!(&mut log, "------- {} -------", tick.0).unwrap();
         writeln!(&mut log, "{}", payload).unwrap();
     }
-    let current_log = crate::logging::get_log_buffer();
     if !current_log.is_empty() {
         writeln!(&mut log, "------- {} -------", game_tick.0).unwrap();
         writeln!(&mut log, "{}", *current_log).unwrap();
@@ -977,8 +982,8 @@ pub fn clean_inputs(
 
 pub fn rotate_log(mut history: ResMut<LogHistory>, tick: Res<GameTick>) {
     let mut buff = crate::logging::get_log_buffer();
-    history.0.push_back((*tick, std::mem::take(&mut buff)));
-    while history.0.len() > 10 {
-        history.0.pop_front();
+    history.items.push_back((*tick, std::mem::take(&mut buff)));
+    while history.items.len() > history.capacity {
+        history.items.pop_front();
     }
 }

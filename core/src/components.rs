@@ -219,8 +219,20 @@ pub struct DeltaTime(pub i32);
 #[derive(Debug, Clone, Copy)]
 pub struct TickInMs(pub i32);
 
-#[derive(Default)]
-pub struct LogHistory(pub VecDeque<(GameTick, String)>);
+pub struct LogHistory {
+    pub items: VecDeque<(GameTick, String)>,
+    pub capacity: usize,
+}
+
+impl Default for LogHistory {
+    fn default() -> Self {
+        let capacity = 10;
+        LogHistory {
+            items: VecDeque::with_capacity(capacity),
+            capacity,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum AppMode {
