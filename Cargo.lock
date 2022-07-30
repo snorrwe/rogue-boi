@@ -109,7 +109,7 @@ dependencies = [
 [[package]]
 name = "cecs"
 version = "0.1.0"
-source = "git+https://github.com/caolo-game/cecs#f788de30323e612c9218aaa6e149b6c0d33756e2"
+source = "git+https://github.com/caolo-game/cecs#4338ccf2521cf4fc197dbe4932f80f1ae16ff291"
 dependencies = [
  "serde",
  "thiserror",
@@ -133,9 +133,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.15"
+version = "3.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44bbe24bbd31a185bc2c4f7c2abe80bea13a20d57ee4e55be70ac512bdc76417"
+checksum = "a3dbbb6653e7c55cc8595ad3e1f7be8f32aba4eb7ff7f0fd1163d4f3d137c0a9"
 dependencies = [
  "atty",
  "bitflags",
