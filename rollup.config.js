@@ -4,8 +4,11 @@ import commonjs from '@rollup/plugin-commonjs';
 import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 import rust from '@wasm-tool/rollup-plugin-rust';
+import alias from '@rollup/plugin-alias';
+import path from 'node:path';
 
 const production = !process.env.ROLLUP_WATCH;
+const projectRootDir = path.resolve(__dirname);
 
 export default [
 	{
@@ -17,6 +20,9 @@ export default [
 			file: 'public/build/bundle.js'
 		},
 		plugins: [
+			alias({
+				entries: [{ find: '@rogueBoi', replacement: path.resolve(projectRootDir, 'ui/lib') }]
+			}),
 			svelte({
 				compilerOptions: {
 					// enable run-time checks when not in production
