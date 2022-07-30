@@ -2,7 +2,7 @@
 	import { coreOutputStore } from '@rogueBoi/store.js';
 
 	let alive = false;
-	coreOutputStore.subscribe((c) => (alive = c?.player != null));
+	coreOutputStore.subscribe((c) => (alive = c && c.player != null));
 </script>
 
 <nav class="menu">
