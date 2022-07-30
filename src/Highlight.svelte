@@ -3,6 +3,7 @@
 
 	export let selected;
 	export let core;
+	export let targetingMode;
 
 	const useItem = (item) => () => {
 		core.useItem(item.id);
@@ -47,7 +48,7 @@
 {#if selected.item}
 	<button on:click={dropItem(selected)}>Drop</button>
 {/if}
-{#if selected.targetable}
+{#if selected.targetable && targetingMode}
 	<button on:click={target(selected)}>Target</button>
 {/if}
 
