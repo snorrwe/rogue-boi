@@ -139,6 +139,7 @@ fn init_dungeon(world: &mut World) {
     world.run_system(map_gen::generate_map);
     world.run_system(systems::init_static_grid);
 
+    game_log!("Hello wanderer!");
     world.run_stage(
         SystemStage::serial("initial-post-process")
             .with_system(update_camera_pos)
@@ -154,7 +155,6 @@ pub fn init_core() -> Core {
     let mut world = World::new(world_dims.x as u32 * world_dims.y as u32);
 
     init_world(world_dims, &mut world);
-    init_dungeon(&mut world);
 
     let world = Rc::new(RefCell::new(world));
     let mut core = Core { world };
@@ -301,7 +301,6 @@ impl PlayerActions {
 #[wasm_bindgen]
 impl Core {
     pub fn init(&mut self) {
-        game_log!("Hello wanderer!");
         self.tick(0);
     }
 
