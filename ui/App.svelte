@@ -1,28 +1,19 @@
 <script>
-	import { canvasStore } from './store.js';
-	import { writable } from 'svelte/store';
-	import Grid from './Grid.svelte';
-	import Highlight from './Highlight.svelte';
-	import Log from './Log.svelte';
-	import Player from './Player.svelte';
 	import { onMount } from 'svelte';
-	import { fetchIcon } from './store.js';
+	import { fetchIcon, coreStore } from '@rogueBoi/store.js';
+	import Menu from './routes/Menu.svelte';
+	import Game from './routes/Game.svelte';
 
 	export let core;
+	let page = Menu;
 
 	onMount(() => {
 		core.icons().forEach((icon) => {
 			fetchIcon({ src: `icons/${icon}.svg`, name: icon });
 		});
+		coreStore.set(core);
+		routeChange();
 	});
-
-	const coreOutput = writable(core.getOutput());
-	let selected = writable(null);
-	coreOutput.subscribe((c) => selected.set(c && c.selected && core.fetchEntity(c.selected)));
-	const inventory = writable(core.getInventory());
-	let last = new Date().getTime();
-
-	canvasStore.subscribe((canvas) => core.setCanvas(canvas));
 
 	document.addEventListener('keydown', (event) => {
 		core.pushEvent({
@@ -31,51 +22,28 @@
 		});
 	});
 
-	const gameLoop = () => {
-		const now = new Date().getTime();
-
-		core.tick(now - last);
-
-		coreOutput.set(core.getOutput());
-		inventory.set(core.getInventory());
-		last = now;
-		if ($selected && $selected.id) {
-			selected.set(core.fetchEntity($selected.id));
-		}
-
-		requestAnimationFrame(gameLoop);
+	const routeChange = () => {
+		let factory =
+			{
+				'#game': () => Game,
+				'#newgame': () => {
+					if (core) {
+						core.restart();
+						return Game;
+					}
+				}
+			}[location.hash] || (() => Menu);
+		page = factory();
 	};
-	requestAnimationFrame(gameLoop);
 </script>
 
+<svelte:window on:hashchange={routeChange} />
+
 <main>
-	{#if core != null}
-		<div class="content">
-			<div>
-				<Grid />
-			</div>
-			<div class="log">
-				<h2>Log</h2>
-				<Log log={$coreOutput.log} />
-			</div>
-			<div class="game-ui">
-				{#if $selected != null}
-					<Highlight targetingMode={$coreOutput.targeting} selected={$selected} {core} />
-				{/if}
-				<div>
-					<Player
-						inventory={$inventory}
-						alive={$coreOutput.player != null}
-						hp={$coreOutput.player && $coreOutput.player.playerHp}
-						pos={$coreOutput.player && $coreOutput.player.playerPosition}
-						attack={$coreOutput.player && $coreOutput.player.playerAttack}
-						targeting={$coreOutput.targeting}
-						{core}
-					/>
-				</div>
-			</div>
-		</div>
-	{/if}
+	<header>
+		<a href="/#">Back to menu</a>
+	</header>
+	<svelte:component this={page} />
 </main>
 
 <style>
@@ -84,21 +52,5 @@
 		margin: 0 auto;
 		color: white;
 		min-width: 0px;
-	}
-
-	.content {
-		display: grid;
-		grid-template-columns: 2fr repeat(2, 1fr);
-		column-gap: 2rem;
-	}
-
-	.log {
-		max-height: 100%;
-		overflow: auto;
-	}
-
-	.game-ui {
-		color: white;
-		text-align: left;
 	}
 </style>

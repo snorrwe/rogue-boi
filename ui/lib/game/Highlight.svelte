@@ -1,5 +1,5 @@
 <script>
-	import { iconStore } from './store.js';
+	import { iconStore } from '@rogueBoi/store.js';
 
 	export let selected;
 	export let core;

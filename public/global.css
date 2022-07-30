@@ -6,3 +6,7 @@ body {
 path {
 	fill: var(--fill-color);
 }
+
+a {
+    color: white;
+}

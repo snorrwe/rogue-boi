@@ -1,6 +1,6 @@
 <script>
 	import { onDestroy, onMount } from 'svelte';
-	import { canvasStore } from './store.js';
+	import { canvasStore } from '@rogueBoi/store.js';
 
 	let canvas;
 	onMount(() => {
