@@ -207,7 +207,7 @@ pub struct StaticStuff;
 pub struct StaticGrid(pub Grid<Stuff>);
 
 #[derive(Debug, Clone, Copy)]
-pub struct Time(pub i32);
+pub struct BounceOffTime(pub i32);
 
 #[derive(Default, Debug, Clone, Copy)]
 pub struct ShouldTick(pub bool);
