@@ -708,7 +708,7 @@ pub fn update_output(
             player_attack: attack.power,
             player_pos: pos.0,
         });
-    let mut log = String::with_capacity(1024);
+    let mut log = String::with_capacity(10 * 1024);
     for (tick, payload) in history.0.iter() {
         writeln!(&mut log, "------- {} -------", tick.0).unwrap();
         writeln!(&mut log, "{}", payload).unwrap();
