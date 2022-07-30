@@ -225,7 +225,8 @@ pub fn stuff_to_js(
                 "icon": icon.0.clone(),
                 "hp": hp,
                 "targetable": true,
-                "color": color.and_then(|c|c.0.as_string())
+                "color": color.and_then(|c|c.0.as_string()),
+                "creature": true
             }}
         }
         StuffTag::HpPotion
@@ -252,7 +253,8 @@ pub fn stuff_to_js(
                 "description": desc.0.clone(),
                 "icon": icon.0.clone(),
                 "usable": usable,
-                "color": color.and_then(|c|c.0.as_string())
+                "color": color.and_then(|c|c.0.as_string()),
+                "item": true
             }}
         }
     };

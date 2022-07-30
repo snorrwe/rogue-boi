@@ -395,6 +395,37 @@ impl Core {
             .0 = Some(id);
     }
 
+    #[wasm_bindgen(js_name = "dropItem")]
+    pub fn drop_item(&mut self, id: JsValue) {
+        let id: EntityId = JsValue::into_serde(&id).unwrap();
+        if !self.world.borrow().is_id_valid(id) {
+            error!("drop_item id is not valid");
+            return;
+        }
+
+        fn sys<'a>(
+            mut cmd: Commands,
+            mut q: Query<(&'a Pos, &'a mut Inventory), With<PlayerTag>>,
+            q_item: Query<&Name>,
+            item: Res<DropItem>,
+        ) {
+            // remove item from inventory and add a position
+            // TODO: random empty nearby position intead of the player's?
+            if let Some((pos, inv)) = q.iter_mut().next() {
+                if let Some(item) = inv.remove(item.0) {
+                    if let Some(Name(name)) = q_item.fetch(item) {
+                        game_log!("Drop {}", name);
+                        cmd.entity(item).insert(*pos);
+                    }
+                }
+            }
+        }
+        let mut world = self.world.borrow_mut();
+        world.insert_resource(DropItem(id));
+        world.run_system(sys);
+        world.remove_resource::<DropItem>();
+    }
+
     #[wasm_bindgen]
     pub fn wait(&mut self) {
         self.world

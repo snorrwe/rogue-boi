@@ -246,3 +246,6 @@ pub struct Aoe {
 pub struct TargetPos {
     pub pos: Option<Vec2>,
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct DropItem(pub EntityId);

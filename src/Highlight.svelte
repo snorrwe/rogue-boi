@@ -8,6 +8,10 @@
 		core.useItem(item.id);
 	};
 
+	const dropItem = (item) => () => {
+		core.dropItem(item.id);
+	};
+
 	const target = (item) => () => {
 		core.setTarget(item.id);
 	};
@@ -39,6 +43,9 @@
 {/if}
 {#if selected.usable}
 	<button on:click={useItem(selected)}>Use</button>
+{/if}
+{#if selected.item}
+	<button on:click={dropItem(selected)}>Drop</button>
 {/if}
 {#if selected.targetable}
 	<button on:click={target(selected)}>Target</button>
