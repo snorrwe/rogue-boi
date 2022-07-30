@@ -31,7 +31,8 @@
 						core.restart();
 						return Game;
 					}
-				}
+				},
+				'#menu': () => Menu
 			}[location.hash] || (() => Menu);
 		page = factory();
 	};
@@ -41,7 +42,7 @@
 
 <main>
 	<header>
-		<a href="/#">Back to menu</a>
+		<a href="#menu">Back to menu</a>
 	</header>
 	<svelte:component this={page} />
 </main>
