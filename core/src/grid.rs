@@ -109,8 +109,8 @@ impl<T: serde::Serialize> Grid<T> {
     {
         let miny = from.y.max(0);
         let minx = from.x.max(0);
-        let maxy = to.y.min(self.dims.y);
-        let maxx = to.x.min(self.dims.x);
+        let maxy = to.y.min(self.dims.y - 1);
+        let maxx = to.x.min(self.dims.x - 1);
         for y in miny..maxy {
             for x in minx..maxx {
                 self[Vec2::new(x, y)] = value.clone();
