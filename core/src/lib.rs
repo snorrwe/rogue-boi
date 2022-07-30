@@ -66,7 +66,7 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     world.insert_resource(CameraPos(Vec2::ZERO));
     world.insert_resource(Output(JsValue::null()));
     world.insert_resource(RenderResources::default());
-    world.insert_resource(Time(0));
+    world.insert_resource(BounceOffTime(0));
     world.insert_resource(ShouldTick(false));
     world.insert_resource(DeltaTime(0));
     world.insert_resource(TickInMs(120));

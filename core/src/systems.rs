@@ -923,7 +923,7 @@ pub fn init_static_grid(
 
 pub fn update_should_tick(
     mut dt: ResMut<DeltaTime>,
-    mut time: ResMut<Time>,
+    mut time: ResMut<BounceOffTime>,
     mut should_tick: ResMut<ShouldTick>,
     actions: Res<PlayerActions>,
     use_item: Res<UseItem>,
