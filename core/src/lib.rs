@@ -305,6 +305,7 @@ impl Core {
     }
 
     pub fn restart(&mut self) {
+        logging::get_log_buffer().clear();
         let mut world = self.world.borrow_mut();
         world.insert_resource(DeltaTime(0));
         world.insert_resource(GameTick::default());
