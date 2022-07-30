@@ -113,7 +113,6 @@ source = "git+https://github.com/caolo-game/cecs#4338ccf2521cf4fc197dbe4932f80f1
 dependencies = [
  "serde",
  "thiserror",
- "tracing",
 ]
 
 [[package]]
