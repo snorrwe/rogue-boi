@@ -12,8 +12,9 @@ pub const ITEM_TAGS: &[StuffTag] = &[
     StuffTag::HpPotion,
     StuffTag::LightningScroll,
     StuffTag::ConfusionScroll,
+    StuffTag::FireBallScroll,
 ];
-pub const ITEM_WEIGHTS: &[i32] = &[2, 2, 1, 1];
+pub const ITEM_WEIGHTS: &[i32] = &[2, 2, 1, 2, 1];
 
 pub fn icon(key: &'static str) -> Icon {
     assert!(icons::ICONS.contains_key(key));
@@ -127,6 +128,26 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 Color("#800080".into()),
             ));
         }
+        StuffTag::FireBallScroll => {
+            let power = 4;
+            let radius = 3;
+            cmd.insert_bundle((
+                icon("scroll"),
+                Ranged {
+                    power,
+                    range: 5,
+                    skill: 4,
+                },
+                Aoe { radius },
+                Item,
+                Description(format!(
+                    "Hurl a fireball dealing {} damage in a {} radius",
+                    power, radius
+                )),
+                Name("Fire Ball".to_string()),
+                Color("#af0808".into()),
+            ));
+        }
     }
 }
 
@@ -210,12 +231,16 @@ pub fn stuff_to_js(
         StuffTag::HpPotion
         | StuffTag::Sword
         | StuffTag::LightningScroll
-        | StuffTag::ConfusionScroll => {
+        | StuffTag::ConfusionScroll
+        | StuffTag::FireBallScroll => {
             let (icon, name, desc, ranged, heal, melee, pos, color) = q_item.fetch(id).unwrap();
             let usable = pos.is_none()
                 && matches!(
                     tag,
-                    StuffTag::HpPotion | StuffTag::LightningScroll | StuffTag::ConfusionScroll
+                    StuffTag::HpPotion
+                        | StuffTag::LightningScroll
+                        | StuffTag::ConfusionScroll
+                        | StuffTag::FireBallScroll
                 );
             json! {{
                 "id": id,

@@ -73,6 +73,7 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     world.insert_resource(LogHistory::default());
     world.insert_resource(AppMode::Game);
     world.insert_resource(UseItem::default());
+    world.insert_resource(TargetPos::default());
 
     world.add_stage(
         SystemStage::serial("inputs")
@@ -185,7 +186,8 @@ impl StuffPayload {
             Some(StuffTag::HpPotion)
             | Some(StuffTag::Sword)
             | Some(StuffTag::LightningScroll)
-            | Some(StuffTag::ConfusionScroll) => Self::Item { id },
+            | Some(StuffTag::ConfusionScroll)
+            | Some(StuffTag::FireBallScroll) => Self::Item { id },
         }
     }
 }

@@ -107,9 +107,26 @@ impl<T: serde::Serialize> Grid<T> {
     where
         T: Clone,
     {
-        for y in from.y..to.y {
-            for x in from.x..to.x {
+        let miny = from.y.max(0);
+        let minx = from.x.max(0);
+        let maxy = to.y.min(self.dims.y);
+        let maxx = to.x.min(self.dims.x);
+        for y in miny..maxy {
+            for x in minx..maxx {
                 self[Vec2::new(x, y)] = value.clone();
+            }
+        }
+    }
+
+    pub fn scan_range(&self, [from, to]: [Vec2; 2], mut f: impl FnMut(Vec2, &T)) {
+        let miny = from.y.max(0);
+        let minx = from.x.max(0);
+        let maxy = to.y.min(self.dims.y - 1);
+        let maxx = to.x.min(self.dims.x - 1);
+        for y in miny..=maxy {
+            for x in minx..=maxx {
+                let pos = Vec2::new(x, y);
+                f(pos, &self[pos]);
             }
         }
     }

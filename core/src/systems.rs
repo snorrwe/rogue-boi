@@ -38,16 +38,18 @@ pub fn update_player_item_use<'a>(
     mut player_query: Query<(EntityId, &'a mut Inventory, &'a Pos), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
     heal_query: Query<&Heal>,
-    item_query: Query<Option<&Ranged>>,
+    item_query: QuerySet<(Query<&Ranged>, Query<(&Ranged, &Aoe)>)>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     mut app_mode: ResMut<AppMode>,
-    names: Query<&Name>,
     mut use_item: ResMut<UseItem>,
     mut q_target: QuerySet<(
-        Query<(&'a Pos, Option<&'a mut ConfusedAi>)>,
-        Query<(&'a Pos, &'a mut Hp)>,
+        Query<(&'a Pos, Option<&'a mut ConfusedAi>, Option<&'a Name>)>,
+        Query<(&'a Pos, &'a mut Hp, Option<&'a Name>)>,
+        Query<(&'a mut Hp, Option<&'a Name>)>,
         Query<&'a mut Hp>,
     )>,
+    target_pos: Res<TargetPos>,
+    grid: Res<Grid<Stuff>>,
 ) {
     let (player_id, inventory, pos) = player_query.iter_mut().next().unwrap();
     let pos = *pos;
@@ -64,7 +66,7 @@ pub fn update_player_item_use<'a>(
         match tag {
             Some(StuffTag::HpPotion) => {
                 game_log!("Drink a health potion.");
-                let hp = q_target.q2_mut().fetch_mut(player_id).unwrap();
+                let hp = q_target.q3_mut().fetch_mut(player_id).unwrap();
                 if hp.full() {
                     game_log!("The potion has no effect");
                 }
@@ -82,7 +84,7 @@ pub fn update_player_item_use<'a>(
                 }
                 Some(target_id) => {
                     debug!("Use ConfusionScroll");
-                    let (target_pos, target_confusion) =
+                    let (target_pos, target_confusion, target_name) =
                         match q_target.q0_mut().fetch_mut(target_id) {
                             Some(x) => x,
                             None => {
@@ -91,8 +93,7 @@ pub fn update_player_item_use<'a>(
                                 return;
                             }
                         };
-                    let range = item_query.fetch(id).unwrap();
-                    let range = range.unwrap();
+                    let range = item_query.q0().fetch(id).unwrap();
                     if target_pos.0.chebyshev(pos.0) > range.range {
                         game_log!("Target is too far away");
                         should_run.0 = false;
@@ -106,7 +107,7 @@ pub fn update_player_item_use<'a>(
                         } else {
                             cmd.entity(target_id).insert(ConfusedAi { duration });
                         }
-                        if let Some(Name(name)) = names.fetch(target_id) {
+                        if let Some(Name(name)) = target_name {
                             game_log!(
                                 "The eyes of the {} look vacant, as it starts to stumble around!",
                                 name
@@ -121,16 +122,16 @@ pub fn update_player_item_use<'a>(
             Some(StuffTag::LightningScroll) => match actions.target() {
                 Some(target_id) => {
                     debug!("Use lightning scroll {}", id);
-                    let (target_pos, target_hp) = match q_target.q1_mut().fetch_mut(target_id) {
-                        Some(x) => x,
-                        None => {
-                            game_log!("Invalid target");
-                            should_run.0 = false;
-                            return;
-                        }
-                    };
-                    let range = item_query.fetch(id).unwrap();
-                    let range = range.unwrap();
+                    let (target_pos, target_hp, target_name) =
+                        match q_target.q1_mut().fetch_mut(target_id) {
+                            Some(x) => x,
+                            None => {
+                                game_log!("Invalid target");
+                                should_run.0 = false;
+                                return;
+                            }
+                        };
+                    let range = item_query.q0().fetch(id).unwrap();
                     if target_pos.0.chebyshev(pos.0) > range.range {
                         game_log!("Target is too far away");
                         should_run.0 = false;
@@ -140,7 +141,7 @@ pub fn update_player_item_use<'a>(
                         let dmg = range.power;
                         target_hp.current -= dmg;
                         debug!("Lightning Bolt hits {} for {} damage!", target_id, dmg);
-                        if let Some(Name(name)) = names.fetch(target_id) {
+                        if let Some(Name(name)) = target_name {
                             game_log!("Lightning Bolt hits {} for {} damage!", name, dmg);
                         }
                     } else {
@@ -153,6 +154,43 @@ pub fn update_player_item_use<'a>(
                     debug!("Lightning Bolt has no target!");
                     should_run.0 = false;
                     *app_mode = AppMode::Targeting;
+                    return;
+                }
+            },
+            Some(StuffTag::FireBallScroll) => match target_pos.pos {
+                Some(target_pos) => {
+                    let (range, aoe) = item_query.q1().fetch(id).unwrap();
+                    if target_pos.chebyshev(pos.0) > range.range {
+                        game_log!("Target is too far away. Try again");
+                        *app_mode = AppMode::TargetingPosition;
+                        should_run.0 = false;
+                        return;
+                    }
+                    game_log!("Hurl a fire ball at {}", target_pos);
+                    let radius = Vec2::splat(aoe.radius as i32);
+                    let power = range.power;
+                    grid.scan_range([target_pos - radius, target_pos + radius], |_pos, id| {
+                        if let Some(id) = id {
+                            if let Some((hp, name)) = q_target.q2_mut().fetch_mut(*id) {
+                                // TODO skill check?
+                                hp.current -= power;
+                                if let Some(Name(ref name)) = name {
+                                    game_log!(
+                                        "{} is engulfed in a fiery explosion, taking {} damage",
+                                        name,
+                                        power
+                                    );
+                                }
+                            }
+                        }
+                    });
+                    cleanup(id, &mut use_item, &mut cmd)
+                }
+                None => {
+                    game_log!("Select a target position");
+                    debug!("Fire Ball has no target!");
+                    should_run.0 = false;
+                    *app_mode = AppMode::TargetingPosition;
                     return;
                 }
             },
@@ -190,7 +228,8 @@ pub fn update_player_world_interact<'a>(
                 StuffTag::Sword
                 | StuffTag::HpPotion
                 | StuffTag::LightningScroll
-                | StuffTag::ConfusionScroll => {
+                | StuffTag::ConfusionScroll
+                | StuffTag::FireBallScroll => {
                     // pick up item
                     match inventory.add(stuff_id) {
                         Ok(_) => {
@@ -276,7 +315,8 @@ pub fn handle_player_move<'a>(
                     StuffTag::LightningScroll
                     | StuffTag::HpPotion
                     | StuffTag::Sword
-                    | StuffTag::ConfusionScroll => {
+                    | StuffTag::ConfusionScroll
+                    | StuffTag::FireBallScroll => {
                         // pick up item
                         grid_step(pos, new_pos, &mut grid);
                     }
@@ -821,6 +861,8 @@ pub fn render_into_canvas(
 
 pub fn handle_click(
     mut target: ResMut<Selected>,
+    mut target_pos: ResMut<TargetPos>,
+    mode: Res<AppMode>,
     grid: Res<Grid<Stuff>>,
     viewport: Res<Viewport>,
     camera_pos: Res<CameraPos>,
@@ -850,6 +892,10 @@ pub fn handle_click(
         cell_size = tracing::field::debug(cell_size),
         "clicked on grid position",
     );
+    if matches!(*mode, AppMode::TargetingPosition) {
+        target_pos.pos = Some(pos);
+        debug!("targeting position {}", pos);
+    }
     if !visible.0.at(pos.x, pos.y).unwrap_or(&false) {
         target.0 = None;
         return;
@@ -857,7 +903,6 @@ pub fn handle_click(
 
     let result = grid[pos];
     target.0 = result;
-
     debug!("targeting entity {:?}", result);
 }
 
@@ -897,11 +942,17 @@ pub fn handle_targeting(
     mut should_tick: ResMut<ShouldTick>,
     actions: Res<PlayerActions>,
     mut mode: ResMut<AppMode>,
+    target_pos: Res<TargetPos>,
 ) {
     match *mode {
         AppMode::Game => {}
         AppMode::Targeting => {
             if actions.target().is_some() {
+                *mode = AppMode::Game;
+            }
+        }
+        AppMode::TargetingPosition => {
+            if target_pos.pos.is_some() {
                 *mode = AppMode::Game;
             }
         }
@@ -913,10 +964,12 @@ pub fn clean_inputs(
     should_tick: Res<ShouldTick>,
     mut inputs: ResMut<Vec<InputEvent>>,
     mut actions: ResMut<PlayerActions>,
+    mut target_pos: ResMut<TargetPos>,
 ) {
     if should_tick.0 {
         inputs.clear();
         actions.clear();
+        let _ = target_pos.pos.take();
     }
 }
 

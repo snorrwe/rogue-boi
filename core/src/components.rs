@@ -86,6 +86,7 @@ pub enum StuffTag {
     HpPotion,
     LightningScroll,
     ConfusionScroll,
+    FireBallScroll,
 }
 
 impl StuffTag {
@@ -225,11 +226,23 @@ pub struct LogHistory(pub VecDeque<(GameTick, String)>);
 pub enum AppMode {
     Game,
     Targeting,
+    TargetingPosition,
 }
 
 #[derive(Default, Debug, Clone, Copy)]
 pub struct Velocity(pub Vec2);
+
 #[derive(Debug, Clone, Copy)]
 pub struct ConfusedAi {
     pub duration: i32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Aoe {
+    pub radius: u32,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct TargetPos {
+    pub pos: Option<Vec2>,
 }
