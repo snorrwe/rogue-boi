@@ -2,9 +2,9 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"paths": {
-			"$lib": ["src/lib"],
-			"$lib/*": ["src/lib/*"]
+			"$rogueBoi": ["ui/lib"],
+			"$rogueBoi/*": ["ui/lib/*"]
 		}
 	},
-	"include": ["src/**/*.d.ts", "src/**/*.js", "src/**/*.svelte"]
+	"include": ["ui/**/*.d.ts", "ui/**/*.js", "ui/**/*.svelte"]
 }
