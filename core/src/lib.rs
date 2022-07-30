@@ -43,12 +43,7 @@ fn compute_icons() -> IconCollection {
     IconCollection(inner)
 }
 
-pub fn init_world(world_dims: Vec2, world: &mut World) {
-    let player_count = Query::<&(), With<PlayerTag>>::new(&world).count();
-    assert_eq!(
-        player_count, 0,
-        "re-initializing exiting World will cause inconsistencies"
-    );
+fn init_world_resources(world_dims: Vec2, world: &mut World) {
     world.insert_resource(Grid::<Stuff>::new(world_dims));
     world.insert_resource(StaticGrid(Grid::new(world_dims)));
     world.insert_resource(GameTick::default());
@@ -74,7 +69,9 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     world.insert_resource(AppMode::Game);
     world.insert_resource(UseItem::default());
     world.insert_resource(TargetPos::default());
+}
 
+fn init_world_systems(world: &mut World) {
     world.add_stage(
         SystemStage::serial("inputs")
             .with_system(update_input_events)
@@ -120,6 +117,16 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
             .with_system(systems::rotate_log)
             .with_system(update_tick),
     );
+}
+
+pub fn init_world(world_dims: Vec2, world: &mut World) {
+    let player_count = Query::<&(), With<PlayerTag>>::new(&world).count();
+    assert_eq!(
+        player_count, 0,
+        "re-initializing exiting World will cause inconsistencies"
+    );
+    init_world_resources(world_dims, world);
+    init_world_systems(world);
 }
 
 fn init_dungeon(world: &mut World) {
