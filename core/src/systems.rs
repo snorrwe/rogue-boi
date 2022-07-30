@@ -37,12 +37,11 @@ pub fn update_player_item_use<'a>(
     mut cmd: Commands,
     mut player_query: Query<(EntityId, &'a mut Inventory, &'a Pos), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
-    heal_query: Query<&Heal>,
-    item_query: QuerySet<(Query<&Ranged>, Query<(&Ranged, &Aoe)>)>,
+    item_query: QuerySet<(Query<&Ranged>, Query<(&Ranged, &Aoe)>, Query<&Heal>)>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     mut app_mode: ResMut<AppMode>,
     mut use_item: ResMut<UseItem>,
-    mut q_target: QuerySet<(
+    mut target_query: QuerySet<(
         Query<(&'a Pos, Option<&'a mut ConfusedAi>, Option<&'a Name>)>,
         Query<(&'a Pos, &'a mut Hp, Option<&'a Name>)>,
         Query<(&'a mut Hp, Option<&'a Name>)>,
@@ -66,11 +65,11 @@ pub fn update_player_item_use<'a>(
         match tag {
             Some(StuffTag::HpPotion) => {
                 game_log!("Drink a health potion.");
-                let hp = q_target.q3_mut().fetch_mut(player_id).unwrap();
+                let hp = target_query.q3_mut().fetch_mut(player_id).unwrap();
                 if hp.full() {
                     game_log!("The potion has no effect");
                 }
-                let heal = heal_query.fetch(id).unwrap();
+                let heal = item_query.q2().fetch(id).unwrap();
                 hp.current = (hp.current + heal.hp).min(hp.max);
                 cleanup(id, &mut use_item, &mut cmd);
             }
@@ -85,7 +84,7 @@ pub fn update_player_item_use<'a>(
                 Some(target_id) => {
                     debug!("Use ConfusionScroll");
                     let (target_pos, target_confusion, target_name) =
-                        match q_target.q0_mut().fetch_mut(target_id) {
+                        match target_query.q0_mut().fetch_mut(target_id) {
                             Some(x) => x,
                             None => {
                                 game_log!("Invalid target");
@@ -123,7 +122,7 @@ pub fn update_player_item_use<'a>(
                 Some(target_id) => {
                     debug!("Use lightning scroll {}", id);
                     let (target_pos, target_hp, target_name) =
-                        match q_target.q1_mut().fetch_mut(target_id) {
+                        match target_query.q1_mut().fetch_mut(target_id) {
                             Some(x) => x,
                             None => {
                                 game_log!("Invalid target");
@@ -171,7 +170,7 @@ pub fn update_player_item_use<'a>(
                     let power = range.power;
                     grid.scan_range([target_pos - radius, target_pos + radius], |_pos, id| {
                         if let Some(id) = id {
-                            if let Some((hp, name)) = q_target.q2_mut().fetch_mut(*id) {
+                            if let Some((hp, name)) = target_query.q2_mut().fetch_mut(*id) {
                                 // TODO skill check?
                                 hp.current -= power;
                                 if let Some(Name(ref name)) = name {
