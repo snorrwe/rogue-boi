@@ -2,8 +2,8 @@ use std::ops::{Index, IndexMut};
 
 use crate::math::Vec2;
 
-#[derive(Clone, serde::Serialize)]
-pub struct Grid<T: serde::Serialize> {
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct Grid<T> {
     dims: Vec2,
     data: Box<[T]>,
 }

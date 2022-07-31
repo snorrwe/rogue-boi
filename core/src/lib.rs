@@ -11,7 +11,7 @@ mod utils;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::systems::*;
-use cecs::prelude::*;
+use cecs::{persister::WorldSerializer, prelude::*};
 use components::*;
 use grid::Grid;
 use icons::ICONS;
@@ -43,10 +43,19 @@ fn compute_icons() -> IconCollection {
     IconCollection(inner)
 }
 
-fn init_world_resources(world_dims: Vec2, world: &mut World) {
+fn get_world_persister() -> impl WorldSerializer {
+    let persister = cecs::persister::WorldPersister::new()
+        .add_resource::<WorldDims>()
+        .add_resource::<GameTick>()
+        .add_resource::<LogHistory>()
+        .add_resource::<Explored>();
+
+    archetypes::register_persistent_components(persister)
+}
+
+fn init_world_transient_resources(world_dims: Vec2, world: &mut World) {
     world.insert_resource(Grid::<Stuff>::new(world_dims));
     world.insert_resource(StaticGrid(Grid::new(world_dims)));
-    world.insert_resource(GameTick::default());
     world.insert_resource(ClickPosition(None));
     world.insert_resource(Selected::default());
     world.insert_resource(compute_icons());
@@ -55,7 +64,6 @@ fn init_world_resources(world_dims: Vec2, world: &mut World) {
     world.insert_resource(Vec::<InputEvent>::with_capacity(16));
     world.insert_resource(PlayerActions::new());
     world.insert_resource(Visible(Grid::new(world_dims)));
-    world.insert_resource(Explored(Grid::new(world_dims)));
     world.insert_resource(Viewport(Vec2::new(20, 20)));
     world.insert_resource(Visibility(Vec2::new(10, 10)));
     world.insert_resource(CameraPos(Vec2::ZERO));
@@ -65,10 +73,17 @@ fn init_world_resources(world_dims: Vec2, world: &mut World) {
     world.insert_resource(ShouldTick(false));
     world.insert_resource(DeltaTime(0));
     world.insert_resource(TickInMs(120));
-    world.insert_resource(LogHistory::default());
     world.insert_resource(AppMode::Game);
     world.insert_resource(UseItem::default());
     world.insert_resource(TargetPos::default());
+}
+
+fn init_world_resources(world_dims: Vec2, world: &mut World) {
+    init_world_transient_resources(world_dims, world);
+    world.insert_resource(WorldDims(world_dims));
+    world.insert_resource(GameTick::default());
+    world.insert_resource(LogHistory::default());
+    world.insert_resource(Explored(Grid::new(world_dims)));
 }
 
 fn init_world_systems(world: &mut World) {
@@ -144,7 +159,7 @@ fn init_dungeon(world: &mut World) {
     world.insert_resource(PlayerActions::new());
 
     world.run_system(map_gen::generate_map);
-    world.run_system(systems::init_static_grid);
+    world.run_system(systems::init_grids);
 
     game_log!("Hello wanderer!");
     world.run_stage(
@@ -164,9 +179,7 @@ pub fn init_core() -> Core {
     init_world(world_dims, &mut world);
 
     let world = Rc::new(RefCell::new(world));
-    let mut core = Core { world };
-    core.init();
-    core
+    Core { world }
 }
 
 pub type Stuff = Option<EntityId>;
@@ -307,10 +320,6 @@ impl PlayerActions {
 
 #[wasm_bindgen]
 impl Core {
-    pub fn init(&mut self) {
-        self.tick(0);
-    }
-
     pub fn restart(&mut self) {
         logging::get_log_buffer().clear();
         let mut world = self.world.borrow_mut();
@@ -533,6 +542,47 @@ impl Core {
             *mode = AppMode::Game;
         }
         game_log!("Cancel item use");
+    }
+
+    pub fn save(&self) -> String {
+        let p = get_world_persister();
+        let world = self.world.borrow();
+
+        let mut result = Vec::<u8>::new();
+        let mut s = serde_json::Serializer::pretty(&mut result);
+
+        p.save(&mut s, &world).unwrap();
+
+        let result = String::from_utf8(result).unwrap();
+
+        result
+    }
+
+    pub fn load(&mut self, pl: String) {
+        let p = get_world_persister();
+
+        let (mut world, id_map) = p
+            .load(&mut serde_json::Deserializer::from_str(pl.as_str()))
+            .unwrap();
+
+        // remap inventory
+        for inv in Query::<&mut Inventory>::new(&world).iter_mut() {
+            for id in inv.items.iter_mut() {
+                *id = id_map[id];
+            }
+        }
+
+        let dims = *world.get_resource::<WorldDims>().unwrap();
+        init_world_transient_resources(dims.0, &mut world);
+
+        world.run_system(archetypes::insert_transient_components);
+        world.run_system(systems::init_grids);
+        world.run_system(systems::update_camera_pos);
+        world.run_system(systems::update_fov);
+        init_world_systems(&mut world);
+
+        *self.world.borrow_mut() = world;
+        self.tick(0);
     }
 }
 

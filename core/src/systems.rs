@@ -916,13 +916,19 @@ pub fn record_last_pos<'a>(mut q: Query<(&'a mut LastPos, &'a Pos)>) {
     }
 }
 
-pub fn init_static_grid(
-    q: Query<(EntityId, &Pos), With<StaticStuff>>,
-    mut grid: ResMut<StaticGrid>,
+pub fn init_grids(
+    static_q: Query<(EntityId, &Pos), With<StaticStuff>>,
+    dyn_q: Query<(EntityId, &Pos), WithOut<StaticStuff>>,
+    mut static_grid: ResMut<StaticGrid>,
+    mut grid: ResMut<Grid<Stuff>>,
 ) {
-    grid.0.fill(None);
-    for (id, Pos(p)) in q.iter() {
-        grid.0[*p] = Some(id);
+    static_grid.0.fill(None);
+    for (id, Pos(p)) in static_q.iter() {
+        static_grid.0[*p] = Some(id);
+    }
+    grid.copy(&static_grid.0);
+    for (id, Pos(p)) in dyn_q.iter() {
+        grid[*p] = Some(id);
     }
 }
 
