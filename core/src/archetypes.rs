@@ -21,22 +21,124 @@ pub fn icon(key: &'static str) -> Icon {
     Icon(key)
 }
 
+pub fn register_persistent_components(
+    persister: impl cecs::persister::WorldSerializer,
+) -> impl cecs::persister::WorldSerializer {
+    persister
+        .add_component::<StuffTag>()
+        .add_component::<LastPos>()
+        .add_component::<Pos>()
+        .add_component::<Hp>()
+        .add_component::<Inventory>()
+        .add_component::<Melee>()
+        .add_component::<Leash>()
+        .add_component::<Heal>()
+        .add_component::<Ranged>()
+        .add_component::<Aoe>()
+        .add_component::<ConfusedAi>()
+}
+
+fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {
+    match tag {
+        StuffTag::Player => {
+            cmd.insert_bundle((
+                icon("person"),
+                PlayerTag,
+                Color("white".into()),
+                Name("Player".into()),
+            ));
+        }
+        StuffTag::Wall => {
+            cmd.insert_bundle((icon("wall"), Color("#d4dfd7".into()), StaticStuff));
+        }
+        StuffTag::Troll => {
+            cmd.insert_bundle((
+                Ai,
+                Description("Large brutish troll. Clumsy, but hits hard".to_string()),
+                PathCache::default(),
+                icon("troll"),
+                Name("Troll".into()),
+                Velocity::default(),
+            ));
+        }
+        StuffTag::Orc => {
+            cmd.insert_bundle((
+                Ai,
+                Description("Cunning, but brutal".to_string()),
+                PathCache::default(),
+                icon("orc-head"),
+                Color("#06b306".into()),
+                Name("Orc".into()),
+                Velocity::default(),
+            ));
+        }
+        StuffTag::Sword => {
+            cmd.insert_bundle((
+                icon("sword"),
+                Item,
+                Description("Power 1".to_string()),
+                Name("Simple Sword".into()),
+            ));
+        }
+        StuffTag::HpPotion => {
+            cmd.insert_bundle((
+                icon("hp_potion"),
+                Item,
+                Description("Restores some health".to_string()),
+                Name("Health Potion".into()),
+                Color("rgb(255, 0, 127)".into()),
+            ));
+        }
+        StuffTag::LightningScroll => {
+            cmd.insert_bundle((
+                icon("scroll"),
+                Item,
+                Description(format!("Hurl a lightning bolt at your foe")),
+                Name("Lightning Bolt".to_string()),
+                Color("#fee85d".into()),
+            ));
+        }
+        StuffTag::ConfusionScroll => {
+            cmd.insert_bundle((
+                icon("scroll"),
+                Item,
+                Description(format!("Confuse the target enemy")),
+                Name("Confusion Bolt".to_string()),
+                Color("#800080".into()),
+            ));
+        }
+        StuffTag::FireBallScroll => {
+            cmd.insert_bundle((
+                icon("scroll"),
+                Item,
+                Description(format!("Hurl a fireball dealing damage in an area",)),
+                Name("Fire Ball".to_string()),
+                Color("#af0808".into()),
+            ));
+        }
+    }
+}
+
+/// Insert components that are not saved
+pub fn insert_transient_components(mut cmd: Commands, q: Query<(EntityId, &StuffTag)>) {
+    for (id, tag) in q.iter() {
+        let cmd = cmd.entity(id);
+        insert_transient_components_for_entity(cmd, *tag);
+    }
+}
+
 pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid<Stuff>) {
     let cmd = cmd.spawn();
     grid[pos] = Some(Default::default());
     cmd.insert_bundle((tag, Pos(pos)));
+    insert_transient_components_for_entity(cmd, tag);
     match tag {
         StuffTag::Player => {
             cmd.insert_bundle((
                 LastPos(pos),
-                StuffTag::Player,
-                icon("person"),
                 Hp::new(10),
-                PlayerTag,
                 Inventory::new(16),
                 Melee { power: 1, skill: 5 },
-                Color("white".into()),
-                Name("Player".into()),
             ));
         }
 
@@ -46,106 +148,52 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         StuffTag::Troll => {
             cmd.insert_bundle((
                 Hp::new(6),
-                icon("troll"),
-                Ai,
-                PathCache::default(),
                 Melee { power: 4, skill: 1 },
-                Description("Large brutish troll. Clumsy, but hits hard".to_string()),
                 Leash {
                     origin: pos,
                     radius: 20,
                 },
-                Name("Troll".into()),
-                Velocity::default(),
             ));
         }
         StuffTag::Orc => {
             cmd.insert_bundle((
                 Hp::new(4),
-                icon("orc-head"),
-                Ai,
                 Melee { power: 1, skill: 3 },
-                PathCache::default(),
-                Description("Cunning, but brutal".to_string()),
                 Leash {
                     origin: pos,
                     radius: 20,
                 },
-                Color("#06b306".into()),
-                Name("Orc".into()),
-                Velocity::default(),
             ));
         }
         StuffTag::Sword => {
-            cmd.insert_bundle((
-                icon("sword"),
-                Melee { power: 1, skill: 0 },
-                Item,
-                Description("Power 1".to_string()),
-                Name("Simple Sword".into()),
-            ));
+            cmd.insert_bundle((Melee { power: 1, skill: 0 },));
         }
         StuffTag::HpPotion => {
-            cmd.insert_bundle((
-                icon("hp_potion"),
-                Heal { hp: 3 },
-                Item,
-                Description("Heal 3".to_string()),
-                Name("Health Potion".into()),
-                Color("rgb(255, 0, 127)".into()),
-            ));
+            cmd.insert_bundle((Heal { hp: 3 },));
         }
         StuffTag::LightningScroll => {
             let power = 3;
-            cmd.insert_bundle((
-                icon("scroll"),
-                Ranged {
-                    power,
-                    range: 5,
-                    skill: 4,
-                },
-                Item,
-                Description(format!(
-                    "Hurl a lightning bolt at your foe for {} damage.",
-                    power
-                )),
-                Name("Lightning Bolt".to_string()),
-                Color("#fee85d".into()),
-            ));
+            cmd.insert_bundle((Ranged {
+                power,
+                range: 5,
+                skill: 4,
+            },));
         }
         StuffTag::ConfusionScroll => {
-            let power = 10;
-            cmd.insert_bundle((
-                icon("scroll"),
-                Ranged {
-                    power,
-                    range: 5,
-                    skill: 4,
-                },
-                Item,
-                Description(format!("Confuse the target enemy for {} turns", power)),
-                Name("Confusion Bolt".to_string()),
-                Color("#800080".into()),
-            ));
+            cmd.insert_bundle((Ranged {
+                power: 10,
+                range: 5,
+                skill: 4,
+            },));
         }
         StuffTag::FireBallScroll => {
-            let power = 4;
-            let radius = 3;
             cmd.insert_bundle((
-                icon("scroll"),
                 Ranged {
-                    power,
+                    power: 4,
                     range: 5,
                     skill: 4,
                 },
-                Aoe { radius },
-                Item,
-                Description(format!(
-                    "Hurl a fireball dealing {} damage in a {} radius",
-                    power, radius
-                )),
-                Name("Fire Ball".to_string()),
-                Color("#af0808".into()),
+                Aoe { radius: 3 },
             ));
         }
     }

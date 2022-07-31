@@ -23,6 +23,16 @@
 		});
 	};
 
+	function letsgoboi() {
+		let pl = core.save();
+		console.log(pl.length, JSON.parse(pl));
+		core.load(pl);
+		// hack: re-initialize core
+		canvasStore.update((canvas) => {
+			return canvas;
+		});
+	}
+
 	const gameLoop = () => {
 		if (core) {
 			const now = new Date().getTime();
@@ -45,6 +55,9 @@
 
 <main>
 	{#if core != null}
+		<div>
+			<button on:click={letsgoboi}>Save Load test</button>
+		</div>
 		<div class="content">
 			<div>
 				<Grid />

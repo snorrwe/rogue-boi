@@ -1,21 +1,24 @@
+//! Implementation note: if a component is persisted, and stores an ID to another entity, make sure
+//! it's remapped when loading! See [[Core::load]]
+//!
 use std::collections::{HashMap, VecDeque};
 
 use crate::{grid::Grid, math::Vec2, Stuff};
 use cecs::entity_id::EntityId;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use wasm_bindgen::JsValue;
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Pos(pub Vec2);
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct Icon(pub &'static str);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct PlayerTag;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Ai;
 
 #[derive(Debug, Clone, Copy)]
@@ -24,19 +27,19 @@ pub struct Walkable;
 #[derive(Debug, Clone, Copy)]
 pub struct Item;
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Melee {
     pub power: i32,
     pub skill: i32,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Description(pub String);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Inventory {
     pub capacity: usize,
-    pub items: SmallVec<[EntityId; 32]>,
+    pub items: Vec<EntityId>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -49,7 +52,7 @@ impl Inventory {
     pub fn new(capacity: usize) -> Self {
         Self {
             capacity,
-            items: SmallVec::with_capacity(capacity),
+            items: Vec::with_capacity(capacity),
         }
     }
 
@@ -71,12 +74,8 @@ impl Inventory {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct OwnedItem {
-    pub owner: EntityId,
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
+#[repr(u8)]
 pub enum StuffTag {
     Player,
     Wall,
@@ -107,7 +106,7 @@ impl StuffTag {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Hp {
     pub current: i32,
     pub max: i32,
@@ -123,12 +122,12 @@ impl Hp {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Heal {
     pub hp: i32,
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Ranged {
     pub power: i32,
     pub range: i32,
@@ -140,7 +139,7 @@ pub struct PathCache {
     pub path: SmallVec<[Vec2; 16]>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Leash {
     pub origin: Vec2,
     pub radius: i32,
@@ -150,8 +149,11 @@ pub struct Leash {
 pub struct Color(pub JsValue);
 
 pub struct Visible(pub Grid<bool>);
+
+#[derive(Serialize, Deserialize)]
 pub struct Explored(pub Grid<bool>);
-#[derive(Clone, Copy)]
+
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct GameTick(pub i32);
 
 impl Default for GameTick {
@@ -196,7 +198,7 @@ impl Default for DungeonLevel {
 
 pub struct Name(pub String);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct LastPos(pub Vec2);
 
 /// Mark entities that can't move
@@ -219,6 +221,7 @@ pub struct DeltaTime(pub i32);
 #[derive(Debug, Clone, Copy)]
 pub struct TickInMs(pub i32);
 
+#[derive(Serialize, Deserialize)]
 pub struct LogHistory {
     pub items: VecDeque<(GameTick, String)>,
     pub capacity: usize,
@@ -244,12 +247,12 @@ pub enum AppMode {
 #[derive(Default, Debug, Clone, Copy)]
 pub struct Velocity(pub Vec2);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct ConfusedAi {
     pub duration: i32,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Aoe {
     pub radius: u32,
 }
@@ -261,3 +264,6 @@ pub struct TargetPos {
 
 #[derive(Debug, Clone, Copy)]
 pub struct DropItem(pub EntityId);
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct WorldDims(pub Vec2);
