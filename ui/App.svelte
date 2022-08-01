@@ -48,8 +48,10 @@
 				'#newgame': () => {
 					if (core) {
 						core.restart();
+						window.location.hash = 'game';
 						return Game;
 					}
+					return Menu;
 				},
 				'#menu': () => Menu
 			}[location.hash] || (() => Menu);
