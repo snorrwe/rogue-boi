@@ -25,7 +25,7 @@
 
 	function letsgoboi() {
 		let pl = core.save();
-		console.log(pl.length, JSON.parse(pl));
+		console.log(pl.length);
 		core.load(pl);
 		// hack: re-initialize core
 		canvasStore.update((canvas) => {

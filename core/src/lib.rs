@@ -549,20 +549,22 @@ impl Core {
         let world = self.world.borrow();
 
         let mut result = Vec::<u8>::new();
-        let mut s = serde_json::Serializer::pretty(&mut result);
+        let mut s = bincode::Serializer::new(&mut result, bincode::config::DefaultOptions::new());
 
         p.save(&mut s, &world).unwrap();
 
-        let result = String::from_utf8(result).unwrap();
-
-        result
+        base64::encode(result)
     }
 
     pub fn load(&mut self, pl: String) {
         let p = get_world_persister();
+        let pl = base64::decode(pl).unwrap();
 
         let (mut world, id_map) = p
-            .load(&mut serde_json::Deserializer::from_str(pl.as_str()))
+            .load(&mut bincode::de::Deserializer::from_slice(
+                pl.as_slice(),
+                bincode::config::DefaultOptions::new(),
+            ))
             .unwrap();
 
         // remap inventory
