@@ -323,6 +323,14 @@ impl Core {
     pub fn restart(&mut self) {
         logging::get_log_buffer().clear();
         let mut world = self.world.borrow_mut();
+
+        // delete the player
+        world.run_system(|mut cmd: Commands, q: Query<EntityId, With<PlayerTag>>| {
+            for id in q.iter() {
+                cmd.delete(id);
+            }
+        });
+
         world.insert_resource(DeltaTime(0));
         world.insert_resource(GameTick::default());
         world.insert_resource(DungeonLevel::default());
