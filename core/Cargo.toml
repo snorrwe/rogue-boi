@@ -30,6 +30,8 @@ thiserror = "1.0.31"
 serde_json = "1.0.82"
 icons = { version = "0.1.0", path = "../icons" }
 web-sys = { version = "0.3.58", features = ["CanvasRenderingContext2d", "HtmlCanvasElement", "Path2d", "DomMatrix", "MouseEvent"] }
+bincode = "1.3.3"
+base64 = "0.13.0"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.31"
