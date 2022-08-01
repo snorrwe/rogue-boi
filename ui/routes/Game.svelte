@@ -23,12 +23,6 @@
 		});
 	};
 
-	function letsgoboi() {
-		let pl = core.save();
-		console.log(pl.length);
-		localStorage.setItem('save', pl);
-	}
-
 	const gameLoop = () => {
 		if (core) {
 			const now = new Date().getTime();
@@ -51,9 +45,6 @@
 
 <main>
 	{#if core != null}
-		<div>
-			<button on:click={letsgoboi}>Save</button>
-		</div>
 		<div class="content">
 			<div>
 				<Grid />
