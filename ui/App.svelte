@@ -26,6 +26,14 @@
 		routeChange();
 	});
 
+	function saveGame() {
+		if (core) {
+			let pl = core.save();
+			console.log(pl.length);
+			localStorage.setItem('save', pl);
+		}
+	}
+
 	document.addEventListener('keydown', (event) => {
 		core.pushEvent({
 			ty: 'KeyDown',
@@ -49,7 +57,7 @@
 	};
 </script>
 
-<svelte:window on:hashchange={routeChange} />
+<svelte:window on:unload={saveGame} on:hashchange={routeChange} />
 
 <main>
 	<header>
