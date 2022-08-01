@@ -8,7 +8,7 @@
 <nav class="menu">
 	<ul>
 		{#if alive}
-			<li><a href="#game">Return to game</a></li>
+			<li><a href="#game">Continue</a></li>
 		{/if}
 		<li><a href="#newgame">New Game</a></li>
 	</ul>
