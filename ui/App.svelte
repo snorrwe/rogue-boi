@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { fetchIcon, coreStore } from '@rogueBoi/store.js';
+	import { fetchIcon, coreStore, coreOutputStore } from '@rogueBoi/store.js';
 	import Menu from './routes/Menu.svelte';
 	import Game from './routes/Game.svelte';
 
@@ -11,6 +11,17 @@
 		core.icons().forEach((icon) => {
 			fetchIcon({ src: `icons/${icon}.svg`, name: icon });
 		});
+		const saveGame = localStorage.getItem('save');
+		if (saveGame != null) {
+			try {
+				console.log('Loading previous save');
+				core.load(saveGame);
+				coreOutputStore.set(core.getOutput());
+			} catch (err) {
+				console.error('Failed to load save game', err);
+				localStorage.removeItem('save');
+			}
+		}
 		coreStore.set(core);
 		routeChange();
 	});

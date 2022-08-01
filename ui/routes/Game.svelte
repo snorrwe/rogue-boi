@@ -26,11 +26,7 @@
 	function letsgoboi() {
 		let pl = core.save();
 		console.log(pl.length);
-		core.load(pl);
-		// hack: re-initialize core
-		canvasStore.update((canvas) => {
-			return canvas;
-		});
+		localStorage.setItem('save', pl);
 	}
 
 	const gameLoop = () => {
@@ -56,7 +52,7 @@
 <main>
 	{#if core != null}
 		<div>
-			<button on:click={letsgoboi}>Save Load test</button>
+			<button on:click={letsgoboi}>Save</button>
 		</div>
 		<div class="content">
 			<div>
