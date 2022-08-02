@@ -173,11 +173,13 @@ pub enum InputEvent {
 }
 
 #[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RenderedOutput {
     pub selected: Option<EntityId>,
     pub player: Option<PlayerOutput>,
     pub log: String,
     pub targeting: bool,
+    pub dungeon_level: u32,
 }
 
 #[derive(serde::Serialize)]
