@@ -14,6 +14,7 @@
 	export let currentXp;
 	export let neededXp;
 	export let level;
+	export let levelup;
 </script>
 
 <div>
@@ -27,11 +28,17 @@
 		<h2>Player stats</h2>
 		{#if hp != null}
 			<p id="player-hp">
+				{#if levelup}
+					<button on:click={() => core.setLevelupStat({ ty: 'Hp' })}>+</button>
+				{/if}
 				Health: {hp.current} / {hp.max}
 			</p>
 		{/if}
 		{#if attack != null}
 			<p id="player-attack">
+				{#if levelup}
+					<button on:click={() => core.setLevelupStat({ ty: 'Attack' })}>+</button>
+				{/if}
 				Attack Power: {attack}
 			</p>
 		{/if}

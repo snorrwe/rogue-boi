@@ -80,6 +80,7 @@ fn init_world_transient_resources(world_dims: Vec2, world: &mut World) {
     world.insert_resource(AppMode::Game);
     world.insert_resource(UseItem::default());
     world.insert_resource(TargetPos::default());
+    world.insert_resource(None::<DesiredStat>);
 }
 
 fn init_world_resources(world_dims: Vec2, world: &mut World) {
@@ -96,7 +97,8 @@ fn init_world_systems(world: &mut World) {
             .with_system(update_input_events)
             .with_system(update_should_tick)
             .with_system(handle_targeting)
-            .with_system(player_prepare),
+            .with_system(player_prepare)
+            .with_system(handle_levelup),
     );
     world.add_stage(
         SystemStage::serial("pre-update")
@@ -181,6 +183,7 @@ pub struct RenderedOutput {
     pub log: String,
     pub targeting: bool,
     pub dungeon_level: u32,
+    pub app_mode: AppMode,
 }
 
 #[derive(serde::Serialize)]
@@ -539,6 +542,13 @@ impl Core {
 
         *self.world.borrow_mut() = world;
         self.tick(0);
+    }
+
+    #[wasm_bindgen(js_name = "setLevelupStat")]
+    pub fn set_levelup_stat(&mut self, stat: JsValue) {
+        let stat: DesiredStat = stat.into_serde().unwrap();
+        let mut w = self.world.borrow_mut();
+        w.insert_resource(Some(stat));
     }
 }
 
