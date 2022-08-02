@@ -63,9 +63,12 @@
 						inventory={$inventory}
 						alive={$coreOutputStore.player != null}
 						hp={$coreOutputStore.player && $coreOutputStore.player.playerHp}
-						pos={$coreOutputStore.player && $coreOutputStore.player.playerPosition}
+						pos={$coreOutputStore.player && $coreOutputStore.player.playerPos}
 						attack={$coreOutputStore.player && $coreOutputStore.player.playerAttack}
 						targeting={$coreOutputStore.targeting}
+						currentXp={$coreOutputStore.player && $coreOutputStore.player.currentXp}
+						neededXp={$coreOutputStore.player && $coreOutputStore.player.neededXp}
+						level={$coreOutputStore.player && $coreOutputStore.player.level}
 						{core}
 					/>
 				</div>

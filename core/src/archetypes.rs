@@ -36,6 +36,8 @@ pub fn register_persistent_components(
         .add_component::<Ranged>()
         .add_component::<Aoe>()
         .add_component::<ConfusedAi>()
+        .add_component::<Level>()
+        .add_component::<Exp>()
 }
 
 fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {
@@ -153,6 +155,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 Hp::new(10),
                 Inventory::new(16),
                 Melee { power: 1, skill: 5 },
+                Level::default(),
             ));
         }
 
@@ -167,6 +170,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                     origin: pos,
                     radius: 20,
                 },
+                Exp { amount: 100 },
             ));
         }
         StuffTag::Orc => {
@@ -177,6 +181,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                     origin: pos,
                     radius: 20,
                 },
+                Exp { amount: 35 },
             ));
         }
         StuffTag::Sword => {

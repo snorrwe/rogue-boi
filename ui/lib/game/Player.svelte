@@ -11,6 +11,9 @@
 	export let inventory;
 	export let core;
 	export let targeting;
+	export let currentXp;
+	export let neededXp;
+	export let level;
 </script>
 
 <div>
@@ -36,6 +39,12 @@
 			<p id="player-pos">
 				Position: {pos.x}, {pos.y}
 			</p>
+		{/if}
+		{#if level != null}
+			<p>Level: {level}</p>
+		{/if}
+		{#if currentXp != null}
+			<p>Experience: {currentXp} / {neededXp}</p>
 		{/if}
 		<button on:click={() => core.wait()}>Wait</button>
 	{/if}

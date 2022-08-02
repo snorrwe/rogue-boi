@@ -671,14 +671,25 @@ pub fn update_player_hp<'a>(
     }
 }
 
-pub fn update_ai_hp(
+pub fn update_ai_hp<'a>(
     mut cmd: Commands,
-    query_hp: Query<(EntityId, &Hp, Option<&Name>), (With<Ai>, WithOut<PlayerTag>)>,
+    query_hp: Query<(EntityId, &Hp, Option<&Name>, Option<&Exp>), (With<Ai>, WithOut<PlayerTag>)>,
+    mut query_player: Query<(&'a mut Level, &'a mut Melee), With<PlayerTag>>,
 ) {
-    for (id, _hp, name) in query_hp.iter().filter(|(_, hp, _)| (hp.current <= 0)) {
+    let mut player = query_player.iter_mut().next();
+    for (id, _hp, name, xp) in query_hp.iter().filter(|(_, hp, _, _)| (hp.current <= 0)) {
         debug!("Entity {} died", id);
         if let Some(Name(name)) = name {
             game_log!("{} died", name);
+        }
+
+        if let Some((level, melee)) = player.as_mut() && let Some(xp) = xp {
+            if level.add_xp(xp.amount){
+                let level = level.current_level;
+                game_log!("Level up! Your're now level {}", level);
+                melee.power += 1;
+            }
+            debug!("Gain {} xp. Now: {:?}", xp.amount, level);
         }
 
         cmd.delete(id);
@@ -706,7 +717,7 @@ pub fn update_camera_pos(mut camera: ResMut<CameraPos>, q: Query<&Pos, With<Play
 }
 
 pub fn update_output(
-    q_player: Query<(&Pos, &Hp, &Melee), With<PlayerTag>>,
+    q_player: Query<(&Pos, &Hp, &Melee, &Level), With<PlayerTag>>,
     game_tick: Res<GameTick>,
     mut output_cache: ResMut<Output>,
     selected: Res<Selected>,
@@ -721,7 +732,10 @@ pub fn update_output(
     let player = q_player
         .iter()
         .next()
-        .map(|(pos, hp, attack)| PlayerOutput {
+        .map(|(pos, hp, attack, level)| PlayerOutput {
+            level: level.current_level,
+            current_xp: level.current_xp,
+            needed_xp: level.experience_to_next_level(),
             player_hp: *hp,
             player_attack: attack.power,
             player_pos: pos.0,
