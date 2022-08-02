@@ -712,6 +712,7 @@ pub fn update_output(
     selected: Res<Selected>,
     history: Res<LogHistory>,
     app_mode: Res<AppMode>,
+    dungeon_level: Res<DungeonLevel>,
 ) {
     use std::fmt::Write;
 
@@ -742,6 +743,7 @@ pub fn update_output(
     }
     let targeting = matches!(*app_mode, AppMode::Targeting);
     let result = RenderedOutput {
+        dungeon_level: dungeon_level.current,
         player,
         log,
         selected: selected.0.clone(),

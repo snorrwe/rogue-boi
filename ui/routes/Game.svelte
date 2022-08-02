@@ -50,6 +50,7 @@
 				<Grid />
 			</div>
 			<div class="log">
+				<div>Dungeon level: {$coreOutputStore.dungeonLevel}</div>
 				<h2>Log</h2>
 				<Log log={$coreOutputStore.log} />
 			</div>
