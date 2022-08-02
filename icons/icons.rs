@@ -9,16 +9,7 @@ mod svg_paths {
 lazy_static::lazy_static! {
     // return relative paths
     pub static ref ICONS: HashMap<&'static str, &'static str> = {
-        [
-            ("wall", "delapouite/stone-wall.svg"),
-            ("troll", "skoll/troll.svg"),
-            ("orc-head", "delapouite/orc-head.svg"),
-            ("person", "delapouite/person.svg"),
-            ("tombstone", "lorc/tombstone.svg"),
-            ("sword", "lorc/pointy-sword.svg"),
-            ("hp_potion", "delapouite/health-potion.svg"),
-            ("scroll", "lorc/scroll-unfurled.svg"),
-        ]
+        svg_paths::ICON_LIST
             .iter()
             .map(|x|*x)
             .collect()

@@ -49,8 +49,14 @@ fn main() {
     let payload = format!(
         r#"
 /// The `d` field of the svg path
+pub const ICON_LIST: &[(&str, &str)] = &[{}];
 pub const SVG_PATHS: &[(&str, &str)] = &[{}];
 "#,
+        ICONS
+            .iter()
+            .map(|(key, path)| { format!("(\"{}\",\"{}\")", key, path) })
+            .collect::<Vec<_>>()
+            .join(","),
         payload
             .iter()
             .map(|(key, path)| { format!("(\"{}\",\"{}\")", key, path) })
