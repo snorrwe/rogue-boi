@@ -12,7 +12,7 @@ use tracing::debug;
 
 use crate::{
     archetypes::{init_entity, ENEMY_TAGS, ENEMY_WEIGHTS, ITEM_TAGS, ITEM_WEIGHTS},
-    components::{PlayerTag, Pos, StuffTag},
+    components::{PlayerTag, Pos, StuffTag, WorldDims},
     grid::Grid,
     math::Vec2,
     Stuff,
@@ -28,13 +28,12 @@ pub struct MapGenProps {
 }
 
 impl MapGenProps {
-    pub fn from_level(_level: u32) -> Self {
-        // TODO: use level
+    pub fn from_level(level: u32) -> Self {
         MapGenProps {
             room_min_size: 6,
             room_max_size: 10,
             max_rooms: 50,
-            max_monsters_per_room: 2,
+            max_monsters_per_room: 1 + level,
             max_items_per_room: 2,
         }
     }
@@ -108,13 +107,16 @@ pub fn generate_map(
     mut cmd: Commands,
     mut grid: ResMut<Grid<Stuff>>,
     props: Res<MapGenProps>,
+    dims: Res<WorldDims>,
 ) {
     // player may or may not exist at this point
     let player_id = player_q.iter().next();
-    let mut working_set = Grid::new(grid.dims());
+    let mut working_set = Grid::new(dims.0);
     // fill the map with walls and delete old entities
     //
-    for (p, stuff) in grid.iter_mut() {
+    // FIXME: this is a lot of wall, use None pls
+    working_set.splat_set([Vec2::ZERO, dims.0], Some(StuffTag::Wall));
+    for (_p, stuff) in grid.iter_mut() {
         if let Some(id) = stuff {
             // delete all but player entities from the database
             // player is preserved between levels
@@ -124,7 +126,6 @@ pub fn generate_map(
                 cmd.delete(id);
             }
         }
-        working_set[p] = Some(StuffTag::Wall);
         *stuff = None;
     }
 
@@ -132,6 +133,9 @@ pub fn generate_map(
 
     // insert entities into db
     //
+    if dims.0 != grid.dims() {
+        *grid = Grid::new(dims.0);
+    }
     for (pos, tag) in working_set.iter().filter_map(|(p, t)| t.map(|t| (p, t))) {
         match tag {
             StuffTag::Player => {
