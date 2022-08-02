@@ -941,7 +941,11 @@ pub fn init_grids(
     mut static_grid: ResMut<StaticGrid>,
     mut grid: ResMut<Grid<Stuff>>,
 ) {
-    static_grid.0.fill(None);
+    if static_grid.0.dims() != grid.dims() {
+        static_grid.0 = Grid::new(grid.dims());
+    } else {
+        static_grid.0.fill(None);
+    }
     for (id, Pos(p)) in static_q.iter() {
         static_grid.0[*p] = Some(id);
     }
@@ -1017,16 +1021,24 @@ pub fn regenerate_dungeon(mut access: WorldAccess) {
     info!("Regenerating dungeon");
     let world = access.world_mut();
 
-    world.get_resource_mut::<Visible>().unwrap().0.fill(false);
-    world.get_resource_mut::<Explored>().unwrap().0.fill(false);
-
     let level = world
         .get_resource::<DungeonLevel>()
         .cloned()
         .unwrap_or_default()
         .desired;
 
+    let dims = match level {
+        0 | 1 => Vec2::new(64, 64),
+        2 => Vec2::new(80, 80),
+        3 => Vec2::new(96, 96),
+        4 => Vec2::new(115, 115),
+        _ => Vec2::new(128, 128),
+    };
+
     // reset some resources
+    world.insert_resource(Visible(Grid::new(dims)));
+    world.insert_resource(Explored(Grid::new(dims)));
+    world.insert_resource(WorldDims(dims));
     world.insert_resource(DungeonLevel {
         current: level,
         desired: level,
