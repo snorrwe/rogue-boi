@@ -190,11 +190,17 @@ pub struct Selected(pub Option<EntityId>);
 #[derive(Default)]
 pub struct ClickPosition(pub Option<[f64; 2]>);
 
-#[derive(Clone, Copy)]
-pub struct DungeonLevel(pub u32);
+#[derive(Clone, Copy, Serialize, Deserialize)]
+pub struct DungeonLevel {
+    pub current: u32,
+    pub desired: u32,
+}
 impl Default for DungeonLevel {
     fn default() -> Self {
-        Self(1)
+        Self {
+            current: 0,
+            desired: 1,
+        }
     }
 }
 

@@ -3,6 +3,7 @@ use crate::{
     components::*,
     game_log,
     grid::Grid,
+    map_gen,
     math::{remap_f64, walk_square, Vec2},
     pathfinder::find_path,
     InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff, UseItem,
@@ -213,6 +214,7 @@ pub fn update_player_world_interact<'a>(
     grid: Res<Grid<Stuff>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     actions: Res<PlayerActions>,
+    mut level: ResMut<DungeonLevel>,
 ) {
     if !actions.interact() {
         return;
@@ -247,7 +249,8 @@ pub fn update_player_world_interact<'a>(
                     }
                 }
                 StuffTag::Stairs => {
-                    todo!("stairs");
+                    game_log!("You descend the staircase");
+                    level.desired += 1;
                 }
                 _ => {
                     debug!("Cant interact with {}", id);
@@ -1006,4 +1009,39 @@ pub fn rotate_log(mut history: ResMut<LogHistory>, tick: Res<GameTick>) {
     while history.items.len() > history.capacity {
         history.items.pop_front();
     }
+}
+
+pub fn regenerate_dungeon(mut access: WorldAccess) {
+    info!("Regenerating dungeon");
+    let world = access.world_mut();
+
+    world.get_resource_mut::<Visible>().unwrap().0.fill(false);
+    world.get_resource_mut::<Explored>().unwrap().0.fill(false);
+
+    let level = world
+        .get_resource::<DungeonLevel>()
+        .cloned()
+        .unwrap_or_default()
+        .desired;
+
+    // reset some resources
+    world.insert_resource(DungeonLevel {
+        current: level,
+        desired: level,
+    });
+    world.insert_resource(level);
+    world.insert_resource(map_gen::MapGenProps::from_level(level));
+    world.insert_resource(PlayerActions::new());
+
+    world.run_system(map_gen::generate_map);
+    world.run_system(init_grids);
+
+    game_log!("You're on level {}", level);
+    world.run_stage(
+        SystemStage::serial("initial-post-process")
+            .with_system(update_camera_pos)
+            .with_system(update_grid)
+            .with_system(update_fov)
+            .with_system(update_output),
+    );
 }

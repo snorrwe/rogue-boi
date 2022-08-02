@@ -50,6 +50,7 @@ fn get_world_persister() -> impl WorldSerializer {
         .add_resource::<WorldDims>()
         .add_resource::<GameTick>()
         .add_resource::<LogHistory>()
+        .add_resource::<DungeonLevel>()
         .add_resource::<Explored>();
 
     archetypes::register_persistent_components(persister)
@@ -134,6 +135,11 @@ fn init_world_systems(world: &mut World) {
             .with_system(systems::rotate_log)
             .with_system(update_tick),
     );
+    world.add_stage(
+        SystemStage::serial("dungeon-delve")
+            .with_should_run(|level: Res<DungeonLevel>| level.current != level.desired)
+            .with_system(regenerate_dungeon),
+    );
 }
 
 pub fn init_world(world_dims: Vec2, world: &mut World) {
@@ -144,33 +150,6 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     );
     init_world_resources(world_dims, world);
     init_world_systems(world);
-}
-
-fn init_dungeon(world: &mut World) {
-    // reset visibility
-    world.get_resource_mut::<Visible>().unwrap().0.fill(false);
-    world.get_resource_mut::<Explored>().unwrap().0.fill(false);
-    let level = world
-        .get_resource::<DungeonLevel>()
-        .cloned()
-        .unwrap_or_default();
-
-    // reset some resources
-    world.insert_resource(level);
-    world.insert_resource(map_gen::MapGenProps::from_level(level));
-    world.insert_resource(PlayerActions::new());
-
-    world.run_system(map_gen::generate_map);
-    world.run_system(systems::init_grids);
-
-    game_log!("Hello wanderer!");
-    world.run_stage(
-        SystemStage::serial("initial-post-process")
-            .with_system(update_camera_pos)
-            .with_system(update_grid)
-            .with_system(update_fov)
-            .with_system(update_output),
-    );
 }
 
 #[wasm_bindgen(js_name = "initCore")]
@@ -309,7 +288,8 @@ impl Core {
             .clear();
         world.insert_resource(AppMode::Game);
         world.insert_resource(UseItem::default());
-        init_dungeon(&mut world);
+        game_log!("Hello wanderer!");
+        world.run_system(regenerate_dungeon);
     }
 
     /// return the name of the icons (without the extension!)

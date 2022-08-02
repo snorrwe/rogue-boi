@@ -12,7 +12,7 @@ use tracing::debug;
 
 use crate::{
     archetypes::{init_entity, ENEMY_TAGS, ENEMY_WEIGHTS, ITEM_TAGS, ITEM_WEIGHTS},
-    components::{DungeonLevel, PlayerTag, Pos, StuffTag},
+    components::{PlayerTag, Pos, StuffTag},
     grid::Grid,
     math::Vec2,
     Stuff,
@@ -28,7 +28,7 @@ pub struct MapGenProps {
 }
 
 impl MapGenProps {
-    pub fn from_level(_level: DungeonLevel) -> Self {
+    pub fn from_level(_level: u32) -> Self {
         // TODO: use level
         MapGenProps {
             room_min_size: 6,
