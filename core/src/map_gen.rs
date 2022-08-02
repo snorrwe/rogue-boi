@@ -8,6 +8,7 @@ use rand::{
     prelude::{Distribution, SliceRandom},
     Rng,
 };
+use tracing::debug;
 
 use crate::{
     archetypes::{init_entity, ENEMY_TAGS, ENEMY_WEIGHTS, ITEM_TAGS, ITEM_WEIGHTS},
@@ -59,6 +60,21 @@ fn place_entities(
         if grid[pos].is_none() {
             let tag = ENEMY_TAGS[dist.sample(rng)];
             grid[pos] = Some(tag);
+            debug!("Placing {:?} at {}", tag, pos);
+        }
+    }
+}
+
+fn place_stairs(rng: &mut impl Rng, grid: &mut Grid<Option<StuffTag>>, room: &RectRoom) {
+    loop {
+        let x = rng.gen_range(room.min.x + 1..room.max.x + 1);
+        let y = rng.gen_range(room.min.y + 1..room.max.y + 1);
+
+        let pos = Vec2::new(x, y);
+        if grid[pos].is_none() {
+            debug!("Placing end at {}", pos);
+            grid[pos] = Some(StuffTag::Stairs);
+            return;
         }
     }
 }
@@ -81,6 +97,7 @@ fn place_items(
         if grid[pos].is_none() {
             let tag = ITEM_TAGS[dist.sample(rng)];
             grid[pos] = Some(tag);
+            debug!("Placing {:?} at {}", tag, pos);
         }
     }
 }
@@ -171,6 +188,11 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps) {
 
     // spawn the player in the first room
     grid[rooms[0].center()] = Some(StuffTag::Player);
+
+    let end_room = rooms[1..]
+        .choose(&mut rng)
+        .expect("Expected more than 1 room");
+    place_stairs(&mut rng, grid, end_room);
 }
 
 fn tunnel_between(mut rng: impl Rng, start: Vec2, end: Vec2) -> impl Iterator<Item = Vec2> {

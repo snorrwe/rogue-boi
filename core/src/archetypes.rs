@@ -40,6 +40,15 @@ pub fn register_persistent_components(
 
 fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {
     match tag {
+        StuffTag::Stairs => {
+            cmd.insert_bundle((
+                icon("stairs"),
+                Name("Stairs".into()),
+                Description("Move deeper into the dungeon".to_string()),
+                NextLevel,
+                Color("white".into()),
+            ));
+        }
         StuffTag::Tombstone => {
             cmd.insert_bundle((icon("tombstone"), Name("Tombstone".into())));
         }
@@ -136,6 +145,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
     cmd.insert_bundle((tag, Pos(pos)));
     insert_transient_components_for_entity(cmd, tag);
     match tag {
+        StuffTag::Stairs => {}
         StuffTag::Tombstone => {}
         StuffTag::Player => {
             cmd.insert_bundle((
@@ -236,7 +246,7 @@ pub type StuffToJsQuery<'a> = QuerySet<(
 
 pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValue {
     let payload = match tag {
-        StuffTag::Tombstone => {
+        StuffTag::Stairs | StuffTag::Tombstone => {
             let (icon, name, desc) = query.q4().fetch(id).unwrap();
             json! {{
                 "id": id,

@@ -1,3 +1,5 @@
+#![feature(let_else)]
+
 mod archetypes;
 mod components;
 mod grid;
