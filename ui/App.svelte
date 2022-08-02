@@ -30,7 +30,7 @@
 	function saveGame() {
 		if ($coreStore) {
 			let pl = $coreStore.save();
-			console.log(pl.length);
+			console.log('Save size: ', pl.length);
 			localStorage.setItem('save', pl);
 		}
 	}
