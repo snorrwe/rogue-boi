@@ -245,11 +245,13 @@ impl Default for LogHistory {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(tag = "ty")]
 pub enum AppMode {
     Game,
     Targeting,
     TargetingPosition,
+    Levelup,
 }
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -304,21 +306,30 @@ impl Level {
         self.level_up_base + self.current_level * self.level_up_factor
     }
 
-    /// return wether levelup occured
-    pub fn add_xp(&mut self, exp: u32) -> bool {
+    pub fn add_xp(&mut self, exp: u32) {
         self.current_xp += exp;
+    }
+
+    pub fn needs_levelup(&self) -> bool {
         let required = self.experience_to_next_level();
-        if self.current_xp >= required {
-            self.current_level += 1;
-            self.current_xp = self.current_xp - required;
-            true
-        } else {
-            false
-        }
+        self.current_xp >= required
+    }
+
+    pub fn levelup(&mut self) {
+        debug_assert!(self.current_xp >= self.experience_to_next_level());
+        self.current_xp = self.current_xp - self.experience_to_next_level();
+        self.current_level += 1;
     }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Exp {
     pub amount: u32,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(tag = "ty")]
+pub enum DesiredStat {
+    Attack,
+    Hp,
 }

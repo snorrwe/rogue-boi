@@ -674,7 +674,7 @@ pub fn update_player_hp<'a>(
 pub fn update_ai_hp<'a>(
     mut cmd: Commands,
     query_hp: Query<(EntityId, &Hp, Option<&Name>, Option<&Exp>), (With<Ai>, WithOut<PlayerTag>)>,
-    mut query_player: Query<(&'a mut Level, &'a mut Melee), With<PlayerTag>>,
+    mut query_player: Query<&'a mut Level, With<PlayerTag>>,
 ) {
     let mut player = query_player.iter_mut().next();
     for (id, _hp, name, xp) in query_hp.iter().filter(|(_, hp, _, _)| (hp.current <= 0)) {
@@ -683,12 +683,8 @@ pub fn update_ai_hp<'a>(
             game_log!("{} died", name);
         }
 
-        if let Some((level, melee)) = player.as_mut() && let Some(xp) = xp {
-            if level.add_xp(xp.amount){
-                let level = level.current_level;
-                game_log!("Level up! Your're now level {}", level);
-                melee.power += 1;
-            }
+        if let Some(level) = player.as_mut() && let Some(xp) = xp {
+            level.add_xp(xp.amount);
             debug!("Gain {} xp. Now: {:?}", xp.amount, level);
         }
 
@@ -758,6 +754,7 @@ pub fn update_output(
     let targeting = matches!(*app_mode, AppMode::Targeting);
     let result = RenderedOutput {
         dungeon_level: dungeon_level.current,
+        app_mode: *app_mode,
         player,
         log,
         selected: selected.0.clone(),
@@ -996,7 +993,7 @@ pub fn handle_targeting(
     target_pos: Res<TargetPos>,
 ) {
     match *mode {
-        AppMode::Game => {}
+        AppMode::Levelup | AppMode::Game => {}
         AppMode::Targeting => {
             if actions.target().is_some() {
                 *mode = AppMode::Game;
@@ -1073,4 +1070,48 @@ pub fn regenerate_dungeon(mut access: WorldAccess) {
             .with_system(update_fov)
             .with_system(update_output),
     );
+}
+
+pub fn handle_levelup<'a>(
+    mut app_mode: ResMut<AppMode>,
+    mut stat: ResMut<Option<DesiredStat>>,
+    mut player_q: Query<(&'a mut Hp, &'a mut Melee, &'a mut Level), With<PlayerTag>>,
+) {
+    if let Some((hp, melee, level)) = player_q.iter_mut().next() {
+        if !level.needs_levelup() {
+            return;
+        }
+        match stat.take() {
+            Some(stat) => {
+                debug_assert!(matches!(*app_mode, AppMode::Levelup));
+                level.levelup();
+                // player _might_ level up multiple times in a single tick
+                if level.needs_levelup() {
+                    let level = level.current_level + 1;
+                    game_log!("Level up! Your're now level {}", level);
+                    game_log!("Select a stat to upgrade!");
+                } else {
+                    *app_mode = AppMode::Game;
+                }
+                match stat {
+                    DesiredStat::Attack => {
+                        melee.power += 1;
+                    }
+                    DesiredStat::Hp => {
+                        let amount = 10;
+                        hp.current += amount;
+                        hp.max += amount;
+                    }
+                }
+            }
+            None => {
+                if !matches!(*app_mode, AppMode::Levelup) {
+                    let level = level.current_level + 1;
+                    game_log!("Level up! Your're now level {}", level);
+                    game_log!("Select a stat to upgrade!");
+                    *app_mode = AppMode::Levelup;
+                }
+            }
+        }
+    }
 }

@@ -69,6 +69,7 @@
 						currentXp={$coreOutputStore.player && $coreOutputStore.player.currentXp}
 						neededXp={$coreOutputStore.player && $coreOutputStore.player.neededXp}
 						level={$coreOutputStore.player && $coreOutputStore.player.level}
+                        levelup={$coreOutputStore.appMode.ty == "Levelup"}
 						{core}
 					/>
 				</div>
