@@ -79,7 +79,10 @@ pub fn find_path(
         let new_neighbours: ArrayVec<_, 4> = [Vec2::X, Vec2::Y, -Vec2::X, -Vec2::Y]
             .iter()
             .map(|x| current.pos + *x)
-            .filter(|pos| grid[*pos].is_none() || walkies.fetch(grid[*pos].unwrap()).is_some())
+            .filter(|pos| {
+                grid.contains(pos.x, pos.y)
+                    && (grid[*pos].is_none() || walkies.fetch(grid[*pos].unwrap()).is_some())
+            })
             // if it's a new node, or if it's cheaper than the previous visit
             // this is required because we only check the cross neighbours, so our `f` const function is inconsistent
             .filter(|pos| gcost.get(pos).map(|cost| new_g < *cost).unwrap_or(true))
