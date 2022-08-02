@@ -290,37 +290,35 @@ pub fn handle_player_move<'a>(
             let stuff_id = id.into();
             stuff_tags.fetch(stuff_id).map(|tag| (stuff_id, tag))
         }) {
-            Some((stuff_id, tag)) => {
-                match tag {
-                    StuffTag::Player => unreachable!(),
-                    StuffTag::Wall => {
-                        game_log!("Can't move into wall");
-                        should_run.0 = false;
-                    }
-                    StuffTag::Troll | StuffTag::Orc => {
-                        if skill_check(power.skill) {
-                            let hp = hp.fetch_mut(stuff_id).expect("Enemy has no hp");
-                            let power = power.power;
-                            hp.current -= power;
-                            debug!("kick enemy {}: {:?}", stuff_id, hp);
-                            if let Some(Name(name)) = names.fetch(stuff_id) {
-                                game_log!("Bonk {} for {} damage", name, power);
-                            }
-                        } else {
-                            debug!("miss enemy {}", stuff_id);
-                            game_log!("Your attack misses");
+            Some((stuff_id, tag)) => match tag {
+                StuffTag::Player => unreachable!(),
+                StuffTag::Wall => {
+                    game_log!("Can't move into wall");
+                    should_run.0 = false;
+                }
+                StuffTag::Troll | StuffTag::Orc => {
+                    if skill_check(power.skill) {
+                        let hp = hp.fetch_mut(stuff_id).expect("Enemy has no hp");
+                        let power = power.power;
+                        hp.current -= power;
+                        debug!("kick enemy {}: {:?}", stuff_id, hp);
+                        if let Some(Name(name)) = names.fetch(stuff_id) {
+                            game_log!("Bonk {} for {} damage", name, power);
                         }
-                    }
-                    StuffTag::LightningScroll
-                    | StuffTag::HpPotion
-                    | StuffTag::Sword
-                    | StuffTag::ConfusionScroll
-                    | StuffTag::FireBallScroll => {
-                        // pick up item
-                        grid_step(pos, new_pos, &mut grid);
+                    } else {
+                        debug!("miss enemy {}", stuff_id);
+                        game_log!("Your attack misses");
                     }
                 }
-            }
+                StuffTag::LightningScroll
+                | StuffTag::HpPotion
+                | StuffTag::Sword
+                | StuffTag::ConfusionScroll
+                | StuffTag::FireBallScroll
+                | StuffTag::Tombstone => {
+                    grid_step(pos, new_pos, &mut grid);
+                }
+            },
             None => {
                 // empty position
                 // update the grid asap so the monsters will see the updated player position
@@ -642,14 +640,21 @@ pub fn update_melee_ai<'a>(
 
 pub fn update_player_hp<'a>(
     mut cmd: Commands,
-    mut query_player: Query<(EntityId, &'a Hp, &'a mut Icon), With<PlayerTag>>,
+    query_player: Query<(EntityId, &'a Hp), With<PlayerTag>>,
 ) {
-    for (player_id, hp, i) in query_player.iter_mut() {
+    for (player_id, hp) in query_player.iter() {
         if hp.current <= 0 {
             info!("Player died");
             game_log!("Player died");
-            *i = icon("tombstone");
-            cmd.entity(player_id).remove::<PlayerTag>();
+            cmd.entity(player_id)
+                .remove::<Inventory>()
+                .remove::<Hp>()
+                .insert_bundle((
+                    icon("tombstone"),
+                    StuffTag::Tombstone,
+                    Name("RIP".to_string()),
+                    Description("Your resting place".to_string()),
+                ));
         }
     }
 }

@@ -40,6 +40,9 @@ pub fn register_persistent_components(
 
 fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {
     match tag {
+        StuffTag::Tombstone => {
+            cmd.insert_bundle((icon("tombstone"), Name("Tombstone".into())));
+        }
         StuffTag::Player => {
             cmd.insert_bundle((
                 icon("person"),
@@ -133,6 +136,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
     cmd.insert_bundle((tag, Pos(pos)));
     insert_transient_components_for_entity(cmd, tag);
     match tag {
+        StuffTag::Tombstone => {}
         StuffTag::Player => {
             cmd.insert_bundle((
                 LastPos(pos),
@@ -199,60 +203,63 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
     }
 }
 
-pub fn stuff_to_js(
-    id: EntityId,
-    tag: StuffTag,
-    q_wall: Query<(&Icon, Option<&Color>)>,
-    q_item: Query<
+pub type StuffToJsQuery<'a> = QuerySet<(
+    Query<(&'a Icon, Option<&'a Color>)>,
+    Query<
         (
-            &Icon,
-            &Name,
-            &Description,
-            Option<&Ranged>,
-            Option<&Heal>,
-            Option<&Melee>,
-            Option<&Pos>,
-            Option<&Color>,
+            &'a Icon,
+            &'a Name,
+            &'a Description,
+            Option<&'a Ranged>,
+            Option<&'a Heal>,
+            Option<&'a Melee>,
+            Option<&'a Pos>,
+            Option<&'a Color>,
         ),
         With<Item>,
     >,
-    q_ai: Query<
+    Query<
         (
-            &Icon,
-            &Name,
-            Option<&Ranged>,
-            Option<&Melee>,
-            &Hp,
-            Option<&Description>,
-            Option<&Color>,
+            &'a Icon,
+            &'a Name,
+            Option<&'a Ranged>,
+            Option<&'a Melee>,
+            &'a Hp,
+            Option<&'a Description>,
+            Option<&'a Color>,
         ),
         With<Ai>,
     >,
-    q_player: Query<(&Icon, &Melee, &Hp), With<PlayerTag>>,
-) -> JsValue {
+    Query<(&'a Icon, &'a Melee, &'a Hp), With<PlayerTag>>,
+    Query<(&'a Icon, Option<&'a Name>, Option<&'a Description>)>,
+)>;
+
+pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValue {
     let payload = match tag {
+        StuffTag::Tombstone => {
+            let (icon, name, desc) = query.q4().fetch(id).unwrap();
+            json! {{
+                "id": id,
+                "tag": tag,
+                "icon": icon.0,
+                "name": name.as_ref().map(|Name(n)|n),
+                "description": desc
+            }}
+        }
         StuffTag::Player => {
-            if let Some((icon, melee, hp)) = q_player.fetch(id) {
-                json! {{
-                    "id": id,
-                    "tag": tag,
-                    "name": "The player",
-                    "description": "Yourself",
-                    "icon": icon.0.clone(),
-                    "hp": hp,
-                    "melee": melee.clone(),
-                }}
-            } else {
-                json! {{
-                    "id": id,
-                    "tag": tag,
-                    "description": "Your resting place",
-                    "icon": icon("tombstone").0.clone(),
-                }}
-            }
+            let (icon, melee, hp) = query.q3().fetch(id).unwrap();
+            json! {{
+                "id": id,
+                "tag": tag,
+                "name": "The player",
+                "description": "Yourself",
+                "icon": icon.0.clone(),
+                "hp": hp,
+                "melee": melee.clone(),
+            }}
         }
         StuffTag::Wall => {
-            let (icon, color) = q_wall.fetch(id).unwrap();
+            let (icon, color) = query.q0().fetch(id).unwrap();
             json! {{
                 "id": id,
                 "tag": tag,
@@ -262,7 +269,7 @@ pub fn stuff_to_js(
             }}
         }
         StuffTag::Troll | StuffTag::Orc => {
-            let (icon, name, ranged, melee, hp, description, color) = q_ai.fetch(id).unwrap();
+            let (icon, name, ranged, melee, hp, description, color) = query.q2().fetch(id).unwrap();
             json! {{
                 "id": id,
                 "name": name.0.clone(),
@@ -282,7 +289,7 @@ pub fn stuff_to_js(
         | StuffTag::LightningScroll
         | StuffTag::ConfusionScroll
         | StuffTag::FireBallScroll => {
-            let (icon, name, desc, ranged, heal, melee, pos, color) = q_item.fetch(id).unwrap();
+            let (icon, name, desc, ranged, heal, melee, pos, color) = query.q1().fetch(id).unwrap();
             let usable = pos.is_none()
                 && matches!(
                     tag,

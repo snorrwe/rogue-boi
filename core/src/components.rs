@@ -86,6 +86,7 @@ pub enum StuffTag {
     LightningScroll,
     ConfusionScroll,
     FireBallScroll,
+    Tombstone,
 }
 
 impl StuffTag {

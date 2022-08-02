@@ -184,40 +184,6 @@ pub fn init_core() -> Core {
 
 pub type Stuff = Option<EntityId>;
 
-#[derive(Clone, serde::Serialize)]
-#[serde(tag = "ty")]
-pub enum StuffPayload {
-    Empty,
-    Wall,
-    Player { id: EntityId },
-    Troll { id: EntityId },
-    Orc { id: EntityId },
-    Item { id: EntityId },
-}
-
-impl StuffPayload {
-    pub fn new(id: EntityId, tag: Option<StuffTag>) -> Self {
-        match tag {
-            None => StuffPayload::Empty,
-            Some(StuffTag::Wall) => Self::Wall,
-            Some(StuffTag::Player) => Self::Player { id },
-            Some(StuffTag::Troll) => Self::Troll { id },
-            Some(StuffTag::Orc) => Self::Orc { id },
-            Some(StuffTag::HpPotion)
-            | Some(StuffTag::Sword)
-            | Some(StuffTag::LightningScroll)
-            | Some(StuffTag::ConfusionScroll)
-            | Some(StuffTag::FireBallScroll) => Self::Item { id },
-        }
-    }
-}
-
-impl Default for StuffPayload {
-    fn default() -> Self {
-        Self::Empty
-    }
-}
-
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 #[serde(tag = "ty")]
 pub enum InputEvent {
@@ -488,19 +454,13 @@ impl Core {
     #[wasm_bindgen(js_name = "fetchEntity")]
     pub fn fetch_entity(&self, id: JsValue) -> JsValue {
         let id: EntityId = JsValue::into_serde(&id).unwrap();
-        let world = self.world.borrow_mut();
+        let mut world = self.world.borrow_mut();
         if !world.is_id_valid(id) {
             return JsValue::null();
         }
-        let tag = Query::<&StuffTag>::new(&world).fetch(id).unwrap();
-        archetypes::stuff_to_js(
-            id,
-            *tag,
-            Query::new(&world),
-            Query::new(&world),
-            Query::new(&world),
-            Query::new(&world),
-        )
+        world.run_system(move |tags: Query<&StuffTag>, q| {
+            archetypes::stuff_to_js(id, *tags.fetch(id).unwrap(), q)
+        })
     }
 
     #[wasm_bindgen(js_name = "setCanvas")]
