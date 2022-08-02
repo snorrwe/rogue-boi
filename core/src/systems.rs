@@ -50,7 +50,9 @@ pub fn update_player_item_use<'a>(
     target_pos: Res<TargetPos>,
     grid: Res<Grid<Stuff>>,
 ) {
-    let (player_id, inventory, pos) = player_query.iter_mut().next().unwrap();
+    let Some((player_id, inventory, pos)) = player_query.iter_mut().next() else {
+        return;
+    };
     let pos = *pos;
 
     let mut cleanup = |id, use_item: &mut UseItem, cmd: &mut Commands| {
@@ -244,7 +246,12 @@ pub fn update_player_world_interact<'a>(
                         },
                     }
                 }
-                _ => unreachable!(),
+                StuffTag::Stairs => {
+                    todo!("stairs");
+                }
+                _ => {
+                    debug!("Cant interact with {}", id);
+                }
             }
         } else {
             game_log!("Nothing to do...");
@@ -315,7 +322,8 @@ pub fn handle_player_move<'a>(
                 | StuffTag::Sword
                 | StuffTag::ConfusionScroll
                 | StuffTag::FireBallScroll
-                | StuffTag::Tombstone => {
+                | StuffTag::Tombstone
+                | StuffTag::Stairs => {
                     grid_step(pos, new_pos, &mut grid);
                 }
             },

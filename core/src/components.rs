@@ -87,6 +87,7 @@ pub enum StuffTag {
     ConfusionScroll,
     FireBallScroll,
     Tombstone,
+    Stairs,
 }
 
 impl StuffTag {
@@ -268,3 +269,6 @@ pub struct DropItem(pub EntityId);
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct WorldDims(pub Vec2);
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct NextLevel;
