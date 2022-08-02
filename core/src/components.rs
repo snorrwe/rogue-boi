@@ -276,5 +276,6 @@ pub struct DropItem(pub EntityId);
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct WorldDims(pub Vec2);
 
+/// Allows going to the next dungeon level
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct NextLevel;
