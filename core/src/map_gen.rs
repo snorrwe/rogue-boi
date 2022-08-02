@@ -162,8 +162,9 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps) {
         let width = rng.gen_range(props.room_min_size..props.room_max_size) as i32;
         let height = rng.gen_range(props.room_min_size..props.room_max_size) as i32;
 
-        let x = rng.gen_range(1..grid.width() - 1 - width);
-        let y = rng.gen_range(1..grid.height() - 1 - height);
+        // -2 so all rooms have walls, even those that touch the end of the map
+        let x = rng.gen_range(1..grid.width() - 2 - width);
+        let y = rng.gen_range(1..grid.height() - 2 - height);
 
         let room = RectRoom::new(x, y, width, height);
         for r in rooms.iter() {
