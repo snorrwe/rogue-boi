@@ -970,6 +970,7 @@ pub fn update_should_tick(
         && (use_item.0.is_some() || !actions.is_empty())
         && time.0 >= tick_time.0;
     if should_tick.0 {
+        debug!("Running update after {} ms", time.0);
         time.0 = 0;
     }
 }
