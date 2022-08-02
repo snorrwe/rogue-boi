@@ -1,4 +1,5 @@
 #![feature(let_else)]
+#![feature(let_chains)]
 
 mod archetypes;
 mod components;
@@ -183,13 +184,14 @@ pub struct RenderedOutput {
 }
 
 #[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PlayerOutput {
-    #[serde(rename = "playerHp")]
     pub player_hp: Hp,
-    #[serde(rename = "playerAttack")]
     pub player_attack: i32,
-    #[serde(rename = "playerPosition")]
     pub player_pos: Vec2,
+    pub current_xp: u32,
+    pub needed_xp: u32,
+    pub level: u32,
 }
 
 #[derive(Default, Clone, Copy)]

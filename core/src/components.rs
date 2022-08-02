@@ -279,3 +279,46 @@ pub struct WorldDims(pub Vec2);
 /// Allows going to the next dungeon level
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct NextLevel;
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct Level {
+    pub current_level: u32,
+    pub current_xp: u32,
+    pub level_up_base: u32,
+    pub level_up_factor: u32,
+}
+
+impl Default for Level {
+    fn default() -> Self {
+        Self {
+            current_level: 1,
+            current_xp: 0,
+            level_up_base: 200,
+            level_up_factor: 150,
+        }
+    }
+}
+
+impl Level {
+    pub fn experience_to_next_level(self) -> u32 {
+        self.level_up_base + self.current_level * self.level_up_factor
+    }
+
+    /// return wether levelup occured
+    pub fn add_xp(&mut self, exp: u32) -> bool {
+        self.current_xp += exp;
+        let required = self.experience_to_next_level();
+        if self.current_xp >= required {
+            self.current_level += 1;
+            self.current_xp = self.current_xp - required;
+            true
+        } else {
+            false
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct Exp {
+    pub amount: u32,
+}
