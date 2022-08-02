@@ -3,6 +3,7 @@
 	import { fetchIcon, coreStore, coreOutputStore } from '@rogueBoi/store.js';
 	import Menu from './routes/Menu.svelte';
 	import Game from './routes/Game.svelte';
+	import Options from './routes/Options.svelte';
 
 	export let core;
 	let page = Menu;
@@ -27,8 +28,8 @@
 	});
 
 	function saveGame() {
-		if (core) {
-			let pl = core.save();
+		if ($coreStore) {
+			let pl = $coreStore.save();
 			console.log(pl.length);
 			localStorage.setItem('save', pl);
 		}
@@ -53,7 +54,8 @@
 					}
 					return Menu;
 				},
-				'#menu': () => Menu
+				'#menu': () => Menu,
+				'#options': () => Options
 			}[location.hash] || (() => Menu);
 		page = factory();
 	};

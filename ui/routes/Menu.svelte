@@ -11,6 +11,7 @@
 			<li><a href="#game">Continue</a></li>
 		{/if}
 		<li><a href="#newgame">New Game</a></li>
+		<li><a href="#options">Options</a></li>
 	</ul>
 </nav>
 
@@ -22,5 +23,9 @@
 
 	.menu ul {
 		list-style: none;
+	}
+
+	li {
+		margin: 1rem auto;
 	}
 </style>
