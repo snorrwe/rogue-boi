@@ -649,6 +649,7 @@ pub fn update_player_hp<'a>(
             cmd.entity(player_id)
                 .remove::<Inventory>()
                 .remove::<Hp>()
+                .remove::<PlayerTag>()
                 .insert_bundle((
                     icon("tombstone"),
                     StuffTag::Tombstone,
