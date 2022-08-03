@@ -1,8 +1,8 @@
 use crate::{
     archetypes::icon,
+    colors::*,
     components::*,
     grid::Grid,
-    colors::*,
     map_gen,
     math::{remap_f64, walk_square, Vec2},
     pathfinder::find_path,
@@ -267,7 +267,7 @@ pub fn update_player_world_interact<'a>(
                 }
             }
         } else {
-            log.push(WHITE, "Nothing to do...");
+            log.push(IMPOSSIBLE, "Nothing to do...");
             should_run.0 = false;
         }
     }
