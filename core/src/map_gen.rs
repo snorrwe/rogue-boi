@@ -136,7 +136,7 @@ pub fn generate_map(
     if dims.0 != grid.dims() {
         *grid = Grid::new(dims.0);
     }
-    for (pos, tag) in working_set.iter().filter_map(|(p, t)| t.map(|t| (p, t))) {
+    'insert_loop: for (pos, tag) in working_set.iter().filter_map(|(p, t)| t.map(|t| (p, t))) {
         match tag {
             StuffTag::Player => {
                 if let Some(player_id) = player_id {
@@ -145,6 +145,19 @@ pub fn generate_map(
                     grid[pos] = Some(player_id.into());
                 } else {
                     init_entity(pos, tag, &mut cmd, &mut grid);
+                }
+            }
+            StuffTag::Wall => {
+                // clear invisible walls
+                // leave walls around the edge of the map just to be safe
+                for y in -1..=1 {
+                    for x in -1..=1 {
+                        let stuff = working_set.at(pos.x + x, pos.y + y);
+                        if stuff.is_none() || stuff.and_then(|s| *s).is_none() {
+                            init_entity(pos, tag, &mut cmd, &mut grid);
+                            continue 'insert_loop;
+                        }
+                    }
                 }
             }
             _ => {
