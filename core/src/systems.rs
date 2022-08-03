@@ -273,21 +273,6 @@ pub fn update_player_world_interact<'a>(
     }
 }
 
-pub fn update_player_inventory(
-    mut q_melee: Query<&mut Melee>,
-    q_inventory: Query<(EntityId, &Inventory), With<PlayerTag>>,
-) {
-    for (player_id, inventory) in q_inventory.iter() {
-        let mut power = 1;
-        for item in inventory.items.iter().copied() {
-            if let Some(melee_weapon) = q_melee.fetch(item) {
-                power += melee_weapon.power;
-            }
-        }
-        q_melee.fetch_mut(player_id).unwrap().power = power;
-    }
-}
-
 pub fn handle_player_move<'a>(
     actions: Res<PlayerActions>,
     mut player_q: Query<(&'a Melee, &'a mut Pos), With<PlayerTag>>,

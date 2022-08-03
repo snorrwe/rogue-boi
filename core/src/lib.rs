@@ -112,7 +112,6 @@ fn init_world_systems(world: &mut World) {
             .with_system(update_player_item_use)
             .with_system(handle_player_move)
             .with_system(update_player_world_interact)
-            .with_system(update_player_inventory)
             .with_system(update_camera_pos),
     );
     world.add_stage(SystemStage::serial("update-ai-hp").with_system(update_ai_hp));

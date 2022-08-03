@@ -8,13 +8,13 @@ pub const ENEMY_TAGS: &[StuffTag] = &[StuffTag::Troll, StuffTag::Orc];
 pub const ENEMY_WEIGHTS: &[i32] = &[1, 10];
 
 pub const ITEM_TAGS: &[StuffTag] = &[
-    StuffTag::Sword,
+    // StuffTag::Sword,
     StuffTag::HpPotion,
     StuffTag::LightningScroll,
     StuffTag::ConfusionScroll,
     StuffTag::FireBallScroll,
 ];
-pub const ITEM_WEIGHTS: &[i32] = &[2, 2, 1, 2, 1];
+pub const ITEM_WEIGHTS: &[i32] = &[2, 1, 2, 1];
 
 pub fn icon(key: &'static str) -> Icon {
     assert!(icons::ICONS.contains_key(key));
