@@ -1,8 +1,8 @@
 use crate::{
     archetypes::icon,
     components::*,
-    game_log,
     grid::Grid,
+    colors::*,
     map_gen,
     math::{remap_f64, walk_square, Vec2},
     pathfinder::find_path,
@@ -50,6 +50,7 @@ pub fn update_player_item_use<'a>(
     )>,
     target_pos: Res<TargetPos>,
     grid: Res<Grid<Stuff>>,
+    mut log: ResMut<LogHistory>,
 ) {
     let Some((player_id, inventory, pos)) = player_query.iter_mut().next() else {
         return;
@@ -67,10 +68,10 @@ pub fn update_player_item_use<'a>(
         let tag = stuff_tags.fetch(id);
         match tag {
             Some(StuffTag::HpPotion) => {
-                game_log!("Drink a health potion.");
+                log.push(HEAL, "Drink a health potion.");
                 let hp = target_query.q3_mut().fetch_mut(player_id).unwrap();
                 if hp.full() {
-                    game_log!("The potion has no effect");
+                    log.push(INVALID, "The potion has no effect");
                 }
                 let heal = item_query.q2().fetch(id).unwrap();
                 hp.current = (hp.current + heal.hp).min(hp.max);
@@ -78,7 +79,7 @@ pub fn update_player_item_use<'a>(
             }
             Some(StuffTag::ConfusionScroll) => match actions.target() {
                 None => {
-                    game_log!("Select a target");
+                    log.push(WHITE, "Select a target");
                     debug!("Confusion Bolt has no target!");
                     should_run.0 = false;
                     *app_mode = AppMode::Targeting;
@@ -90,14 +91,14 @@ pub fn update_player_item_use<'a>(
                         match target_query.q0_mut().fetch_mut(target_id) {
                             Some(x) => x,
                             None => {
-                                game_log!("Invalid target");
+                                log.push(IMPOSSIBLE, "Invalid target");
                                 should_run.0 = false;
                                 return;
                             }
                         };
                     let range = item_query.q0().fetch(id).unwrap();
                     if target_pos.0.chebyshev(pos.0) > range.range {
-                        game_log!("Target is too far away");
+                        log.push(IMPOSSIBLE, "Target is too far away");
                         should_run.0 = false;
                         return;
                     }
@@ -110,13 +111,16 @@ pub fn update_player_item_use<'a>(
                             cmd.entity(target_id).insert(ConfusedAi { duration });
                         }
                         if let Some(Name(name)) = target_name {
-                            game_log!(
+                            log.push(
+                                WHITE,
+                                &format!(
                                 "The eyes of the {} look vacant, as it starts to stumble around!",
                                 name
+                            ),
                             );
                         }
                     } else {
-                        game_log!("Confusion Bolt misses!");
+                        log.push(WHITE, "Confusion Bolt misses!");
                     }
                     cleanup(id, &mut use_item, &mut cmd);
                 }
@@ -128,14 +132,14 @@ pub fn update_player_item_use<'a>(
                         match target_query.q1_mut().fetch_mut(target_id) {
                             Some(x) => x,
                             None => {
-                                game_log!("Invalid target");
+                                log.push(INVALID, "Invalid target");
                                 should_run.0 = false;
                                 return;
                             }
                         };
                     let range = item_query.q0().fetch(id).unwrap();
                     if target_pos.0.chebyshev(pos.0) > range.range {
-                        game_log!("Target is too far away");
+                        log.push(INVALID, "Target is too far away");
                         should_run.0 = false;
                         return;
                     }
@@ -144,15 +148,18 @@ pub fn update_player_item_use<'a>(
                         target_hp.current -= dmg;
                         debug!("Lightning Bolt hits {} for {} damage!", target_id, dmg);
                         if let Some(Name(name)) = target_name {
-                            game_log!("Lightning Bolt hits {} for {} damage!", name, dmg);
+                            log.push(
+                                WHITE,
+                                &format!("Lightning Bolt hits {} for {} damage!", name, dmg),
+                            );
                         }
                     } else {
-                        game_log!("Lightning Bolt misses!");
+                        log.push(INVALID, "Lightning Bolt misses!");
                     }
                     cleanup(id, &mut use_item, &mut cmd);
                 }
                 None => {
-                    game_log!("Select a target");
+                    log.push(NEEDS_TARGET, "Select a target");
                     debug!("Lightning Bolt has no target!");
                     should_run.0 = false;
                     *app_mode = AppMode::Targeting;
@@ -163,12 +170,12 @@ pub fn update_player_item_use<'a>(
                 Some(target_pos) => {
                     let (range, aoe) = item_query.q1().fetch(id).unwrap();
                     if target_pos.chebyshev(pos.0) > range.range {
-                        game_log!("Target is too far away. Try again");
+                        log.push(INVALID, "Target is too far away. Try again");
                         *app_mode = AppMode::TargetingPosition;
                         should_run.0 = false;
                         return;
                     }
-                    game_log!("Hurl a fire ball at {}", target_pos);
+                    log.push(PLAYER_ATTACK, format!("Hurl a fire ball at {}", target_pos));
                     let radius = Vec2::splat(aoe.radius as i32);
                     let power = range.power;
                     grid.scan_range([target_pos - radius, target_pos + radius], |_pos, id| {
@@ -177,10 +184,12 @@ pub fn update_player_item_use<'a>(
                                 // TODO skill check?
                                 hp.current -= power;
                                 if let Some(Name(ref name)) = name {
-                                    game_log!(
-                                        "{} is engulfed in a fiery explosion, taking {} damage",
-                                        name,
-                                        power
+                                    log.push(
+                                        PLAYER_ATTACK,
+                                        format!(
+                                            "{} is engulfed in a fiery explosion, taking {} damage",
+                                            name, power
+                                        ),
                                     );
                                 }
                             }
@@ -189,7 +198,7 @@ pub fn update_player_item_use<'a>(
                     cleanup(id, &mut use_item, &mut cmd)
                 }
                 None => {
-                    game_log!("Select a target position");
+                    log.push(NEEDS_TARGET, "Select a target position");
                     debug!("Fire Ball has no target!");
                     should_run.0 = false;
                     *app_mode = AppMode::TargetingPosition;
@@ -215,6 +224,7 @@ pub fn update_player_world_interact<'a>(
     mut should_run: ResMut<ShouldUpdateWorld>,
     actions: Res<PlayerActions>,
     mut level: ResMut<DungeonLevel>,
+    mut log: ResMut<LogHistory>,
 ) {
     if !actions.interact() {
         return;
@@ -238,18 +248,18 @@ pub fn update_player_world_interact<'a>(
                         Ok(_) => {
                             cmd.entity(stuff_id).remove::<Pos>();
                             let Name(ref name) = name.unwrap();
-                            game_log!("Picked up a {}", name);
+                            log.push(WHITE, format!("Picked up a {}", name));
                         }
                         Err(err) => match err {
                             crate::components::InventoryError::Full => {
-                                game_log!("Inventory is full");
+                                log.push(INVALID, "Inventory is full");
                                 should_run.0 = false;
                             }
                         },
                     }
                 }
                 StuffTag::Stairs => {
-                    game_log!("You descend the staircase");
+                    log.push(WHITE, "You descend the staircase");
                     level.desired += 1;
                 }
                 _ => {
@@ -257,7 +267,7 @@ pub fn update_player_world_interact<'a>(
                 }
             }
         } else {
-            game_log!("Nothing to do...");
+            log.push(WHITE, "Nothing to do...");
             should_run.0 = false;
         }
     }
@@ -286,6 +296,7 @@ pub fn handle_player_move<'a>(
     mut grid: ResMut<Grid<Stuff>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     names: Query<&Name>,
+    mut log: ResMut<LogHistory>,
 ) {
     let delta = match actions.move_action() {
         Some(x) => x,
@@ -303,7 +314,7 @@ pub fn handle_player_move<'a>(
             Some((stuff_id, tag)) => match tag {
                 StuffTag::Player => unreachable!(),
                 StuffTag::Wall => {
-                    game_log!("Can't move into wall");
+                    log.push(INVALID, "Can't move into wall");
                     should_run.0 = false;
                 }
                 StuffTag::Troll | StuffTag::Orc => {
@@ -313,11 +324,11 @@ pub fn handle_player_move<'a>(
                         hp.current -= power;
                         debug!("kick enemy {}: {:?}", stuff_id, hp);
                         if let Some(Name(name)) = names.fetch(stuff_id) {
-                            game_log!("Bonk {} for {} damage", name, power);
+                            log.push(PLAYER_ATTACK, format!("Bonk {} for {} damage", name, power));
                         }
                     } else {
                         debug!("miss enemy {}", stuff_id);
-                        game_log!("Your attack misses");
+                        log.push(PLAYER_ATTACK, "Your attack misses");
                     }
                 }
                 StuffTag::LightningScroll
@@ -343,7 +354,6 @@ fn grid_step(pos: &mut Vec2, new_pos: Vec2, grid: &mut Grid<Stuff>) {
     let old_stuff = std::mem::take(&mut grid[*pos]);
     grid[new_pos] = old_stuff;
     *pos = new_pos;
-    game_log!("Step on tile: {}", new_pos);
 }
 
 /// return wether the segment hits something and where
@@ -503,12 +513,13 @@ pub fn perform_move<'a>(
 pub fn update_confusion<'a>(
     mut cmd: Commands,
     mut confused: Query<(EntityId, Option<&'a Name>, &'a mut ConfusedAi)>,
+    mut log: ResMut<LogHistory>,
 ) {
     for (id, name, confusion) in confused.iter_mut() {
         confusion.duration -= 1;
         if confusion.duration <= 0 {
             if let Some(Name(name)) = name {
-                game_log!("{} is no longer confused!", name);
+                log.push(STATUS_EFFECT, format!("{} is no longer confused!", name));
             }
             cmd.entity(id).remove::<ConfusedAi>();
         }
@@ -603,6 +614,7 @@ pub fn update_melee_ai<'a>(
         With<Ai>,
     >,
     grid: Res<Grid<Stuff>>,
+    mut log: ResMut<LogHistory>,
 ) {
     let (player_id, Pos(player_pos)) = match q_player.iter_mut().next() {
         Some(x) => x,
@@ -634,7 +646,7 @@ pub fn update_melee_ai<'a>(
 
         if let Some((target_hp, target_name, target_id)) = target {
             if !skill_check(*skill) {
-                game_log!("{} misses", name);
+                log.push(ENEMY_ATTACK, format!("{} misses", name));
                 continue;
             }
             target_hp.current -= power;
@@ -644,7 +656,10 @@ pub fn update_melee_ai<'a>(
                 target_id = tracing::field::display(target_id),
                 "melee hit"
             );
-            game_log!("{} hits {} for {} damage", name, target_name, power);
+            log.push(
+                ENEMY_ATTACK,
+                format!("{} hits {} for {} damage", name, target_name, power),
+            );
         }
     }
 }
@@ -652,11 +667,12 @@ pub fn update_melee_ai<'a>(
 pub fn update_player_hp<'a>(
     mut cmd: Commands,
     query_player: Query<(EntityId, &'a Hp), With<PlayerTag>>,
+    mut log: ResMut<LogHistory>,
 ) {
     for (player_id, hp) in query_player.iter() {
         if hp.current <= 0 {
             info!("Player died");
-            game_log!("Player died");
+            log.push(PLAYER_DIE, "Player died");
             cmd.entity(player_id)
                 .remove::<Inventory>()
                 .remove::<Hp>()
@@ -675,12 +691,13 @@ pub fn update_ai_hp<'a>(
     mut cmd: Commands,
     query_hp: Query<(EntityId, &Hp, Option<&Name>, Option<&Exp>), (With<Ai>, WithOut<PlayerTag>)>,
     mut query_player: Query<&'a mut Level, With<PlayerTag>>,
+    mut log: ResMut<LogHistory>,
 ) {
     let mut player = query_player.iter_mut().next();
     for (id, _hp, name, xp) in query_hp.iter().filter(|(_, hp, _, _)| (hp.current <= 0)) {
         debug!("Entity {} died", id);
         if let Some(Name(name)) = name {
-            game_log!("{} died", name);
+            log.push(ENEMY_DIE, format!("{} died", name));
         }
 
         if let Some(level) = player.as_mut() && let Some(xp) = xp {
@@ -714,15 +731,12 @@ pub fn update_camera_pos(mut camera: ResMut<CameraPos>, q: Query<&Pos, With<Play
 
 pub fn update_output(
     q_player: Query<(&Pos, &Hp, &Melee, &Level), With<PlayerTag>>,
-    game_tick: Res<GameTick>,
     mut output_cache: ResMut<Output>,
     selected: Res<Selected>,
     history: Res<LogHistory>,
     app_mode: Res<AppMode>,
     dungeon_level: Res<DungeonLevel>,
 ) {
-    use std::fmt::Write;
-
     let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
 
     let player = q_player
@@ -736,20 +750,9 @@ pub fn update_output(
             player_attack: attack.power,
             player_pos: pos.0,
         });
-    let current_log = crate::logging::get_log_buffer();
-    let skip = if !current_log.is_empty() && history.items.len() >= history.capacity {
-        1
-    } else {
-        0
-    };
-    let mut log = String::with_capacity(10 * 1024);
-    for (tick, payload) in history.items.iter().skip(skip) {
-        writeln!(&mut log, "------- {} -------", tick.0).unwrap();
-        writeln!(&mut log, "{}", payload).unwrap();
-    }
-    if !current_log.is_empty() {
-        writeln!(&mut log, "------- {} -------", game_tick.0).unwrap();
-        writeln!(&mut log, "{}", *current_log).unwrap();
+    let mut log = Vec::with_capacity(100);
+    for line in history.items.iter() {
+        log.push(line.clone());
     }
     let targeting = matches!(*app_mode, AppMode::Targeting);
     let result = RenderedOutput {
@@ -773,6 +776,7 @@ pub fn player_prepare(
     mut should_update_player: ResMut<ShouldUpdatePlayer>,
     actions: Res<PlayerActions>,
     should_tick: Res<ShouldTick>,
+    mut log: ResMut<LogHistory>,
 ) {
     if !should_tick.0 {
         should_update_player.0 = false;
@@ -788,7 +792,7 @@ pub fn player_prepare(
     }
     if should_update_player.0 {
         if actions.wait() {
-            game_log!("Waiting...");
+            log.push(WHITE, "Waiting...");
             should_update_player.0 = false;
             return;
         }
@@ -1021,14 +1025,6 @@ pub fn clean_inputs(
     }
 }
 
-pub fn rotate_log(mut history: ResMut<LogHistory>, tick: Res<GameTick>) {
-    let mut buff = crate::logging::get_log_buffer();
-    history.items.push_back((*tick, std::mem::take(&mut buff)));
-    while history.items.len() > history.capacity {
-        history.items.pop_front();
-    }
-}
-
 pub fn regenerate_dungeon(mut access: WorldAccess) {
     info!("Regenerating dungeon");
     let world = access.world_mut();
@@ -1062,7 +1058,8 @@ pub fn regenerate_dungeon(mut access: WorldAccess) {
     world.run_system(map_gen::generate_map);
     world.run_system(init_grids);
 
-    game_log!("You're on level {}", level);
+    let log = world.get_resource_mut::<LogHistory>().unwrap();
+    log.push(WHITE, format!("You're on level {}", level));
     world.run_stage(
         SystemStage::serial("initial-post-process")
             .with_system(update_camera_pos)
@@ -1076,6 +1073,7 @@ pub fn handle_levelup<'a>(
     mut app_mode: ResMut<AppMode>,
     mut stat: ResMut<Option<DesiredStat>>,
     mut player_q: Query<(&'a mut Hp, &'a mut Melee, &'a mut Level), With<PlayerTag>>,
+    mut log: ResMut<LogHistory>,
 ) {
     if let Some((hp, melee, level)) = player_q.iter_mut().next() {
         if !level.needs_levelup() {
@@ -1088,8 +1086,8 @@ pub fn handle_levelup<'a>(
                 // player _might_ level up multiple times in a single tick
                 if level.needs_levelup() {
                     let level = level.current_level + 1;
-                    game_log!("Level up! Your're now level {}", level);
-                    game_log!("Select a stat to upgrade!");
+                    log.push(WHITE, format!("Level up! Your're now level {}", level));
+                    log.push(WHITE, "Select a stat to upgrade!");
                 } else {
                     *app_mode = AppMode::Game;
                 }
@@ -1107,8 +1105,8 @@ pub fn handle_levelup<'a>(
             None => {
                 if !matches!(*app_mode, AppMode::Levelup) {
                     let level = level.current_level + 1;
-                    game_log!("Level up! Your're now level {}", level);
-                    game_log!("Select a stat to upgrade!");
+                    log.push(WHITE, format!("Level up! Your're now level {}", level));
+                    log.push(WHITE, "Select a stat to upgrade!");
                     *app_mode = AppMode::Levelup;
                 }
             }

@@ -2,9 +2,9 @@
 #![feature(let_chains)]
 
 mod archetypes;
+mod colors;
 mod components;
 mod grid;
-mod logging;
 mod map_gen;
 mod math;
 mod pathfinder;
@@ -15,6 +15,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::systems::*;
 use cecs::{persister::WorldSerializer, prelude::*};
+use colors::WHITE;
 use components::*;
 use grid::Grid;
 use icons::ICONS;
@@ -135,7 +136,6 @@ fn init_world_systems(world: &mut World) {
     world.add_stage(
         SystemStage::serial("post-render")
             .with_should_run(should_update_world)
-            .with_system(systems::rotate_log)
             .with_system(update_tick),
     );
     world.add_stage(
@@ -180,7 +180,7 @@ pub enum InputEvent {
 pub struct RenderedOutput {
     pub selected: Option<EntityId>,
     pub player: Option<PlayerOutput>,
-    pub log: String,
+    pub log: Vec<String>,
     pub targeting: bool,
     pub dungeon_level: u32,
     pub app_mode: AppMode,
@@ -275,7 +275,6 @@ impl PlayerActions {
 #[wasm_bindgen]
 impl Core {
     pub fn restart(&mut self) {
-        logging::get_log_buffer().clear();
         let mut world = self.world.borrow_mut();
 
         // delete the player
@@ -288,14 +287,14 @@ impl Core {
         world.insert_resource(DeltaTime(0));
         world.insert_resource(GameTick::default());
         world.insert_resource(DungeonLevel::default());
-        world
-            .get_resource_mut::<LogHistory>()
-            .unwrap()
-            .items
-            .clear();
+
         world.insert_resource(AppMode::Game);
         world.insert_resource(UseItem::default());
-        game_log!("Hello wanderer!");
+
+        let log = world.get_resource_mut::<LogHistory>().unwrap();
+        log.items.clear();
+        log.push(WHITE, "Hello wanderer!");
+
         world.run_system(regenerate_dungeon);
     }
 
@@ -391,13 +390,14 @@ impl Core {
             mut q: Query<(&'a Pos, &'a mut Inventory), With<PlayerTag>>,
             q_item: Query<&Name>,
             item: Res<DropItem>,
+            mut log: ResMut<LogHistory>,
         ) {
             // remove item from inventory and add a position
             // TODO: random empty nearby position intead of the player's?
             if let Some((pos, inv)) = q.iter_mut().next() {
                 if let Some(item) = inv.remove(item.0) {
                     if let Some(Name(name)) = q_item.fetch(item) {
-                        game_log!("Drop {}", name);
+                        log.push(WHITE, format!("Drop {}", name));
                         cmd.entity(item).insert(*pos);
                     }
                 }
@@ -498,7 +498,8 @@ impl Core {
         if matches!(*mode, AppMode::Targeting) {
             *mode = AppMode::Game;
         }
-        game_log!("Cancel item use");
+        let log = world.get_resource_mut::<LogHistory>().unwrap();
+        log.push(WHITE, "Cancel item use");
     }
 
     pub fn save(&self) -> String {

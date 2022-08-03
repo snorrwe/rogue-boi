@@ -2,10 +2,16 @@
 	export let log;
 </script>
 
-<pre>{log}</pre>
+{#if log}
+	<ul>
+		{#each log as line}
+			<li>{@html line}</li>
+		{/each}
+	</ul>
+{/if}
 
 <style>
-	pre {
-		color: white;
+	ul {
+		list-style: none;
 	}
 </style>

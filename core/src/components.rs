@@ -231,13 +231,26 @@ pub struct TickInMs(pub i32);
 
 #[derive(Serialize, Deserialize)]
 pub struct LogHistory {
-    pub items: VecDeque<(GameTick, String)>,
+    pub items: VecDeque<String>,
     pub capacity: usize,
+}
+
+impl LogHistory {
+    pub fn push<'a>(&mut self, color: &str, line: impl AsRef<str>) {
+        self.items.push_back(format!(
+            "<span style=\"color:{}\">{}</span>",
+            color,
+            line.as_ref()
+        ));
+        while self.items.len() > self.capacity {
+            self.items.pop_front();
+        }
+    }
 }
 
 impl Default for LogHistory {
     fn default() -> Self {
-        let capacity = 10;
+        let capacity = 20;
         LogHistory {
             items: VecDeque::with_capacity(capacity),
             capacity,
