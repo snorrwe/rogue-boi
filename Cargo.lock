@@ -124,7 +124,7 @@ dependencies = [
 [[package]]
 name = "cecs"
 version = "0.1.1"
-source = "git+https://github.com/caolo-game/cecs#22c5c4ceb63c510c7dd9cda849dc526a001a9656"
+source = "git+https://github.com/caolo-game/cecs#bf0a18a60ed2317238386ba7ad9c95009b0a33e5"
 dependencies = [
  "serde",
  "thiserror",
