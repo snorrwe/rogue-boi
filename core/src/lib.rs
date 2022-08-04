@@ -510,7 +510,11 @@ impl Core {
 
         p.save(&mut s, &world).unwrap();
 
-        base64::encode(result)
+        debug!("bincode size {}", result.len());
+        let encoded = base64::encode(result);
+        debug!("encoded size {}", encoded.len());
+
+        encoded
     }
 
     pub fn load(&mut self, pl: String) {

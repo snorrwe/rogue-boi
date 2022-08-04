@@ -11,7 +11,6 @@
 	function saveGame() {
 		if ($coreStore) {
 			let pl = $coreStore.save();
-			console.log('Save size: ', pl.length);
 			localStorage.setItem('save', pl);
 		}
 	}
@@ -34,14 +33,13 @@
 		coreStore.set(core);
 		routeChange();
 
-        let autoSaveHandle = setInterval(() => {
-            if ($coreStore) {
-                let pl = $coreStore.save();
-                console.log('Save size: ', pl.length);
-                localStorage.setItem('save', pl);
-            }
-        }, 10000);
-        return () => clearInterval(autoSaveHandle);
+		let autoSaveHandle = setInterval(() => {
+			if ($coreStore) {
+				let pl = $coreStore.save();
+				localStorage.setItem('save', pl);
+			}
+		}, 10000);
+		return () => clearInterval(autoSaveHandle);
 	});
 
 	document.addEventListener('keydown', (event) => {
