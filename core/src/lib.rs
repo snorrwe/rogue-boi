@@ -517,19 +517,14 @@ impl Core {
         let p = get_world_persister();
         let pl = base64::decode(pl).unwrap();
 
-        let (mut world, id_map) = p
+        let mut world = p
             .load(&mut bincode::de::Deserializer::from_slice(
                 pl.as_slice(),
                 bincode::config::DefaultOptions::new(),
             ))
             .unwrap();
 
-        // remap inventory
-        for inv in Query::<&mut Inventory>::new(&world).iter_mut() {
-            for id in inv.items.iter_mut() {
-                *id = id_map[id];
-            }
-        }
+        world.gc_empty_entities();
 
         let dims = *world.get_resource::<WorldDims>().unwrap();
         init_world_transient_resources(dims.0, &mut world);
