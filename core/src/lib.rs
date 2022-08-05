@@ -52,7 +52,7 @@ fn get_world_persister() -> impl WorldSerializer {
         .add_resource::<WorldDims>()
         .add_resource::<GameTick>()
         .add_resource::<LogHistory>()
-        .add_resource::<DungeonLevel>()
+        .add_resource::<DungeonFloor>()
         .add_resource::<Explored>();
 
     archetypes::register_persistent_components(persister)
@@ -139,7 +139,7 @@ fn init_world_systems(world: &mut World) {
     );
     world.add_stage(
         SystemStage::serial("dungeon-delve")
-            .with_should_run(|level: Res<DungeonLevel>| level.current != level.desired)
+            .with_should_run(|level: Res<DungeonFloor>| level.current != level.desired)
             .with_system(regenerate_dungeon),
     );
 }
@@ -285,7 +285,7 @@ impl Core {
 
         world.insert_resource(DeltaTime(0));
         world.insert_resource(GameTick::default());
-        world.insert_resource(DungeonLevel::default());
+        world.insert_resource(DungeonFloor::default());
 
         world.insert_resource(AppMode::Game);
         world.insert_resource(UseItem::default());

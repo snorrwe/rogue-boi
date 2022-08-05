@@ -14,7 +14,7 @@ use tracing::debug;
 
 use crate::{
     archetypes::{init_entity, ENEMY_CHANCES, ITEM_CHANCES},
-    components::{DungeonLevel, PlayerTag, Pos, StuffTag, WorldDims},
+    components::{DungeonFloor, PlayerTag, Pos, StuffTag, WorldDims},
     grid::Grid,
     math::Vec2,
     Stuff,
@@ -175,7 +175,7 @@ pub fn generate_map(
     mut grid: ResMut<Grid<Stuff>>,
     props: Res<MapGenProps>,
     dims: Res<WorldDims>,
-    floor: Res<DungeonLevel>,
+    floor: Res<DungeonFloor>,
 ) {
     // player may or may not exist at this point
     let player_id = player_q.iter().next();
