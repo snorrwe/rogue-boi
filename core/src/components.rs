@@ -33,6 +33,20 @@ pub struct Melee {
     pub skill: i32,
 }
 
+impl std::ops::AddAssign for Melee {
+    fn add_assign(&mut self, rhs: Self) {
+        self.power += rhs.power;
+        self.skill += rhs.skill;
+    }
+}
+
+impl std::ops::SubAssign for Melee {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.power -= rhs.power;
+        self.skill -= rhs.skill;
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Description(pub String);
 
@@ -88,6 +102,7 @@ pub enum StuffTag {
     FireBallScroll,
     Tombstone,
     Stairs,
+    Dagger,
 }
 
 impl StuffTag {
@@ -101,6 +116,7 @@ impl StuffTag {
             self,
             StuffTag::Wall
                 | StuffTag::Sword
+                | StuffTag::Dagger
                 | StuffTag::HpPotion
                 | StuffTag::LightningScroll
                 | StuffTag::ConfusionScroll
@@ -345,4 +361,16 @@ pub struct Exp {
 pub enum DesiredStat {
     Attack,
     Hp,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum EquipmentType {
+    Weapon,
+    Armor,
+}
+
+#[derive(Default, Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct Equipment {
+    pub weapon: Option<EntityId>,
+    pub armor: Option<EntityId>,
 }
