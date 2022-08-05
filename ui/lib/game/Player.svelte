@@ -15,6 +15,7 @@
 	export let neededXp;
 	export let level;
 	export let levelup;
+	export let defense;
 </script>
 
 <div>
@@ -35,11 +36,19 @@
 			</p>
 		{/if}
 		{#if attack != null}
-			<p id="player-attack">
+			<p>
 				{#if levelup}
 					<button on:click={() => core.setLevelupStat({ ty: 'Attack' })}>+</button>
 				{/if}
 				Attack Power: {attack}
+			</p>
+		{/if}
+		{#if defense != null}
+			<p>
+				{#if levelup}
+					<button on:click={() => core.setLevelupStat({ ty: 'MeleeDefense' })}>+</button>
+				{/if}
+				Melee Defense: {defense.meleeDefense}
 			</p>
 		{/if}
 		{#if pos != null}

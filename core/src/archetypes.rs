@@ -42,6 +42,7 @@ pub fn register_persistent_components(
         .add_component::<Level>()
         .add_component::<Exp>()
         .add_component::<Equipment>()
+        .add_component::<Defense>()
 }
 
 fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {
@@ -173,6 +174,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 Melee { power: 1, skill: 5 },
                 Level::default(),
                 Equipment::default(),
+                Defense::new(0),
             ));
         }
 
@@ -188,6 +190,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                     radius: 20,
                 },
                 Exp { amount: 100 },
+                Defense::new(4),
             ));
         }
         StuffTag::Orc => {
@@ -199,6 +202,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                     radius: 20,
                 },
                 Exp { amount: 35 },
+                Defense::new(0),
             ));
         }
         StuffTag::Dagger => {
@@ -250,6 +254,7 @@ pub type StuffToJsQuery<'a> = QuerySet<(
             Option<&'a Melee>,
             Option<&'a Pos>,
             Option<&'a Color>,
+            Option<&'a Defense>,
         ),
         With<Item>,
     >,
@@ -262,10 +267,11 @@ pub type StuffToJsQuery<'a> = QuerySet<(
             &'a Hp,
             Option<&'a Description>,
             Option<&'a Color>,
+            Option<&'a Defense>,
         ),
         With<Ai>,
     >,
-    Query<(&'a Icon, &'a Melee, &'a Hp), With<PlayerTag>>,
+    Query<(&'a Icon, &'a Melee, &'a Hp, &'a Defense), With<PlayerTag>>,
     Query<(&'a Icon, Option<&'a Name>, Option<&'a Description>)>,
 )>;
 
@@ -282,7 +288,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
             }}
         }
         StuffTag::Player => {
-            let (icon, melee, hp) = query.q3().fetch(id).unwrap();
+            let (icon, melee, hp, defense) = query.q3().fetch(id).unwrap();
             json! {{
                 "id": id,
                 "tag": tag,
@@ -290,7 +296,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                 "description": "Yourself",
                 "icon": icon.0.clone(),
                 "hp": hp,
-                "melee": melee.clone(),
+                "melee": melee,
+                "defense": defense
             }}
         }
         StuffTag::Wall => {
@@ -304,7 +311,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
             }}
         }
         StuffTag::Troll | StuffTag::Orc => {
-            let (icon, name, ranged, melee, hp, description, color) = query.q2().fetch(id).unwrap();
+            let (icon, name, ranged, melee, hp, description, color, defense) =
+                query.q2().fetch(id).unwrap();
             json! {{
                 "id": id,
                 "name": name.0.clone(),
@@ -316,7 +324,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                 "hp": hp,
                 "targetable": true,
                 "color": color.and_then(|c|c.0.as_string()),
-                "creature": true
+                "creature": true,
+                "defense": defense
             }}
         }
         StuffTag::HpPotion
@@ -325,7 +334,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
         | StuffTag::LightningScroll
         | StuffTag::ConfusionScroll
         | StuffTag::FireBallScroll => {
-            let (icon, name, desc, ranged, heal, melee, pos, color) = query.q1().fetch(id).unwrap();
+            let (icon, name, desc, ranged, heal, melee, pos, color, defense) =
+                query.q1().fetch(id).unwrap();
             let equipable = pos.is_none() && matches!(tag, StuffTag::Dagger | StuffTag::Sword);
             let usable = pos.is_none()
                 && matches!(
@@ -347,7 +357,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                 "usable": usable,
                 "equipable": equipable,
                 "color": color.and_then(|c|c.0.as_string()),
-                "item": true
+                "item": true,
+                "defense": defense
             }}
         }
     };

@@ -326,11 +326,16 @@ pub fn update_player_world_interact<'a>(
     }
 }
 
+fn compute_damage(power: i32, defense: i32) -> i32 {
+    // all damage must be at least 1
+    (power - defense).max(1)
+}
+
 pub fn handle_player_move<'a>(
     actions: Res<PlayerActions>,
     mut player_q: Query<(&'a Melee, &'a mut Pos), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
-    mut hp: Query<&mut Hp>,
+    mut enemy_q: Query<(&'a mut Hp, &'a Defense)>,
     mut grid: ResMut<Grid<Stuff>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     names: Query<&Name>,
@@ -357,12 +362,15 @@ pub fn handle_player_move<'a>(
                 }
                 StuffTag::Troll | StuffTag::Orc => {
                     if skill_check(power.skill) {
-                        let hp = hp.fetch_mut(stuff_id).expect("Enemy has no hp");
-                        let power = power.power;
-                        hp.current -= power;
+                        let (hp, defense) = enemy_q.fetch_mut(stuff_id).expect("Enemy has no hp");
+                        let damage = compute_damage(power.power, defense.melee_defense);
+                        hp.current -= damage;
                         debug!("kick enemy {}: {:?}", stuff_id, hp);
                         if let Some(Name(name)) = names.fetch(stuff_id) {
-                            log.push(PLAYER_ATTACK, format!("Bonk {} for {} damage", name, power));
+                            log.push(
+                                PLAYER_ATTACK,
+                                format!("Bonk {} for {} damage", name, damage),
+                            );
                         }
                     } else {
                         debug!("miss enemy {}", stuff_id);
@@ -639,7 +647,7 @@ pub fn update_ai_move<'a>(
 }
 
 pub fn update_melee_ai<'a>(
-    mut q_player: Query<(EntityId, &'a Pos), (With<Hp>, With<PlayerTag>)>,
+    mut q_player: Query<(EntityId, &'a Pos, &'a Defense), (With<Hp>, With<PlayerTag>)>,
     mut q_target: Query<(&'a mut Hp, Option<&'a Name>)>,
     mut q_enemy: Query<
         (
@@ -655,7 +663,7 @@ pub fn update_melee_ai<'a>(
     grid: Res<Grid<Stuff>>,
     mut log: ResMut<LogHistory>,
 ) {
-    let (player_id, Pos(player_pos)) = match q_player.iter_mut().next() {
+    let (player_id, Pos(player_pos), player_defense) = match q_player.iter_mut().next() {
         Some(x) => x,
         None => {
             debug!("No player on the map! Skipping melee update");
@@ -667,6 +675,7 @@ pub fn update_melee_ai<'a>(
         let name = name
             .map(|name| name.0.clone())
             .unwrap_or_else(|| id.to_string());
+        let damage = compute_damage(*power, player_defense.melee_defense);
         let mut target = None;
         if confused.is_some() {
             if let Some(vel) = vel {
@@ -688,7 +697,7 @@ pub fn update_melee_ai<'a>(
                 log.push(ENEMY_ATTACK, format!("{} misses", name));
                 continue;
             }
-            target_hp.current -= power;
+            target_hp.current -= damage;
             let target_name = target_name.unwrap_or("");
             debug!(
                 id = tracing::field::display(id),
@@ -697,7 +706,7 @@ pub fn update_melee_ai<'a>(
             );
             log.push(
                 ENEMY_ATTACK,
-                format!("{} hits {} for {} damage", name, target_name, power),
+                format!("{} hits {} for {} damage", name, target_name, damage),
             );
         }
     }
@@ -769,7 +778,7 @@ pub fn update_camera_pos(mut camera: ResMut<CameraPos>, q: Query<&Pos, With<Play
 }
 
 pub fn update_output(
-    q_player: Query<(&Pos, &Hp, &Melee, &Level), With<PlayerTag>>,
+    q_player: Query<(&Pos, &Hp, &Melee, &Level, &Defense), With<PlayerTag>>,
     mut output_cache: ResMut<Output>,
     selected: Res<Selected>,
     history: Res<LogHistory>,
@@ -781,13 +790,14 @@ pub fn update_output(
     let player = q_player
         .iter()
         .next()
-        .map(|(pos, hp, attack, level)| PlayerOutput {
+        .map(|(pos, hp, attack, level, defense)| PlayerOutput {
             level: level.current_level,
             current_xp: level.current_xp,
             needed_xp: level.experience_to_next_level(),
             player_hp: *hp,
             player_attack: attack.power,
             player_pos: pos.0,
+            defense: *defense,
         });
     let mut log = Vec::with_capacity(100);
     for line in history.items.iter() {
@@ -1111,10 +1121,13 @@ pub fn regenerate_dungeon(mut access: WorldAccess) {
 pub fn handle_levelup<'a>(
     mut app_mode: ResMut<AppMode>,
     mut stat: ResMut<Option<DesiredStat>>,
-    mut player_q: Query<(&'a mut Hp, &'a mut Melee, &'a mut Level), With<PlayerTag>>,
+    mut player_q: Query<
+        (&'a mut Hp, &'a mut Melee, &'a mut Level, &'a mut Defense),
+        With<PlayerTag>,
+    >,
     mut log: ResMut<LogHistory>,
 ) {
-    if let Some((hp, melee, level)) = player_q.iter_mut().next() {
+    if let Some((hp, melee, level, defense)) = player_q.iter_mut().next() {
         if !level.needs_levelup() {
             return;
         }
@@ -1138,6 +1151,9 @@ pub fn handle_levelup<'a>(
                         let amount = 10;
                         hp.current += amount;
                         hp.max += amount;
+                    }
+                    DesiredStat::MeleeDefense => {
+                        defense.melee_defense += 1;
                     }
                 }
             }

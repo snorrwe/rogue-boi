@@ -361,6 +361,7 @@ pub struct Exp {
 pub enum DesiredStat {
     Attack,
     Hp,
+    MeleeDefense,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -373,4 +374,18 @@ pub enum EquipmentType {
 pub struct Equipment {
     pub weapon: Option<EntityId>,
     pub armor: Option<EntityId>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Defense {
+    pub melee_defense: i32,
+}
+
+impl Defense {
+    pub fn new(defense: i32) -> Self {
+        Self {
+            melee_defense: defense,
+        }
+    }
 }
