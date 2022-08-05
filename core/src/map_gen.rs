@@ -11,8 +11,8 @@ use rand::{
 use tracing::debug;
 
 use crate::{
-    archetypes::{init_entity, ENEMY_TAGS, ENEMY_WEIGHTS, ITEM_TAGS, ITEM_WEIGHTS},
-    components::{PlayerTag, Pos, StuffTag, WorldDims},
+    archetypes::{init_entity, ENEMY_CHANCES, ITEM_CHANCES},
+    components::{DungeonLevel, PlayerTag, Pos, StuffTag, WorldDims},
     grid::Grid,
     math::Vec2,
     Stuff,
@@ -55,17 +55,57 @@ impl MapGenProps {
     }
 }
 
+#[derive(Default, Debug)]
+struct EntityChances {
+    enemy_tags: smallvec::SmallVec<[StuffTag; 8]>,
+    enemy_weights: smallvec::SmallVec<[i32; 8]>,
+    item_tags: smallvec::SmallVec<[StuffTag; 8]>,
+    item_weights: smallvec::SmallVec<[i32; 8]>,
+}
+
+impl EntityChances {
+    pub fn from_level(level: u32) -> Self {
+        let mut result = Self::default();
+
+        for (key, weights) in ENEMY_CHANCES {
+            if key > &level {
+                break;
+            }
+            for (tag, weight) in *weights {
+                result.enemy_tags.push(*tag);
+                result.enemy_weights.push(*weight);
+            }
+        }
+
+        for (key, weights) in ITEM_CHANCES {
+            if key > &level {
+                break;
+            }
+            for (tag, weight) in *weights {
+                result.item_tags.push(*tag);
+                result.item_weights.push(*weight);
+            }
+        }
+
+        debug_assert_eq!(result.enemy_weights.len(), result.enemy_tags.len());
+        debug_assert_eq!(result.item_weights.len(), result.item_tags.len());
+
+        result
+    }
+}
+
 fn place_entities(
     rng: &mut impl Rng,
     grid: &mut Grid<Option<StuffTag>>,
     room: &RectRoom,
     max_monsters: u32,
+    weights: &EntityChances,
 ) {
     let n_monsters_a = rng.gen_range(0..=max_monsters);
     let n_monsters_b = rng.gen_range(0..=max_monsters);
     let n_monsters = n_monsters_a.max(n_monsters_b); // bias towards more monsters
 
-    let dist = rand::distributions::WeightedIndex::new(ENEMY_WEIGHTS).unwrap();
+    let dist = rand::distributions::WeightedIndex::new(&weights.enemy_weights[..]).unwrap();
 
     for _ in 0..n_monsters {
         let x = rng.gen_range(room.min.x + 1..room.max.x + 1);
@@ -73,7 +113,7 @@ fn place_entities(
 
         let pos = Vec2::new(x, y);
         if grid[pos].is_none() {
-            let tag = ENEMY_TAGS[dist.sample(rng)];
+            let tag = weights.enemy_tags[dist.sample(rng)];
             grid[pos] = Some(tag);
             debug!("Placing {:?} at {}", tag, pos);
         }
@@ -99,10 +139,11 @@ fn place_items(
     grid: &mut Grid<Option<StuffTag>>,
     room: &RectRoom,
     max_items: u32,
+    weights: &EntityChances,
 ) {
     let n_items = rng.gen_range(0..=max_items);
 
-    let dist = rand::distributions::WeightedIndex::new(ITEM_WEIGHTS).unwrap();
+    let dist = rand::distributions::WeightedIndex::new(&weights.item_weights[..]).unwrap();
 
     for _ in 0..n_items {
         let x = rng.gen_range(room.min.x + 1..room.max.x + 1);
@@ -110,7 +151,7 @@ fn place_items(
 
         let pos = Vec2::new(x, y);
         if grid[pos].is_none() {
-            let tag = ITEM_TAGS[dist.sample(rng)];
+            let tag = weights.item_tags[dist.sample(rng)];
             grid[pos] = Some(tag);
             debug!("Placing {:?} at {}", tag, pos);
         }
@@ -124,6 +165,7 @@ pub fn generate_map(
     mut grid: ResMut<Grid<Stuff>>,
     props: Res<MapGenProps>,
     dims: Res<WorldDims>,
+    floor: Res<DungeonLevel>,
 ) {
     // player may or may not exist at this point
     let player_id = player_q.iter().next();
@@ -145,7 +187,7 @@ pub fn generate_map(
         *stuff = None;
     }
 
-    build_rooms(&mut working_set, &props);
+    build_rooms(&mut working_set, &props, floor.current);
 
     // insert entities into db
     //
@@ -183,7 +225,7 @@ pub fn generate_map(
     }
 }
 
-fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps) {
+fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u32) {
     let mut rng = rand::thread_rng();
     let mut rooms = Vec::<RectRoom>::with_capacity(props.max_rooms as usize);
 
@@ -215,9 +257,22 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps) {
         }
     }
 
+    let entity_weights = EntityChances::from_level(floor);
     for room in rooms.iter().skip(1) {
-        place_entities(&mut rng, grid, room, props.max_monsters_per_floor);
-        place_items(&mut rng, grid, room, props.max_items_per_floor);
+        place_entities(
+            &mut rng,
+            grid,
+            room,
+            props.max_monsters_per_floor,
+            &entity_weights,
+        );
+        place_items(
+            &mut rng,
+            grid,
+            room,
+            props.max_items_per_floor,
+            &entity_weights,
+        );
     }
 
     // spawn the player in the first room
