@@ -45,6 +45,9 @@
 {#if selected.usable}
 	<button on:click={useItem(selected)}>Use</button>
 {/if}
+{#if selected.equipable}
+	<button on:click={useItem(selected)}>Equip</button>
+{/if}
 {#if selected.item}
 	<button on:click={dropItem(selected)}>Drop</button>
 {/if}

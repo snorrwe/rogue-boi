@@ -13,8 +13,8 @@ pub const ENEMY_CHANCES: &[(u32, &[(StuffTag, i32)])] = &[
     (7, &[(StuffTag::Troll, 60)]),
 ];
 pub const ITEM_CHANCES: &[(u32, &[(StuffTag, i32)])] = &[
-    (0, &[(StuffTag::HpPotion, 80)]),
-    (2, &[(StuffTag::ConfusionScroll, 10)]),
+    (0, &[(StuffTag::HpPotion, 80), (StuffTag::Dagger, 40)]),
+    (2, &[(StuffTag::ConfusionScroll, 10), (StuffTag::Sword, 30)]),
     (4, &[(StuffTag::LightningScroll, 25)]),
     (6, &[(StuffTag::FireBallScroll, 25)]),
 ];
@@ -41,6 +41,7 @@ pub fn register_persistent_components(
         .add_component::<ConfusedAi>()
         .add_component::<Level>()
         .add_component::<Exp>()
+        .add_component::<Equipment>()
 }
 
 fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {
@@ -93,8 +94,18 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
             cmd.insert_bundle((
                 icon("sword"),
                 Item,
-                Description("Power 1".to_string()),
+                Description("Larger weapon".to_string()),
                 Name("Simple Sword".into()),
+                EquipmentType::Weapon,
+            ));
+        }
+        StuffTag::Dagger => {
+            cmd.insert_bundle((
+                icon("dagger"),
+                Item,
+                Description("Small weapon".to_string()),
+                Name("Simple dagger".into()),
+                EquipmentType::Weapon,
             ));
         }
         StuffTag::HpPotion => {
@@ -159,6 +170,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 Inventory::new(16),
                 Melee { power: 1, skill: 5 },
                 Level::default(),
+                Equipment::default(),
             ));
         }
 
@@ -187,8 +199,11 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 Exp { amount: 35 },
             ));
         }
+        StuffTag::Dagger => {
+            cmd.insert_bundle((Melee { power: 2, skill: 0 },));
+        }
         StuffTag::Sword => {
-            cmd.insert_bundle((Melee { power: 1, skill: 0 },));
+            cmd.insert_bundle((Melee { power: 4, skill: 0 },));
         }
         StuffTag::HpPotion => {
             cmd.insert_bundle((Heal { hp: 3 },));
@@ -304,10 +319,12 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
         }
         StuffTag::HpPotion
         | StuffTag::Sword
+        | StuffTag::Dagger
         | StuffTag::LightningScroll
         | StuffTag::ConfusionScroll
         | StuffTag::FireBallScroll => {
             let (icon, name, desc, ranged, heal, melee, pos, color) = query.q1().fetch(id).unwrap();
+            let equipable = pos.is_none() && matches!(tag, StuffTag::Dagger | StuffTag::Sword);
             let usable = pos.is_none()
                 && matches!(
                     tag,
@@ -326,6 +343,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                 "description": desc.0.clone(),
                 "icon": icon.0.clone(),
                 "usable": usable,
+                "equipable": equipable,
                 "color": color.and_then(|c|c.0.as_string()),
                 "item": true
             }}

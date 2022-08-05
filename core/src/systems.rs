@@ -33,12 +33,42 @@ pub fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<Pla
     }
 }
 
+fn equip_item(id: EntityId, equipment: &mut Option<EntityId>, inventory: &mut Inventory) {
+    // move old weapon back to the inventory
+    match equipment.take() {
+        Some(old_id) => {
+            let (i, _) = inventory
+                .items
+                .iter()
+                .enumerate()
+                .find(|(_, i)| *i == &id)
+                .unwrap();
+
+            inventory.items[i] = old_id;
+        }
+        None => {
+            // if old id doesn't exist then remove this item from the inventory
+            inventory.remove(id);
+        }
+    }
+    let _ = equipment.insert(id);
+}
+
 pub fn update_player_item_use<'a>(
     actions: Res<PlayerActions>,
     mut cmd: Commands,
-    mut player_query: Query<(EntityId, &'a mut Inventory, &'a Pos), With<PlayerTag>>,
+    mut player_query: Query<
+        (EntityId, &'a mut Inventory, &'a Pos, &'a mut Equipment),
+        With<PlayerTag>,
+    >,
     stuff_tags: Query<&StuffTag>,
-    item_query: QuerySet<(Query<&Ranged>, Query<(&Ranged, &Aoe)>, Query<&Heal>)>,
+    mut item_query: QuerySet<(
+        Query<&'a Ranged>,
+        Query<(&'a Ranged, &'a Aoe)>,
+        Query<&'a Heal>,
+        Query<&'a EquipmentType>,
+        Query<&'a mut Melee>,
+    )>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     mut app_mode: ResMut<AppMode>,
     mut use_item: ResMut<UseItem>,
@@ -52,7 +82,7 @@ pub fn update_player_item_use<'a>(
     grid: Res<Grid<Stuff>>,
     mut log: ResMut<LogHistory>,
 ) {
-    let Some((player_id, inventory, pos)) = player_query.iter_mut().next() else {
+    let Some((player_id, inventory, pos, equipment)) = player_query.iter_mut().next() else {
         return;
     };
     let pos = *pos;
@@ -67,6 +97,28 @@ pub fn update_player_item_use<'a>(
         debug!("Using item {}", id);
         let tag = stuff_tags.fetch(id);
         match tag {
+            Some(StuffTag::Sword | StuffTag::Dagger) => {
+                use_item.0 = None;
+                debug!("Equipping {}, tag: {:?}", id, tag);
+                let ty = *item_query.q3().fetch(id).expect("Equipment type not found");
+                match ty {
+                    EquipmentType::Weapon => {
+                        let old_id = &mut equipment.weapon;
+
+                        // update power
+                        let new_power = *item_query.q4().fetch(id).unwrap();
+                        let old_power = old_id.and_then(|id| item_query.q4().fetch(id).copied());
+                        let player_power = item_query.q4_mut().fetch_mut(player_id).unwrap();
+                        *player_power += new_power;
+                        if let Some(old_power) = old_power {
+                            *player_power -= old_power;
+                        }
+
+                        equip_item(id, old_id, inventory);
+                    }
+                    EquipmentType::Armor => todo!(),
+                }
+            }
             Some(StuffTag::HpPotion) => {
                 log.push(HEAL, "Drink a health potion.");
                 let hp = target_query.q3_mut().fetch_mut(player_id).unwrap();
@@ -239,6 +291,7 @@ pub fn update_player_world_interact<'a>(
             );
             match tag {
                 StuffTag::Sword
+                | StuffTag::Dagger
                 | StuffTag::HpPotion
                 | StuffTag::LightningScroll
                 | StuffTag::ConfusionScroll
@@ -319,6 +372,7 @@ pub fn handle_player_move<'a>(
                 StuffTag::LightningScroll
                 | StuffTag::HpPotion
                 | StuffTag::Sword
+                | StuffTag::Dagger
                 | StuffTag::ConfusionScroll
                 | StuffTag::FireBallScroll
                 | StuffTag::Tombstone

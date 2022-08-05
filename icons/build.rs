@@ -11,6 +11,7 @@ const ICONS: &'static [(&str, &str)] = &[
     ("hp_potion", "delapouite/health-potion.svg"),
     ("scroll", "lorc/scroll-unfurled.svg"),
     ("stairs", "delapouite/stairs.svg"),
+    ("dagger", "lorc/stiletto.svg"),
 ];
 
 #[derive(Deserialize)]
