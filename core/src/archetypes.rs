@@ -230,7 +230,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         StuffTag::Orc => {
             cmd.insert_bundle((
                 Hp::new(4),
-                Melee { power: 1, skill: 3 },
+                Melee { power: 2, skill: 3 },
                 Leash {
                     origin: pos,
                     radius: 20,
