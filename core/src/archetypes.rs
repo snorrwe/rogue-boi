@@ -13,8 +13,22 @@ pub const ENEMY_CHANCES: &[(u32, &[(StuffTag, i32)])] = &[
     (7, &[(StuffTag::Troll, 60)]),
 ];
 pub const ITEM_CHANCES: &[(u32, &[(StuffTag, i32)])] = &[
-    (0, &[(StuffTag::HpPotion, 80), (StuffTag::Dagger, 40)]),
-    (2, &[(StuffTag::ConfusionScroll, 10), (StuffTag::Sword, 30)]),
+    (
+        0,
+        &[
+            (StuffTag::HpPotion, 80),
+            (StuffTag::Dagger, 40),
+            (StuffTag::LeatherArmor, 40),
+        ],
+    ),
+    (
+        2,
+        &[
+            (StuffTag::ConfusionScroll, 10),
+            (StuffTag::Sword, 30),
+            (StuffTag::ChainMailArmor, 30),
+        ],
+    ),
     (4, &[(StuffTag::LightningScroll, 25)]),
     (6, &[(StuffTag::FireBallScroll, 25)]),
 ];
@@ -89,6 +103,26 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
                 Color("#06b306".into()),
                 Name("Orc".into()),
                 Velocity::default(),
+            ));
+        }
+        StuffTag::LeatherArmor => {
+            cmd.insert_bundle((
+                icon("leather-vest"),
+                Item,
+                Description("Comfy".to_string()),
+                Name("Leather vest".into()),
+                EquipmentType::Armor,
+                Color("#00BFFF".into()),
+            ));
+        }
+        StuffTag::ChainMailArmor => {
+            cmd.insert_bundle((
+                icon("chain-mail"),
+                Item,
+                Description("Stronk".to_string()),
+                Name("Chain mail".into()),
+                EquipmentType::Armor,
+                Color("#00BFFF".into()),
             ));
         }
         StuffTag::Sword => {
@@ -204,6 +238,12 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 Exp { amount: 35 },
                 Defense::new(0),
             ));
+        }
+        StuffTag::LeatherArmor => {
+            cmd.insert_bundle((Defense { melee_defense: 1 },));
+        }
+        StuffTag::ChainMailArmor => {
+            cmd.insert_bundle((Defense { melee_defense: 3 },));
         }
         StuffTag::Dagger => {
             cmd.insert_bundle((Melee { power: 2, skill: 0 },));
@@ -329,6 +369,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
             }}
         }
         StuffTag::HpPotion
+        | StuffTag::ChainMailArmor
+        | StuffTag::LeatherArmor
         | StuffTag::Sword
         | StuffTag::Dagger
         | StuffTag::LightningScroll
@@ -336,7 +378,14 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
         | StuffTag::FireBallScroll => {
             let (icon, name, desc, ranged, heal, melee, pos, color, defense) =
                 query.q1().fetch(id).unwrap();
-            let equipable = pos.is_none() && matches!(tag, StuffTag::Dagger | StuffTag::Sword);
+            let equipable = pos.is_none()
+                && matches!(
+                    tag,
+                    StuffTag::Dagger
+                        | StuffTag::Sword
+                        | StuffTag::LeatherArmor
+                        | StuffTag::ChainMailArmor
+                );
             let usable = pos.is_none()
                 && matches!(
                     tag,

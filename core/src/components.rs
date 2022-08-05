@@ -103,6 +103,8 @@ pub enum StuffTag {
     Tombstone,
     Stairs,
     Dagger,
+    LeatherArmor,
+    ChainMailArmor,
 }
 
 impl StuffTag {
@@ -387,5 +389,17 @@ impl Defense {
         Self {
             melee_defense: defense,
         }
+    }
+}
+
+impl std::ops::AddAssign for Defense {
+    fn add_assign(&mut self, rhs: Self) {
+        self.melee_defense += rhs.melee_defense;
+    }
+}
+
+impl std::ops::SubAssign for Defense {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.melee_defense -= rhs.melee_defense;
     }
 }
