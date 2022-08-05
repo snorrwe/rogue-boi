@@ -223,7 +223,7 @@ pub fn update_player_world_interact<'a>(
     grid: Res<Grid<Stuff>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     actions: Res<PlayerActions>,
-    mut level: ResMut<DungeonLevel>,
+    mut level: ResMut<DungeonFloor>,
     mut log: ResMut<LogHistory>,
 ) {
     if !actions.interact() {
@@ -720,7 +720,7 @@ pub fn update_output(
     selected: Res<Selected>,
     history: Res<LogHistory>,
     app_mode: Res<AppMode>,
-    dungeon_level: Res<DungeonLevel>,
+    dungeon_level: Res<DungeonFloor>,
 ) {
     let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
 
@@ -1015,7 +1015,7 @@ pub fn regenerate_dungeon(mut access: WorldAccess) {
     let world = access.world_mut();
 
     let level = world
-        .get_resource::<DungeonLevel>()
+        .get_resource::<DungeonFloor>()
         .cloned()
         .unwrap_or_default()
         .desired;
@@ -1032,7 +1032,7 @@ pub fn regenerate_dungeon(mut access: WorldAccess) {
     world.insert_resource(Visible(Grid::new(dims)));
     world.insert_resource(Explored(Grid::new(dims)));
     world.insert_resource(WorldDims(dims));
-    world.insert_resource(DungeonLevel {
+    world.insert_resource(DungeonFloor {
         current: level,
         desired: level,
     });
