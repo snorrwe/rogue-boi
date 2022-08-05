@@ -1,6 +1,8 @@
 mod rect_room;
 mod tunnel_iter;
 
+use std::collections::HashMap;
+
 use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
 use cecs::prelude::*;
@@ -63,29 +65,37 @@ struct EntityChances {
     item_weights: smallvec::SmallVec<[i32; 8]>,
 }
 
+pub type EntityChanceList<'a> = &'a [(u32, &'a [(StuffTag, i32)])];
+fn entity_weighted_chances(
+    floor: u32,
+    chances: EntityChanceList,
+) -> (
+    smallvec::SmallVec<[StuffTag; 8]>,
+    smallvec::SmallVec<[i32; 8]>,
+) {
+    // allow overriding chances on higher floors
+    let mut weighted_chances = HashMap::new();
+    for (key, weights) in chances {
+        if key > &floor {
+            break;
+        }
+        for (tag, weight) in *weights {
+            weighted_chances.insert(*tag, *weight);
+        }
+    }
+
+    (
+        weighted_chances.keys().copied().collect(),
+        weighted_chances.values().copied().collect(),
+    )
+}
+
 impl EntityChances {
     pub fn from_level(level: u32) -> Self {
         let mut result = Self::default();
 
-        for (key, weights) in ENEMY_CHANCES {
-            if key > &level {
-                break;
-            }
-            for (tag, weight) in *weights {
-                result.enemy_tags.push(*tag);
-                result.enemy_weights.push(*weight);
-            }
-        }
-
-        for (key, weights) in ITEM_CHANCES {
-            if key > &level {
-                break;
-            }
-            for (tag, weight) in *weights {
-                result.item_tags.push(*tag);
-                result.item_weights.push(*weight);
-            }
-        }
+        (result.enemy_tags, result.enemy_weights) = entity_weighted_chances(level, ENEMY_CHANCES);
+        (result.item_tags, result.item_weights) = entity_weighted_chances(level, ITEM_CHANCES);
 
         debug_assert_eq!(result.enemy_weights.len(), result.enemy_tags.len());
         debug_assert_eq!(result.item_weights.len(), result.item_tags.len());
