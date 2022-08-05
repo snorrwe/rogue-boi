@@ -68,6 +68,7 @@ pub fn update_player_item_use<'a>(
         Query<&'a Heal>,
         Query<&'a EquipmentType>,
         Query<&'a mut Melee>,
+        Query<&'a mut Defense>,
     )>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     mut app_mode: ResMut<AppMode>,
@@ -97,7 +98,12 @@ pub fn update_player_item_use<'a>(
         debug!("Using item {}", id);
         let tag = stuff_tags.fetch(id);
         match tag {
-            Some(StuffTag::Sword | StuffTag::Dagger) => {
+            Some(
+                StuffTag::Sword
+                | StuffTag::Dagger
+                | StuffTag::ChainMailArmor
+                | StuffTag::LeatherArmor,
+            ) => {
                 use_item.0 = None;
                 debug!("Equipping {}, tag: {:?}", id, tag);
                 let ty = *item_query.q3().fetch(id).expect("Equipment type not found");
@@ -116,7 +122,20 @@ pub fn update_player_item_use<'a>(
 
                         equip_item(id, old_id, inventory);
                     }
-                    EquipmentType::Armor => todo!(),
+                    EquipmentType::Armor => {
+                        let old_id = &mut equipment.armor;
+
+                        // update defense
+                        let new_defense = *item_query.q5().fetch(id).unwrap();
+                        let old_defense = old_id.and_then(|id| item_query.q5().fetch(id).copied());
+                        let player_defense = item_query.q5_mut().fetch_mut(player_id).unwrap();
+                        *player_defense += new_defense;
+                        if let Some(old_defense) = old_defense {
+                            *player_defense -= old_defense;
+                        }
+
+                        equip_item(id, old_id, inventory);
+                    }
                 }
             }
             Some(StuffTag::HpPotion) => {
@@ -295,6 +314,8 @@ pub fn update_player_world_interact<'a>(
                 | StuffTag::HpPotion
                 | StuffTag::LightningScroll
                 | StuffTag::ConfusionScroll
+                | StuffTag::LeatherArmor
+                | StuffTag::ChainMailArmor
                 | StuffTag::FireBallScroll => {
                     // pick up item
                     match inventory.add(stuff_id) {
@@ -379,6 +400,8 @@ pub fn handle_player_move<'a>(
                 }
                 StuffTag::LightningScroll
                 | StuffTag::HpPotion
+                | StuffTag::LeatherArmor
+                | StuffTag::ChainMailArmor
                 | StuffTag::Sword
                 | StuffTag::Dagger
                 | StuffTag::ConfusionScroll
