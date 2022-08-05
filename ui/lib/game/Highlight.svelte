@@ -38,6 +38,9 @@
 	<div>Melee Power: {selected.melee.power}</div>
 	<div>Melee Skill: {selected.melee.skill}</div>
 {/if}
+{#if selected.defense}
+	<div>Melee Defense: {selected.defense.meleeDefense}</div>
+{/if}
 {#if selected.ranged}
 	<div>Ranged Power: {selected.ranged.power}</div>
 	<div>Ranged Skill: {selected.ranged.skill}</div>

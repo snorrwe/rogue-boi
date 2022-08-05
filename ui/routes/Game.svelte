@@ -70,6 +70,7 @@
 						neededXp={$coreOutputStore.player && $coreOutputStore.player.neededXp}
 						level={$coreOutputStore.player && $coreOutputStore.player.level}
 						levelup={$coreOutputStore.appMode && $coreOutputStore.appMode.ty == 'Levelup'}
+                        defense={$coreOutputStore.player && $coreOutputStore.player.defense}
 						{core}
 					/>
 				</div>

@@ -194,6 +194,7 @@ pub struct PlayerOutput {
     pub current_xp: u32,
     pub needed_xp: u32,
     pub level: u32,
+    pub defense: Defense,
 }
 
 #[derive(Default, Clone, Copy)]
