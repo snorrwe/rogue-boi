@@ -97,6 +97,7 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
                 Description("Larger weapon".to_string()),
                 Name("Simple Sword".into()),
                 EquipmentType::Weapon,
+                Color("#00BFFF".into()),
             ));
         }
         StuffTag::Dagger => {
@@ -106,6 +107,7 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
                 Description("Small weapon".to_string()),
                 Name("Simple dagger".into()),
                 EquipmentType::Weapon,
+                Color("#00BFFF".into()),
             ));
         }
         StuffTag::HpPotion => {
