@@ -23,18 +23,34 @@ pub struct MapGenProps {
     pub room_min_size: u32,
     pub room_max_size: u32,
     pub max_rooms: u32,
-    pub max_monsters_per_room: u32,
-    pub max_items_per_room: u32,
+    pub max_items_per_floor: u32,
+    pub max_monsters_per_floor: u32,
 }
 
 impl MapGenProps {
     pub fn from_level(level: u32) -> Self {
+        // sorted from high to low
+        const MAX_ITEMS: &[[u32; 2]] = &[[4, 2], [1, 1]];
+        const MAX_MONSTERS: &[[u32; 2]] = &[[6, 5], [4, 3], [1, 2]];
+
+        let max_items_per_floor = MAX_ITEMS
+            .iter()
+            .find(|[x, _]| x <= &level)
+            .map(|[_, c]| *c)
+            .unwrap_or(0);
+
+        let max_monsters_per_floor = MAX_MONSTERS
+            .iter()
+            .find(|[x, _]| x <= &level)
+            .map(|[_, c]| *c)
+            .unwrap_or(0);
+
         MapGenProps {
+            max_monsters_per_floor,
+            max_items_per_floor,
             room_min_size: 6,
             room_max_size: 10,
             max_rooms: 50,
-            max_monsters_per_room: 1 + level,
-            max_items_per_room: 2,
         }
     }
 }
@@ -200,8 +216,8 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps) {
     }
 
     for room in rooms.iter().skip(1) {
-        place_entities(&mut rng, grid, room, props.max_monsters_per_room);
-        place_items(&mut rng, grid, room, props.max_items_per_room);
+        place_entities(&mut rng, grid, room, props.max_monsters_per_floor);
+        place_items(&mut rng, grid, room, props.max_items_per_floor);
     }
 
     // spawn the player in the first room
