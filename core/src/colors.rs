@@ -1,5 +1,4 @@
 pub const WHITE: &str = "white";
-pub const ERROR: &str = "#FF4040";
 pub const IMPOSSIBLE: &str = "#808080";
 pub const PLAYER_DIE: &str = "#FF3030";
 pub const ENEMY_DIE: &str = "#FFA030";
