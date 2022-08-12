@@ -42,21 +42,21 @@ pub fn register_persistent_components(
     persister: impl cecs::persister::WorldSerializer,
 ) -> impl cecs::persister::WorldSerializer {
     persister
-        .add_component::<StuffTag>()
-        .add_component::<LastPos>()
-        .add_component::<Pos>()
-        .add_component::<Hp>()
-        .add_component::<Inventory>()
-        .add_component::<Melee>()
-        .add_component::<Leash>()
-        .add_component::<Heal>()
-        .add_component::<Ranged>()
-        .add_component::<Aoe>()
-        .add_component::<ConfusedAi>()
-        .add_component::<Level>()
-        .add_component::<Exp>()
-        .add_component::<Equipment>()
-        .add_component::<Defense>()
+        .with_component::<StuffTag>()
+        .with_component::<LastPos>()
+        .with_component::<Pos>()
+        .with_component::<Hp>()
+        .with_component::<Inventory>()
+        .with_component::<Melee>()
+        .with_component::<Leash>()
+        .with_component::<Heal>()
+        .with_component::<Ranged>()
+        .with_component::<Aoe>()
+        .with_component::<ConfusedAi>()
+        .with_component::<Level>()
+        .with_component::<Exp>()
+        .with_component::<Equipment>()
+        .with_component::<Defense>()
 }
 
 fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {

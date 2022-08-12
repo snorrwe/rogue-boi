@@ -49,11 +49,11 @@ fn compute_icons() -> IconCollection {
 
 fn get_world_persister() -> impl WorldSerializer {
     let persister = cecs::persister::WorldPersister::new()
-        .add_resource::<WorldDims>()
-        .add_resource::<GameTick>()
-        .add_resource::<LogHistory>()
-        .add_resource::<DungeonFloor>()
-        .add_resource::<Explored>();
+        .with_resource::<WorldDims>()
+        .with_resource::<GameTick>()
+        .with_resource::<LogHistory>()
+        .with_resource::<DungeonFloor>()
+        .with_resource::<Explored>();
 
     archetypes::register_persistent_components(persister)
 }
