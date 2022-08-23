@@ -1,5 +1,5 @@
 use std::{
-    fs::File,
+    fs::{self, File, OpenOptions},
     io::{Read, Seek, Write},
     path::Path,
 };
@@ -34,14 +34,20 @@ fn main() {
             });
         }
         Commands::CopyIcons => {
-            let src_root = root.join("icons/icons/ffffff/transparent/1x1");
+            let src = root.join("icons/icons/game-icons.net.svg.zip");
             let dst_root = root.join("public/icons");
             std::fs::remove_dir_all(&dst_root).unwrap_or_default();
             std::fs::create_dir_all(&dst_root).unwrap();
-            icons::ICONS.iter().for_each(|(name, path)| {
-                let src_path = src_root.join(path);
-                let dst_path = dst_root.join(format!("{}.svg", name));
-                std::fs::copy(src_path, dst_path).unwrap();
+            let mut archive =
+                zip::ZipArchive::new(fs::File::open(src).expect("Failed to open icons file"))
+                    .unwrap();
+            let src_root = Path::new("icons/ffffff/transparent/1x1");
+            icons::ICONS.iter().for_each(move |(name, path)| {
+                copy_icon_from_archive(
+                    &mut archive,
+                    src_root.join(path),
+                    dst_root.join(format!("{}.svg", name)),
+                );
             });
         }
         Commands::Clean => {
@@ -88,4 +94,23 @@ fn zip_dir(
         }
     }
     zip.finish().unwrap();
+}
+
+fn copy_icon_from_archive<R: Read + Seek>(
+    archive: &mut zip::ZipArchive<R>,
+    src: std::path::PathBuf,
+    dst: std::path::PathBuf,
+) {
+    let mut f = archive
+        .by_name(src.to_string_lossy().as_ref())
+        .expect("Failed to fetch icon");
+
+    let mut dst = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(dst)
+        .expect("Failed to open destination");
+
+    std::io::copy(&mut f, &mut dst).expect("Failed to copy icon");
 }

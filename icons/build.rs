@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::{env, fs::OpenOptions, path::Path};
+use std::{env, fs, path::Path};
 
 const ICONS: &'static [(&str, &str)] = &[
     ("wall", "delapouite/brick-wall.svg"),
@@ -32,19 +32,26 @@ fn main() {
     let root = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let root = Path::new(&root).parent().unwrap();
 
-    let src_root = root.join("icons/icons/ffffff/transparent/1x1");
-
     let out_root = env::var_os("OUT_DIR").unwrap();
     let out_root = Path::new(&out_root);
 
+    let archive_path = root.join("icons/icons/game-icons.net.svg.zip");
+    println!("cargo:rerun-if-changed={}", archive_path.to_string_lossy());
+
+    let mut icons_archive =
+        zip::ZipArchive::new(fs::File::open(archive_path).expect("Failed to open icons file"))
+            .unwrap();
+
+    let src_root = Path::new("icons/ffffff/transparent/1x1");
     let mut payload = vec![];
     for (key, path) in ICONS {
         let src_path = src_root.join(path);
-        println!("cargo:rerun-if-changed={}", src_path.to_string_lossy());
-        let f = OpenOptions::new()
-            .read(true)
-            .open(src_path)
-            .expect("Failed to open svg file for reading");
+        let src_path = src_path.to_string_lossy();
+        // TODO: rerun if zip changed, not icons...
+        println!("loading icon {}", src_path);
+        let f = icons_archive
+            .by_name(src_path.as_ref())
+            .expect("Failed to fetch icon");
 
         let data: Svg = serde_xml_rs::from_reader(f).expect("Failed to parse svg");
 
@@ -69,5 +76,5 @@ pub const SVG_PATHS: &[(&str, &str)] = &[{}];
     );
 
     let dst_path = out_root.join("icons_svg.rs");
-    std::fs::write(dst_path, payload).expect("Failed to write");
+    fs::write(dst_path, payload).expect("Failed to write");
 }

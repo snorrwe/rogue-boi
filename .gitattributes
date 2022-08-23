@@ -1,1 +1,2 @@
 *.svg filter=lfs diff=lfs merge=lfs -text
+icons/icons/game-icons.net.svg.zip filter=lfs diff=lfs merge=lfs -text

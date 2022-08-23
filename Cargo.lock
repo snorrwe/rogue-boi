@@ -319,6 +319,7 @@ dependencies = [
  "lazy_static",
  "serde",
  "serde-xml-rs",
+ "zip",
 ]
 
 [[package]]
