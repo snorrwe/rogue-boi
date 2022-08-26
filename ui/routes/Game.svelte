@@ -1,6 +1,12 @@
 <script>
-	import { canvasStore, coreStore, coreOutput, inventory, equipment } from '@rogueBoi/store.js';
-	import { writable } from 'svelte/store';
+	import {
+		canvasStore,
+		coreStore,
+		coreOutput,
+		inventory,
+		equipment,
+		selected
+	} from '@rogueBoi/store.js';
 	import Grid from '@rogueBoi/game/Grid.svelte';
 	import Highlight from '@rogueBoi/game/Highlight.svelte';
 	import Log from '@rogueBoi/game/Log.svelte';
@@ -9,8 +15,6 @@
 	let core;
 	coreStore.subscribe((c) => (core = c));
 
-	let selected = writable(null);
-	coreOutput.subscribe((c) => selected.set(c && c.selected && core.fetchEntity(c.selected)));
 	let last = new Date().getTime();
 
 	canvasStore.subscribe((canvas) => core.setCanvas(canvas));
@@ -28,12 +32,14 @@
 
 			core.tick(now - last);
 
-			coreOutput.set(core.getOutput());
+			const output = core.getOutput();
+			coreOutput.set(output);
 			inventory.set(core.getInventory());
 			equipment.set(core.getEquipment());
 			last = now;
-			if ($selected && $selected.id) {
-				selected.set(core.fetchEntity($selected.id));
+			if (output && output.selected) {
+				// TODO: include the entity information in selected field
+				selected.set(core.fetchEntity(output.selected));
 			}
 		}
 		requestAnimationFrame(gameLoop);

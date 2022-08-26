@@ -6,6 +6,7 @@ export const canvasStore = writable(null);
 export const icons = writable({});
 export const inventory = writable(null);
 export const equipment = writable(null);
+export const selected = writable(null);
 
 export const fetchIcon = ({ name, src }) =>
 	fetch(src)

@@ -1,5 +1,5 @@
 <script>
-	import { coreOutput, coreStore } from '@rogueBoi/store.js';
+	import { coreOutput, coreStore, selected } from '@rogueBoi/store.js';
 
 	import Inventory from './Inventory.svelte';
 	import Equipment from './Equipment.svelte';
@@ -17,6 +17,11 @@
 		defense
 	} = player ?? {});
 	$: levelup = appMode == 'Levelup';
+
+	function restartGame() {
+		selected.set(null);
+		$coreStore.restart();
+	}
 </script>
 
 <div>
@@ -69,7 +74,7 @@
 
 	{#if !alive}
 		<p>You died!</p>
-		<button on:click={() => $coreStore.restart()}>Restart</button>
+		<button on:click={() => restartGame()}>Restart</button>
 	{/if}
 </div>
 
