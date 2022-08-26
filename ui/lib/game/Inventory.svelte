@@ -1,11 +1,10 @@
 <script>
-	import { iconStore } from '@rogueBoi/store.js';
+	import { iconStore, coreStore } from '@rogueBoi/store.js';
 
 	export let inventory;
-	export let core;
 
 	const useItem = (item) => {
-		core.setSelection(item.id);
+		$coreStore.setSelection(item.id);
 	};
 </script>
 

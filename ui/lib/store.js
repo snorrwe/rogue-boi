@@ -4,6 +4,7 @@ export const coreStore = writable(null);
 export const coreOutputStore = writable({});
 export const canvasStore = writable(null);
 export const iconStore = writable({});
+export const inventory = writable(null);
 
 export const fetchIcon = ({ name, src }) =>
 	fetch(src)

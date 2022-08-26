@@ -1,5 +1,5 @@
 <script>
-	import { canvasStore, coreStore, coreOutputStore } from '@rogueBoi/store.js';
+	import { canvasStore, coreStore, coreOutputStore, inventory } from '@rogueBoi/store.js';
 	import { writable } from 'svelte/store';
 	import Grid from '@rogueBoi/game/Grid.svelte';
 	import Highlight from '@rogueBoi/game/Highlight.svelte';
@@ -11,7 +11,6 @@
 
 	let selected = writable(null);
 	coreOutputStore.subscribe((c) => selected.set(c && c.selected && core.fetchEntity(c.selected)));
-	const inventory = writable(core.getInventory());
 	let last = new Date().getTime();
 
 	canvasStore.subscribe((canvas) => core.setCanvas(canvas));
@@ -59,20 +58,7 @@
 					<Highlight targetingMode={$coreOutputStore.targeting} selected={$selected} {core} />
 				{/if}
 				<div>
-					<Player
-						inventory={$inventory}
-						alive={$coreOutputStore.player != null}
-						hp={$coreOutputStore.player && $coreOutputStore.player.playerHp}
-						pos={$coreOutputStore.player && $coreOutputStore.player.playerPos}
-						attack={$coreOutputStore.player && $coreOutputStore.player.playerAttack}
-						targeting={$coreOutputStore.targeting}
-						currentXp={$coreOutputStore.player && $coreOutputStore.player.currentXp}
-						neededXp={$coreOutputStore.player && $coreOutputStore.player.neededXp}
-						level={$coreOutputStore.player && $coreOutputStore.player.level}
-						levelup={$coreOutputStore.appMode && $coreOutputStore.appMode.ty == 'Levelup'}
-                        defense={$coreOutputStore.player && $coreOutputStore.player.defense}
-						{core}
-					/>
+					<Player />
 				</div>
 			</div>
 		</div>

@@ -1,36 +1,38 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
+	import { coreOutputStore, inventory, coreStore } from '@rogueBoi/store.js';
 
 	import Inventory from './Inventory.svelte';
 	const dispatch = createEventDispatcher();
 
-	export let alive;
-	export let hp;
-	export let pos;
-	export let attack;
-	export let inventory;
-	export let core;
-	export let targeting;
-	export let currentXp;
-	export let neededXp;
-	export let level;
-	export let levelup;
-	export let defense;
+	$: ({ player, targeting, appMode } = $coreOutputStore);
+
+	$: alive = player != null;
+	$: ({
+		playerHp: hp,
+		playerPos: pos,
+		playerAttack: attack,
+		currentXp,
+		neededXp,
+		level,
+		defense
+	} = player ?? {});
+	$: levelup = appMode == 'Levelup';
 </script>
 
 <div>
 	{#if alive}
-		<Inventory {inventory} {core} on:selected={(ev) => dispatch('selected', ev.detail)} />
+		<Inventory {$inventory} on:selected={(ev) => dispatch('selected', ev.detail)} />
 
 		{#if targeting}
-			<button on:click={() => core.cancelItemUse()}>Cancel item use</button>
+			<button on:click={() => $coreStore.cancelItemUse()}>Cancel item use</button>
 		{/if}
 
 		<h2>Player stats</h2>
 		{#if hp != null}
 			<p id="player-hp">
 				{#if levelup}
-					<button on:click={() => core.setLevelupStat({ ty: 'Hp' })}>+</button>
+					<button on:click={() => $coreStore.setLevelupStat({ ty: 'Hp' })}>+</button>
 				{/if}
 				Health: {hp.current} / {hp.max}
 			</p>
@@ -38,7 +40,7 @@
 		{#if attack != null}
 			<p>
 				{#if levelup}
-					<button on:click={() => core.setLevelupStat({ ty: 'Attack' })}>+</button>
+					<button on:click={() => $coreStore.setLevelupStat({ ty: 'Attack' })}>+</button>
 				{/if}
 				Attack Power: {attack}
 			</p>
@@ -46,7 +48,7 @@
 		{#if defense != null}
 			<p>
 				{#if levelup}
-					<button on:click={() => core.setLevelupStat({ ty: 'MeleeDefense' })}>+</button>
+					<button on:click={() => $coreStore.setLevelupStat({ ty: 'MeleeDefense' })}>+</button>
 				{/if}
 				Melee Defense: {defense.meleeDefense}
 			</p>
@@ -62,12 +64,12 @@
 		{#if currentXp != null}
 			<p>Experience: {currentXp} / {neededXp}</p>
 		{/if}
-		<button on:click={() => core.wait()}>Wait</button>
+		<button on:click={() => $coreStore.wait()}>Wait</button>
 	{/if}
 
 	{#if !alive}
 		<p>You died!</p>
-		<button on:click={() => core.restart()}>Restart</button>
+		<button on:click={() => $coreStore.restart()}>Restart</button>
 	{/if}
 </div>
 
