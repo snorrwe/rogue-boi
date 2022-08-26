@@ -79,16 +79,22 @@ pub fn find_path(
         let new_neighbours: ArrayVec<_, 4> = [Vec2::X, Vec2::Y, -Vec2::X, -Vec2::Y]
             .iter()
             .map(|x| current.pos + *x)
-            .filter(|pos| {
-                grid.contains(pos.x, pos.y)
-                    && (grid[*pos].is_none() || walkies.fetch(grid[*pos].unwrap()).is_some())
+            .filter(|pos| grid.contains(pos.x, pos.y))
+            .map(move |pos| {
+                let mut cost = new_g;
+                // add additional cost for positions that have an entity on them
+                // so there is always a path to the target
+                if grid[pos].is_some() && walkies.fetch(grid[pos].unwrap()).is_none() {
+                    cost += 50;
+                }
+                (pos, cost)
             })
             // if it's a new node, or if it's cheaper than the previous visit
             // this is required because we only check the cross neighbours, so our `f` const function is inconsistent
-            .filter(|pos| gcost.get(pos).map(|cost| new_g < *cost).unwrap_or(true))
+            .filter(|(pos, new_g)| gcost.get(pos).map(|cost| new_g < cost).unwrap_or(true))
             .collect();
 
-        for neighbour in new_neighbours.into_iter() {
+        for (neighbour, new_g) in new_neighbours.into_iter() {
             came_from.insert(neighbour, current.pos);
             gcost.insert(neighbour, new_g);
             open_set.push(Node {
