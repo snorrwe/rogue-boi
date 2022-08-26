@@ -1,7 +1,7 @@
 <script>
-	import { icons, coreStore } from '@rogueBoi/store.js';
+	import { icons, coreStore, inventory as invs } from '@rogueBoi/store.js';
 
-	export let inventory;
+	$: inventory = $invs;
 
 	const useItem = (item) => {
 		$coreStore.setSelection(item.id);

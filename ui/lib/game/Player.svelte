@@ -1,9 +1,8 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
-	import { coreOutput, inventory, coreStore } from '@rogueBoi/store.js';
+	import { coreOutput, coreStore } from '@rogueBoi/store.js';
 
 	import Inventory from './Inventory.svelte';
-	const dispatch = createEventDispatcher();
+	import Equipment from './Equipment.svelte';
 
 	$: ({ player, targeting, appMode } = $coreOutput);
 
@@ -22,7 +21,8 @@
 
 <div>
 	{#if alive}
-		<Inventory {$inventory} on:selected={(ev) => dispatch('selected', ev.detail)} />
+		<Equipment />
+		<Inventory />
 
 		{#if targeting}
 			<button on:click={() => $coreStore.cancelItemUse()}>Cancel item use</button>

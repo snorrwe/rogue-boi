@@ -378,6 +378,13 @@ pub struct Equipment {
     pub armor: Option<EntityId>,
 }
 
+impl Equipment {
+    pub fn contains(&self, id: EntityId) -> bool {
+        self.weapon.map(|i| i == id).unwrap_or(false)
+            || self.armor.map(|i| i == id).unwrap_or(false)
+    }
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Defense {

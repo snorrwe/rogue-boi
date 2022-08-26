@@ -1,5 +1,5 @@
 <script>
-	import { canvasStore, coreStore, coreOutput, inventory } from '@rogueBoi/store.js';
+	import { canvasStore, coreStore, coreOutput, inventory, equipment } from '@rogueBoi/store.js';
 	import { writable } from 'svelte/store';
 	import Grid from '@rogueBoi/game/Grid.svelte';
 	import Highlight from '@rogueBoi/game/Highlight.svelte';
@@ -30,6 +30,7 @@
 
 			coreOutput.set(core.getOutput());
 			inventory.set(core.getInventory());
+			equipment.set(core.getEquipment());
 			last = now;
 			if ($selected && $selected.id) {
 				selected.set(core.fetchEntity($selected.id));

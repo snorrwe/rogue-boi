@@ -51,7 +51,7 @@
 {#if selected.equipable}
 	<button on:click={useItem(selected)}>Equip</button>
 {/if}
-{#if selected.item}
+{#if selected.item && !selected.equipped}
 	<button on:click={dropItem(selected)}>Drop</button>
 {/if}
 {#if selected.targetable && targetingMode}

@@ -313,6 +313,7 @@ pub type StuffToJsQuery<'a> = QuerySet<(
     >,
     Query<(&'a Icon, &'a Melee, &'a Hp, &'a Defense), With<PlayerTag>>,
     Query<(&'a Icon, Option<&'a Name>, Option<&'a Description>)>,
+    Query<&'a Equipment, With<PlayerTag>>,
 )>;
 
 pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValue {
@@ -378,7 +379,16 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
         | StuffTag::FireBallScroll => {
             let (icon, name, desc, ranged, heal, melee, pos, color, defense) =
                 query.q1().fetch(id).unwrap();
+
+            let equipped = query
+                .q5()
+                .iter()
+                .next()
+                .map(|eq| eq.contains(id))
+                .unwrap_or(false);
+
             let equipable = pos.is_none()
+                && !equipped
                 && matches!(
                     tag,
                     StuffTag::Dagger
@@ -386,6 +396,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                         | StuffTag::LeatherArmor
                         | StuffTag::ChainMailArmor
                 );
+
             let usable = pos.is_none()
                 && matches!(
                     tag,
@@ -405,6 +416,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                 "icon": icon.0.clone(),
                 "usable": usable,
                 "equipable": equipable,
+                "equipped": equipped,
                 "color": color.and_then(|c|c.0.as_string()),
                 "item": true,
                 "defense": defense
