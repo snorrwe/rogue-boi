@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { fetchIcon, coreStore, coreOutputStore } from '@rogueBoi/store.js';
+	import { fetchIcon, coreStore, coreOutput } from '@rogueBoi/store.js';
 	import Menu from './routes/Menu.svelte';
 	import Game from './routes/Game.svelte';
 	import Options from './routes/Options.svelte';
@@ -24,7 +24,7 @@
 			try {
 				console.log('Loading previous save');
 				core.load(saveGame);
-				coreOutputStore.set(core.getOutput());
+				coreOutput.set(core.getOutput());
 			} catch (err) {
 				console.error('Failed to load save game', err);
 				localStorage.removeItem('save');

@@ -1,5 +1,5 @@
 <script>
-	import { canvasStore, coreStore, coreOutputStore, inventory } from '@rogueBoi/store.js';
+	import { canvasStore, coreStore, coreOutput, inventory } from '@rogueBoi/store.js';
 	import { writable } from 'svelte/store';
 	import Grid from '@rogueBoi/game/Grid.svelte';
 	import Highlight from '@rogueBoi/game/Highlight.svelte';
@@ -10,7 +10,7 @@
 	coreStore.subscribe((c) => (core = c));
 
 	let selected = writable(null);
-	coreOutputStore.subscribe((c) => selected.set(c && c.selected && core.fetchEntity(c.selected)));
+	coreOutput.subscribe((c) => selected.set(c && c.selected && core.fetchEntity(c.selected)));
 	let last = new Date().getTime();
 
 	canvasStore.subscribe((canvas) => core.setCanvas(canvas));
@@ -28,7 +28,7 @@
 
 			core.tick(now - last);
 
-			coreOutputStore.set(core.getOutput());
+			coreOutput.set(core.getOutput());
 			inventory.set(core.getInventory());
 			last = now;
 			if ($selected && $selected.id) {
@@ -49,13 +49,13 @@
 				<Grid />
 			</div>
 			<div class="log">
-				<div>Dungeon floor: {$coreOutputStore.dungeonLevel}</div>
+				<div>Dungeon floor: {$coreOutput.dungeonLevel}</div>
 				<h2>Log</h2>
-				<Log log={$coreOutputStore.log} />
+				<Log log={$coreOutput.log} />
 			</div>
 			<div class="game-ui">
 				{#if $selected != null}
-					<Highlight targetingMode={$coreOutputStore.targeting} selected={$selected} {core} />
+					<Highlight targetingMode={$coreOutput.targeting} selected={$selected} {core} />
 				{/if}
 				<div>
 					<Player />

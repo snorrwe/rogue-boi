@@ -1,8 +1,8 @@
 <script>
-	import { coreOutputStore } from '@rogueBoi/store.js';
+	import { coreOutput } from '@rogueBoi/store.js';
 
 	let alive = false;
-	coreOutputStore.subscribe((c) => (alive = c && c.player != null));
+	coreOutput.subscribe((c) => (alive = c && c.player != null));
 </script>
 
 <nav class="menu">

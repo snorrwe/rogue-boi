@@ -1,5 +1,5 @@
 <script>
-	import { iconStore, coreStore } from '@rogueBoi/store.js';
+	import { icons, coreStore } from '@rogueBoi/store.js';
 
 	export let inventory;
 
@@ -14,7 +14,7 @@
 		{#each inventory ?? [] as item}
 			<li class="item" on:click={() => useItem(item)}>
 				<div title={item.description} style="--fill-color: {item.color || 'white'}">
-					{@html $iconStore[item.icon]}
+					{@html $icons[item.icon]}
 				</div>
 			</li>
 		{/each}

@@ -1,5 +1,5 @@
 <script>
-	import { iconStore } from '@rogueBoi/store.js';
+	import { icons } from '@rogueBoi/store.js';
 
 	export let selected;
 	export let core;
@@ -19,7 +19,7 @@
 </script>
 
 <div class="icon" style="--fill-color: {selected.color || 'white'}">
-	{@html $iconStore[selected.icon]}
+	{@html $icons[selected.icon]}
 </div>
 {#if selected.name}
 	<h3>

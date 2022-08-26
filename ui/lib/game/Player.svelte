@@ -1,11 +1,11 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import { coreOutputStore, inventory, coreStore } from '@rogueBoi/store.js';
+	import { coreOutput, inventory, coreStore } from '@rogueBoi/store.js';
 
 	import Inventory from './Inventory.svelte';
 	const dispatch = createEventDispatcher();
 
-	$: ({ player, targeting, appMode } = $coreOutputStore);
+	$: ({ player, targeting, appMode } = $coreOutput);
 
 	$: alive = player != null;
 	$: ({
