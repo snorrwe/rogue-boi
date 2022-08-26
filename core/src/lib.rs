@@ -272,6 +272,30 @@ impl PlayerActions {
     }
 }
 
+type ItemPropsTuple<'a> = (
+    Option<&'a Icon>,
+    Option<&'a Description>,
+    Option<&'a Name>,
+    &'a StuffTag,
+    Option<&'a Ranged>,
+    Option<&'a Color>,
+);
+type ItemPropsQ<'a> = Query<ItemPropsTuple<'a>>;
+
+fn to_item_desc(id: EntityId, i: ItemPropsTuple) -> ItemDesc {
+    let (icon, desc, name, tag, ranged, color) = i;
+    ItemDesc {
+        id,
+        color: color.and_then(|c| c.0.as_string()),
+        name: name.map(|n| n.0.clone()),
+        description: desc.map(|desc| desc.0.clone()),
+        icon: icon.map(|icon| icon.0.to_string()),
+        usable: matches!(tag, StuffTag::HpPotion | StuffTag::LightningScroll),
+        target_enemy: matches!(tag, StuffTag::LightningScroll),
+        range: ranged.map(|r| r.range).unwrap_or(0),
+    }
+}
+
 #[wasm_bindgen]
 impl Core {
     pub fn restart(&mut self) {
@@ -328,35 +352,35 @@ impl Core {
             .clone()
     }
 
+    #[wasm_bindgen(js_name = "getEquipment")]
+    pub fn get_equipment(&self) -> JsValue {
+        let world = self.world.borrow();
+        let item_props = ItemPropsQ::new(&world);
+
+        let result = match Query::<&Equipment, With<PlayerTag>>::new(&world)
+            .iter()
+            .next()
+        {
+            Some(equipment) => JsValue::from_serde(&serde_json::json!({
+                "weapon": equipment.weapon.map(|id|to_item_desc(id, item_props.fetch(id).unwrap())),
+                "armor": equipment.armor.map(|id|to_item_desc(id, item_props.fetch(id).unwrap()))
+            }))
+            .unwrap(),
+            None => JsValue::null(),
+        };
+        result
+    }
+
     #[wasm_bindgen(js_name = "getInventory")]
     pub fn get_inventory(&self) -> JsValue {
         let world = self.world.borrow();
-        let item_props = Query::<(
-            Option<&Icon>,
-            Option<&Description>,
-            Option<&Name>,
-            &StuffTag,
-            Option<&Ranged>,
-            Option<&Color>,
-        )>::new(&world);
+        let item_props = ItemPropsQ::new(&world);
         let inventory = Query::<&Inventory, With<PlayerTag>>::new(&world)
             .iter()
             .next()
             .map(|inv| {
                 inv.iter()
-                    .map(|id| {
-                        let (icon, desc, name, tag, ranged, color) = item_props.fetch(id).unwrap();
-                        ItemDesc {
-                            id,
-                            color: color.and_then(|c| c.0.as_string()),
-                            name: name.map(|n| n.0.clone()),
-                            description: desc.map(|desc| desc.0.clone()),
-                            icon: icon.map(|icon| icon.0.to_string()),
-                            usable: matches!(tag, StuffTag::HpPotion | StuffTag::LightningScroll),
-                            target_enemy: matches!(tag, StuffTag::LightningScroll),
-                            range: ranged.map(|r| r.range).unwrap_or(0),
-                        }
-                    })
+                    .map(|id| to_item_desc(id, item_props.fetch(id).unwrap()))
                     .collect::<Vec<_>>()
             });
 
