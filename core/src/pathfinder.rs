@@ -85,7 +85,7 @@ pub fn find_path(
                 // add additional cost for positions that have an entity on them
                 // so there is always a path to the target
                 if grid[pos].is_some() && walkies.fetch(grid[pos].unwrap()).is_none() {
-                    cost += 50;
+                    cost += 25;
                 }
                 (pos, cost)
             })
