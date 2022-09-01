@@ -52,13 +52,13 @@
 <main>
 	{#if core != null}
 		<div class="content">
-			<div>
-				<Grid />
-			</div>
 			<div class="log">
-				<div>Dungeon floor: {$coreOutput.dungeonLevel}</div>
 				<h2>Log</h2>
 				<Log log={$coreOutput.log} />
+			</div>
+			<div>
+				<div>Dungeon floor: {$coreOutput.dungeonLevel}</div>
+				<Grid />
 			</div>
 			<div class="game-ui">
 				{#if $selected != null}
@@ -82,7 +82,7 @@
 
 	.content {
 		display: grid;
-		grid-template-columns: 2fr repeat(2, 1fr);
+		grid-template-columns: 1fr 2fr 1fr;
 		column-gap: 2rem;
 	}
 
