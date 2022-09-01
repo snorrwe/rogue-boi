@@ -904,8 +904,13 @@ pub fn render_into_canvas(
     for y in min.y.max(0)..(max.y + 1).min(grid.height()) {
         for x in min.x.max(0)..(max.x + 1).min(grid.width()) {
             let pos = Vec2::new(x, y);
-            let visible = visible.0[pos];
             let explored = explored.0[pos];
+
+            if !explored {
+                continue;
+            }
+
+            let visible = visible.0[pos];
 
             let render_pos = pos - min;
             let render_x = render_pos.x as f64 * cell_size;
