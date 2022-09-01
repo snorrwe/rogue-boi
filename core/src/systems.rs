@@ -901,6 +901,12 @@ pub fn render_into_canvas(
     let max = camera_pos.0 + viewport.0;
     let cell_size = canvas_cell_size(width, height, viewport.0);
     let icon_scale = cell_size / 512.0;
+
+    let black = "black".into();
+    let darkgrey = "darkgrey".into();
+    let white = "white".into();
+    let yellow = "yellow".into();
+
     for y in min.y.max(0)..(max.y + 1).min(grid.height()) {
         for x in min.x.max(0)..(max.x + 1).min(grid.width()) {
             let pos = Vec2::new(x, y);
@@ -917,9 +923,9 @@ pub fn render_into_canvas(
             let render_y = render_pos.y as f64 * cell_size;
 
             if visible {
-                ctx.set_fill_style(&"yellow".into());
+                ctx.set_fill_style(&yellow);
             } else {
-                ctx.set_fill_style(&"darkgray".into());
+                ctx.set_fill_style(&darkgrey);
             }
 
             if explored {
@@ -927,9 +933,9 @@ pub fn render_into_canvas(
                     Some((_id, (tag, icon, color))) => {
                         // icon background
                         if visible {
-                            ctx.set_fill_style(&"black".into());
+                            ctx.set_fill_style(&black);
                         } else {
-                            ctx.set_fill_style(&"darkgray".into());
+                            ctx.set_fill_style(&darkgrey);
                         }
                         ctx.fill_rect(render_x, render_y, cell_size, cell_size);
                         // render icon
@@ -942,7 +948,7 @@ pub fn render_into_canvas(
                                             ctx.set_fill_style(color);
                                         }
                                         None => {
-                                            ctx.set_fill_style(&"white".into());
+                                            ctx.set_fill_style(&white);
                                         }
                                     }
                                     ctx.save();
@@ -964,7 +970,7 @@ pub fn render_into_canvas(
                     None => {
                         // empty space
                         if visible {
-                            ctx.set_fill_style(&"black".into());
+                            ctx.set_fill_style(&black);
                         }
                         ctx.fill_rect(render_x, render_y, cell_size, cell_size);
                     }
