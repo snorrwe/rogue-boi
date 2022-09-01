@@ -26,7 +26,7 @@ smallvec = "1.9.0"
 arrayvec = "0.7.2"
 lazy_static = "1.4.0"
 getrandom = { version = "0.2.7", features = ["js"] }
-thiserror = "1.0.32"
+thiserror = "1.0.33"
 serde_json = "1.0.85"
 icons = { version = "0.1.0", path = "../icons" }
 web-sys = { version = "0.3.59", features = ["CanvasRenderingContext2d", "HtmlCanvasElement", "Path2d", "DomMatrix", "MouseEvent"] }
