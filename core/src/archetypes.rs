@@ -4,35 +4,6 @@ use wasm_bindgen::JsValue;
 
 use crate::{components::*, grid::Grid, math::Vec2, Stuff};
 
-// sorted from low to high level
-// [floor number: [(tag, weight)]]
-pub const ENEMY_CHANCES: &[(u32, &[(StuffTag, i32)])] = &[
-    (0, &[(StuffTag::Orc, 80)]),
-    (3, &[(StuffTag::Troll, 15)]),
-    (5, &[(StuffTag::Troll, 30)]),
-    (7, &[(StuffTag::Troll, 60)]),
-];
-pub const ITEM_CHANCES: &[(u32, &[(StuffTag, i32)])] = &[
-    (
-        0,
-        &[
-            (StuffTag::HpPotion, 80),
-            (StuffTag::Dagger, 40),
-            (StuffTag::LeatherArmor, 40),
-        ],
-    ),
-    (
-        2,
-        &[
-            (StuffTag::ConfusionScroll, 10),
-            (StuffTag::Sword, 30),
-            (StuffTag::ChainMailArmor, 30),
-        ],
-    ),
-    (4, &[(StuffTag::LightningScroll, 25)]),
-    (6, &[(StuffTag::FireBallScroll, 25)]),
-];
-
 pub fn icon(key: &'static str) -> Icon {
     assert!(icons::ICONS.contains_key(key));
     Icon(key)

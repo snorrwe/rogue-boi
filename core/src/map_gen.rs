@@ -5,6 +5,7 @@ use std::collections::HashMap;
 
 use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
+use crate::game_config::{ENEMY_CHANCES, ITEM_CHANCES};
 use cecs::prelude::*;
 use rand::{
     prelude::{Distribution, SliceRandom},
@@ -13,7 +14,7 @@ use rand::{
 use tracing::debug;
 
 use crate::{
-    archetypes::{init_entity, ENEMY_CHANCES, ITEM_CHANCES},
+    archetypes::init_entity,
     components::{DungeonFloor, PlayerTag, Pos, StuffTag, WorldDims},
     grid::Grid,
     math::Vec2,
