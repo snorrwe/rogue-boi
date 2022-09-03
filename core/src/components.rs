@@ -133,7 +133,7 @@ pub struct Hp {
 }
 
 impl Hp {
-    pub fn new(max: i32) -> Self {
+    pub const fn new(max: i32) -> Self {
         Self { current: max, max }
     }
 
@@ -145,6 +145,12 @@ impl Hp {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Heal {
     pub hp: i32,
+}
+
+impl Heal {
+    pub const fn new(hp: i32) -> Self {
+        Self { hp }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -167,6 +173,9 @@ pub struct Leash {
 
 #[derive(Debug, Clone)]
 pub struct Color(pub JsValue);
+
+unsafe impl Send for Color {}
+unsafe impl Sync for Color {}
 
 pub struct Visible(pub Grid<bool>);
 
@@ -222,6 +231,7 @@ impl Default for DungeonFloor {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Name(pub String);
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -392,7 +402,7 @@ pub struct Defense {
 }
 
 impl Defense {
-    pub fn new(defense: i32) -> Self {
+    pub const fn new(defense: i32) -> Self {
         Self {
             melee_defense: defense,
         }

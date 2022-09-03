@@ -3,6 +3,7 @@ name = "rogue-boi-core"
 version = "0.1.0"
 authors = ["Daniel Kiss <littlesnorrboy@gmail.com>"]
 edition = "2021"
+build="build.rs"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -35,3 +36,8 @@ base64 = "0.13.0"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.32"
+
+[build-dependencies]
+calamine = "0.18.0"
+itertools = "0.10.3"
+serde = { version = "1.0.144", features = ["derive"] }

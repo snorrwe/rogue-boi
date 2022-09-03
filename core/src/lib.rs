@@ -1,6 +1,7 @@
 #![feature(let_else)]
 #![feature(let_chains)]
 
+mod game_config;
 mod archetypes;
 mod colors;
 mod components;
