@@ -187,7 +187,6 @@ fn main() {
 
     let stuff = stuff_descriptors(stuff);
 
-    // todo!("{}", stuff);
     let payload = format!("{}\n{}\n{}", enemy_weights, item_weights, stuff);
 
     fs::write(out_root.join("game_config_gen.rs"), payload).unwrap();
