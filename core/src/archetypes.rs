@@ -2,7 +2,13 @@ use cecs::prelude::*;
 use serde_json::json;
 use wasm_bindgen::JsValue;
 
-use crate::{components::*, grid::Grid, math::Vec2, Stuff};
+use crate::{
+    components::*,
+    game_config::{insert_default_components, insert_default_transient_components},
+    grid::Grid,
+    math::Vec2,
+    Stuff,
+};
 
 pub fn icon(key: &'static str) -> Icon {
     assert!(icons::ICONS.contains_key(key));
@@ -31,126 +37,47 @@ pub fn register_persistent_components(
 }
 
 fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {
+    insert_default_transient_components(cmd, tag);
     match tag {
         StuffTag::Stairs => {
-            cmd.insert_bundle((
-                icon("stairs"),
-                Name("Stairs".into()),
-                Description("Move deeper into the dungeon".to_string()),
-                NextLevel,
-                Color("white".into()),
-            ));
+            cmd.insert_bundle((NextLevel,));
         }
-        StuffTag::Tombstone => {
-            cmd.insert_bundle((icon("tombstone"), Name("Tombstone".into())));
-        }
+        StuffTag::Tombstone => {}
         StuffTag::Player => {
-            cmd.insert_bundle((
-                icon("person"),
-                PlayerTag,
-                Color("white".into()),
-                Name("Player".into()),
-            ));
+            cmd.insert_bundle((PlayerTag,));
         }
         StuffTag::Wall => {
-            cmd.insert_bundle((icon("wall"), Color("#d4dfd7".into()), StaticStuff));
+            cmd.insert_bundle((StaticStuff,));
         }
         StuffTag::Troll => {
-            cmd.insert_bundle((
-                Ai,
-                Description("Large brutish troll. Clumsy, but hits hard".to_string()),
-                PathCache::default(),
-                icon("troll"),
-                Name("Troll".into()),
-                Velocity::default(),
-            ));
+            cmd.insert_bundle((Ai, PathCache::default(), Velocity::default()));
         }
         StuffTag::Orc => {
-            cmd.insert_bundle((
-                Ai,
-                Description("Cunning, but brutal".to_string()),
-                PathCache::default(),
-                icon("orc-head"),
-                Color("#06b306".into()),
-                Name("Orc".into()),
-                Velocity::default(),
-            ));
+            cmd.insert_bundle((Ai, PathCache::default(), Velocity::default()));
         }
         StuffTag::LeatherArmor => {
-            cmd.insert_bundle((
-                icon("leather-vest"),
-                Item,
-                Description("Comfy".to_string()),
-                Name("Leather vest".into()),
-                EquipmentType::Armor,
-                Color("#00BFFF".into()),
-            ));
+            cmd.insert_bundle((Item, EquipmentType::Armor));
         }
         StuffTag::ChainMailArmor => {
-            cmd.insert_bundle((
-                icon("chain-mail"),
-                Item,
-                Description("Stronk".to_string()),
-                Name("Chain mail".into()),
-                EquipmentType::Armor,
-                Color("#00BFFF".into()),
-            ));
+            cmd.insert_bundle((Item, EquipmentType::Armor));
         }
         StuffTag::Sword => {
-            cmd.insert_bundle((
-                icon("sword"),
-                Item,
-                Description("Larger weapon".to_string()),
-                Name("Simple Sword".into()),
-                EquipmentType::Weapon,
-                Color("#00BFFF".into()),
-            ));
+            cmd.insert_bundle((Item, EquipmentType::Weapon));
         }
         StuffTag::Dagger => {
-            cmd.insert_bundle((
-                icon("dagger"),
-                Item,
-                Description("Small weapon".to_string()),
-                Name("Simple dagger".into()),
-                EquipmentType::Weapon,
-                Color("#00BFFF".into()),
-            ));
+            cmd.insert_bundle((Item, EquipmentType::Weapon));
         }
         StuffTag::HpPotion => {
-            cmd.insert_bundle((
-                icon("hp_potion"),
-                Item,
-                Description("Restores some health".to_string()),
-                Name("Health Potion".into()),
-                Color("rgb(255, 0, 127)".into()),
-            ));
+            cmd.insert_bundle((Item,));
         }
         StuffTag::LightningScroll => {
-            cmd.insert_bundle((
-                icon("scroll"),
-                Item,
-                Description(format!("Hurl a lightning bolt at your foe")),
-                Name("Lightning Bolt".to_string()),
-                Color("#fee85d".into()),
-            ));
+            cmd.insert_bundle((Item,));
         }
         StuffTag::ConfusionScroll => {
-            cmd.insert_bundle((
-                icon("scroll"),
-                Item,
-                Description(format!("Confuse the target enemy")),
-                Name("Confusion Bolt".to_string()),
-                Color("#800080".into()),
-            ));
+            cmd.insert_bundle((Item,));
         }
         StuffTag::FireBallScroll => {
-            cmd.insert_bundle((
-                icon("scroll"),
-                Item,
-                Description(format!("Hurl a fireball dealing damage in an area",)),
-                Name("Fire Ball".to_string()),
-                Color("#af0808".into()),
-            ));
+            cmd.insert_bundle((Item,));
         }
     }
 }
@@ -168,18 +95,17 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
     grid[pos] = Some(Default::default());
     cmd.insert_bundle((tag, Pos(pos)));
     insert_transient_components_for_entity(cmd, tag);
+    insert_default_components(cmd, tag);
+    // extra
     match tag {
         StuffTag::Stairs => {}
         StuffTag::Tombstone => {}
         StuffTag::Player => {
             cmd.insert_bundle((
                 LastPos(pos),
-                Hp::new(10),
                 Inventory::new(16),
-                Melee { power: 1, skill: 5 },
                 Level::default(),
                 Equipment::default(),
-                Defense::new(0),
             ));
         }
 
@@ -187,69 +113,25 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
             cmd.insert_bundle((icon("wall"), Color("#d4dfd7".into()), StaticStuff));
         }
         StuffTag::Troll => {
-            cmd.insert_bundle((
-                Hp::new(6),
-                Melee { power: 4, skill: 1 },
-                Leash {
-                    origin: pos,
-                    radius: 20,
-                },
-                Exp { amount: 100 },
-                Defense::new(4),
-            ));
+            cmd.insert_bundle((Leash {
+                origin: pos,
+                radius: 20,
+            },));
         }
         StuffTag::Orc => {
-            cmd.insert_bundle((
-                Hp::new(4),
-                Melee { power: 2, skill: 3 },
-                Leash {
-                    origin: pos,
-                    radius: 20,
-                },
-                Exp { amount: 35 },
-                Defense::new(0),
-            ));
-        }
-        StuffTag::LeatherArmor => {
-            cmd.insert_bundle((Defense { melee_defense: 1 },));
-        }
-        StuffTag::ChainMailArmor => {
-            cmd.insert_bundle((Defense { melee_defense: 3 },));
-        }
-        StuffTag::Dagger => {
-            cmd.insert_bundle((Melee { power: 2, skill: 0 },));
-        }
-        StuffTag::Sword => {
-            cmd.insert_bundle((Melee { power: 4, skill: 0 },));
-        }
-        StuffTag::HpPotion => {
-            cmd.insert_bundle((Heal { hp: 3 },));
-        }
-        StuffTag::LightningScroll => {
-            let power = 3;
-            cmd.insert_bundle((Ranged {
-                power,
-                range: 5,
-                skill: 4,
+            cmd.insert_bundle((Leash {
+                origin: pos,
+                radius: 20,
             },));
         }
-        StuffTag::ConfusionScroll => {
-            cmd.insert_bundle((Ranged {
-                power: 10,
-                range: 5,
-                skill: 4,
-            },));
-        }
-        StuffTag::FireBallScroll => {
-            cmd.insert_bundle((
-                Ranged {
-                    power: 4,
-                    range: 5,
-                    skill: 4,
-                },
-                Aoe { radius: 3 },
-            ));
-        }
+        StuffTag::LeatherArmor => {}
+        StuffTag::ChainMailArmor => {}
+        StuffTag::Dagger => {}
+        StuffTag::Sword => {}
+        StuffTag::HpPotion => {}
+        StuffTag::LightningScroll => {}
+        StuffTag::ConfusionScroll => {}
+        StuffTag::FireBallScroll => {}
     }
 }
 

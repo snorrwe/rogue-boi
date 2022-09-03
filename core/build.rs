@@ -8,8 +8,7 @@ use serde::Deserialize;
 
 fn chances_const(name: &str, groups: &mut [ChanceRow]) -> String {
     let mut payload = format!(
-        r"
-    pub const {}: &[(u32, &[(StuffTag, i32)])] = &[
+        r"pub const {}: &[(u32, &[(StuffTag, i32)])] = &[
 ",
         name
     );
@@ -45,6 +44,120 @@ pub struct ChanceRow {
     pub weight: i32,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct StuffDescription {
+    pub tag: String,
+    pub icon: String,
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub color: Option<String>,
+    pub exp: Option<u32>,
+    pub hp: Option<i32>,
+    pub melee_power: Option<i32>,
+    pub melee_skill: Option<i32>,
+    pub defense: Option<i32>,
+    pub heal: Option<i32>,
+    pub ranged_power: Option<i32>,
+    pub ranged_range: Option<i32>,
+    pub ranged_skill: Option<i32>,
+    pub aoe: Option<u32>,
+}
+
+fn optional_stuff<T>(
+    name: &str,
+    map: impl FnOnce(T) -> String,
+    value: Option<T>,
+    result: &mut String,
+) {
+    match value {
+        Some(x) => {
+            writeln!(result, "{}: Some({}),", name, map(x)).unwrap();
+        }
+        None => {
+            writeln!(result, "{}: None,", name).unwrap();
+        }
+    }
+}
+
+fn stuff_descriptors(sheet: calamine::Range<calamine::DataType>) -> String {
+    let mut iter = RangeDeserializerBuilder::new().from_range(&sheet).unwrap();
+
+    let mut body = String::with_capacity(2048);
+    while let Some(result) = iter.next() {
+        let row: StuffDescription = result.expect("Failed to deserialize row");
+
+        writeln!(body, "(StuffTag::{}, StuffPrototype {{", row.tag).unwrap();
+        writeln!(body, "icon: Icon(\"{}\"),", row.icon).unwrap();
+        optional_stuff(
+            "name",
+            |x| format!("Name(\"{}\".to_string())", x),
+            row.name,
+            &mut body,
+        );
+        optional_stuff(
+            "description",
+            |x| format!("Description(\"{}\".to_string())", x),
+            row.description,
+            &mut body,
+        );
+        optional_stuff(
+            "color",
+            |x| format!("Color(\"{}\".into())", x),
+            row.color,
+            &mut body,
+        );
+        optional_stuff(
+            "exp",
+            |x| format!("Exp{{ amount:{} }}", x),
+            row.exp,
+            &mut body,
+        );
+        optional_stuff("hp", |x| format!("Hp::new({})", x), row.hp, &mut body);
+        optional_stuff(
+            "melee",
+            |(power, skill)| format!("Melee{{ power: {}, skill: {} }}", power, skill),
+            row.melee_power
+                .and_then(|p| row.melee_skill.map(|s| (p, s))),
+            &mut body,
+        );
+        optional_stuff(
+            "defense",
+            |x| format!("Defense::new({})", x),
+            row.defense,
+            &mut body,
+        );
+        optional_stuff("heal", |x| format!("Heal::new({})", x), row.heal, &mut body);
+        optional_stuff(
+            "ranged",
+            |(p, s, r)| format!("Ranged{{ power: {}, skill: {}, range: {} }}", p, s, r),
+            row.ranged_power.and_then(|p| {
+                row.ranged_range
+                    .and_then(|r| row.ranged_skill.map(|s| (r, s)))
+                    .map(|(r, s)| (p, r, s))
+            }),
+            &mut body,
+        );
+        optional_stuff(
+            "aoe",
+            |a| format!("Aoe{{ radius: {} }}", a),
+            row.aoe,
+            &mut body,
+        );
+        writeln!(body, "}}),").unwrap();
+    }
+
+    let payload = format!(
+        r"fn stuff_list() -> Vec<(StuffTag, StuffPrototype)> {{
+        vec![
+    {}
+]
+}}",
+        body
+    );
+
+    payload
+}
+
 fn main() {
     println!("cargo:rerun-if-changed=assets/game-config.xlsx");
 
@@ -64,11 +177,18 @@ fn main() {
         .worksheet_range("item-chances")
         .expect("Failed to open item chances worksheet")
         .expect("Failed to create range for item-chances");
+    let stuff = xls
+        .worksheet_range("stuff-descriptor")
+        .expect("Failed to open stuff worksheet")
+        .expect("Failed to create range for stuff");
 
     let enemy_weights = read_weights("ENEMY_CHANCES", enemy_chances);
     let item_weights = read_weights("ITEM_CHANCES", item_chances);
 
-    let payload = format!("{}\n{}", enemy_weights, item_weights);
+    let stuff = stuff_descriptors(stuff);
 
-    fs::write(out_root.join("game_config.rs"), payload).unwrap();
+    // todo!("{}", stuff);
+    let payload = format!("{}\n{}\n{}", enemy_weights, item_weights, stuff);
+
+    fs::write(out_root.join("game_config_gen.rs"), payload).unwrap();
 }
