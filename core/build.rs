@@ -1,5 +1,6 @@
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
 use itertools::Itertools;
+use std::collections::HashMap;
 use std::fmt::Write;
 use std::fs;
 use std::{env, path::Path};
@@ -80,13 +81,19 @@ fn optional_stuff<T>(
 }
 
 fn stuff_descriptors(sheet: calamine::Range<calamine::DataType>) -> String {
-    let mut iter = RangeDeserializerBuilder::new().from_range(&sheet).unwrap();
+    let mut iter = RangeDeserializerBuilder::new()
+        .from_range(&sheet)
+        .unwrap()
+        .enumerate();
 
     let mut body = String::with_capacity(2048);
-    while let Some(result) = iter.next() {
+    let mut tags = HashMap::new();
+    while let Some((i, result)) = iter.next() {
         let row: StuffDescription = result.expect("Failed to deserialize row");
 
         writeln!(body, "(StuffTag::{}, StuffPrototype {{", row.tag).unwrap();
+        assert!(!tags.contains_key(&row.tag), "Duplicate tag: {}", row.tag);
+        tags.insert(row.tag, i);
         writeln!(body, "icon: Icon(\"{}\"),", row.icon).unwrap();
         optional_stuff(
             "name",
@@ -146,13 +153,25 @@ fn stuff_descriptors(sheet: calamine::Range<calamine::DataType>) -> String {
         writeln!(body, "}}),").unwrap();
     }
 
+    // preserve ordering of tags if possible, otherwise existing save data gets corrupted
+    let mut tags = tags.into_iter().collect::<Vec<_>>();
+    tags.sort_unstable_by_key(|(_, i)| *i);
+
     let payload = format!(
         r"fn stuff_list() -> Vec<(StuffTag, StuffPrototype)> {{
         vec![
     {}
 ]
-}}",
-        body
+}}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, serde::Serialize, serde::Deserialize, Hash)]
+#[repr(u8)]
+pub enum StuffTag {{
+    {}
+}}
+",
+        body,
+        tags.into_iter().map(|(tag, _)| tag).join(",\n")
     );
 
     payload

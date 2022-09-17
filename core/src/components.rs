@@ -9,6 +9,9 @@ use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use wasm_bindgen::JsValue;
 
+// reexport generated tags
+pub use crate::game_config::StuffTag;
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Pos(pub Vec2);
 
@@ -86,25 +89,6 @@ impl Inventory {
     pub fn iter(&self) -> impl Iterator<Item = EntityId> + '_ {
         self.items.iter().copied()
     }
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize, Hash)]
-#[repr(u8)]
-pub enum StuffTag {
-    Player,
-    Wall,
-    Troll,
-    Orc,
-    Sword,
-    HpPotion,
-    LightningScroll,
-    ConfusionScroll,
-    FireBallScroll,
-    Tombstone,
-    Stairs,
-    Dagger,
-    LeatherArmor,
-    ChainMailArmor,
 }
 
 impl StuffTag {

@@ -7,8 +7,9 @@
 
 ## Adding entity archetype
 
-- Add variant to `StuffTag`
 - Add row to `game-config.xlsx`
+- Fix compile errors
+- Test
 
 ## Adding components
 
