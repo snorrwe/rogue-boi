@@ -875,7 +875,7 @@ pub fn render_into_canvas(
     camera_pos: Res<CameraPos>,
     visible: Res<Visible>,
     explored: Res<Explored>,
-    stuff: Query<(&StuffTag, &Icon, Option<&Color>)>,
+    stuff: Query<(Option<&StaticVisibility>, &Icon, Option<&Color>)>,
     icons: Res<IconCollection>,
 ) {
     let width = res.width as f64;
@@ -923,7 +923,7 @@ pub fn render_into_canvas(
 
             if explored {
                 match grid[pos].and_then(|id| stuff.fetch(id).map(|x| (id, x))) {
-                    Some((_id, (tag, icon, color))) => {
+                    Some((_id, (static_vis_tag, icon, color))) => {
                         // icon background
                         if visible {
                             ctx.set_fill_style(&black);
@@ -932,7 +932,7 @@ pub fn render_into_canvas(
                         }
                         ctx.fill_rect(render_x, render_y, cell_size, cell_size);
                         // render icon
-                        if visible || tag.static_visiblity() {
+                        if visible || static_vis_tag.is_some() {
                             ctx.fill_rect(render_x, render_y, cell_size, cell_size);
                             match icons.0.get(icon.0) {
                                 Some(icon) => {

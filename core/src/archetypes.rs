@@ -47,7 +47,7 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
             cmd.insert_bundle((PlayerTag,));
         }
         StuffTag::Wall => {
-            cmd.insert_bundle((StaticStuff, Opaque));
+            cmd.insert_bundle((StaticStuff, Opaque, StaticVisibility));
         }
         StuffTag::Tombstone => {
             cmd.insert_bundle((StaticStuff,));
@@ -56,16 +56,16 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
             cmd.insert_bundle((Ai, PathCache::default(), Velocity::default()));
         }
         StuffTag::LeatherArmor | StuffTag::ChainMailArmor => {
-            cmd.insert_bundle((Item, EquipmentType::Armor));
+            cmd.insert_bundle((Item, EquipmentType::Armor, StaticVisibility));
         }
         StuffTag::Sword | StuffTag::Dagger => {
-            cmd.insert_bundle((Item, EquipmentType::Weapon));
+            cmd.insert_bundle((Item, EquipmentType::Weapon, StaticVisibility));
         }
         StuffTag::HpPotion
         | StuffTag::LightningScroll
         | StuffTag::ConfusionScroll
         | StuffTag::FireBallScroll => {
-            cmd.insert_bundle((Item,));
+            cmd.insert_bundle((Item, StaticVisibility));
         }
     }
 }

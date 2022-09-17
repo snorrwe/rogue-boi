@@ -91,21 +91,6 @@ impl Inventory {
     }
 }
 
-impl StuffTag {
-    /// once explored, these stuff remain visible on the screen, even when visibility is obstructed
-    pub fn static_visiblity(self) -> bool {
-        matches!(
-            self,
-            StuffTag::Wall
-                | StuffTag::Sword
-                | StuffTag::Dagger
-                | StuffTag::HpPotion
-                | StuffTag::LightningScroll
-                | StuffTag::ConfusionScroll
-        )
-    }
-}
-
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Hp {
     pub current: i32,
@@ -403,3 +388,7 @@ impl std::ops::SubAssign for Defense {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Opaque;
+
+/// once explored, these stuff remain visible on the screen, even when visibility is obstructed
+#[derive(Debug, Clone, Copy)]
+pub struct StaticVisibility;
