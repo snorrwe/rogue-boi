@@ -4,11 +4,7 @@
 	import Inventory from './Inventory.svelte';
 	import Equipment from './Equipment.svelte';
 
-	$: ({
-		player,
-		targeting,
-		appMode: { ty: appMode }
-	} = $coreOutput);
+	$: ({ player, targeting, appMode } = $coreOutput);
 
 	$: alive = player != null;
 	$: ({
@@ -20,7 +16,7 @@
 		level,
 		defense
 	} = player ?? {});
-	$: levelup = appMode == 'Levelup';
+	$: levelup = appMode && appMode.ty == 'Levelup';
 
 	function restartGame() {
 		selected.set(null);
