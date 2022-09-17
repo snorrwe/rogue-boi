@@ -1,4 +1,4 @@
-name: Build bundle
+name: Build and deploy
 on:
   push:
     branches: [main]
@@ -11,7 +11,7 @@ env:
   ITCH_GAME_ID: rogue-boi
 
 jobs:
-  build_and_deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:

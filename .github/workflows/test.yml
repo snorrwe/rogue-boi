@@ -1,0 +1,36 @@
+name: Test
+on:
+  push:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          lfs: 'true'
+      - uses: Swatinem/rust-cache@v1
+      - name: wasm-pack-action
+        uses: jetli/wasm-pack-action@v0.3.0
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2.4.1
+        with:
+          node-version: 14.x
+
+      - name: Install deps
+        run: |
+          yarn
+
+      - name: Build xtask
+        run: |
+          cargo build --bin xtask
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v4
+        with:
+          build: yarn build
+          start: yarn dev
