@@ -49,7 +49,8 @@ export default [
 			rust({
 				debug: !production,
 				verbose: true,
-				serverPath: '/build/'
+				serverPath: '/build/',
+                watchPatterns: ["src/**", "assets/**"]
 			}),
 			icons(),
 
