@@ -2,7 +2,8 @@
 	"name": "rogue-boi",
 	"version": "0.0.1",
 	"scripts": {
-		"build": "cargo xtask clean && rollup -c",
+		"build": "cargo xtask clean && rollup -c --environment BUILD:production",
+		"build:dev": "cargo xtask clean && rollup -c --environment BUILD:dev",
 		"dev": "rollup -c -w",
 		"start": "sirv public",
 		"lint": "prettier --ignore-path .gitignore --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
