@@ -1,10 +1,10 @@
 #![feature(let_else)]
 #![feature(let_chains)]
 
-mod game_config;
 mod archetypes;
 mod colors;
 mod components;
+mod game_config;
 mod grid;
 mod map_gen;
 mod math;
@@ -326,7 +326,7 @@ impl Core {
     /// return the name of the icons (without the extension!)
     pub fn icons(&self) -> JsValue {
         let entries: Vec<_> = ICONS.iter().map(|(k, _x)| k).collect();
-        JsValue::from_serde(&entries).unwrap()
+        serde_wasm_bindgen::to_value(&entries).unwrap()
     }
 
     pub fn tick(&mut self, dt_ms: i32) {
@@ -337,7 +337,7 @@ impl Core {
 
     #[wasm_bindgen(js_name = "pushEvent")]
     pub fn push_event(&mut self, event: JsValue) {
-        let event: InputEvent = event.into_serde().unwrap();
+        let event: InputEvent = serde_wasm_bindgen::from_value(event).unwrap();
         let world = self.world.borrow();
         let mut inputs = ResMut::<Vec<InputEvent>>::new(&world);
         inputs.push(event);
@@ -362,7 +362,7 @@ impl Core {
             .iter()
             .next()
         {
-            Some(equipment) => JsValue::from_serde(&serde_json::json!({
+            Some(equipment) => serde_wasm_bindgen::to_value(&serde_json::json!({
                 "weapon": equipment.weapon.map(|id|to_item_desc(id, item_props.fetch(id).unwrap())),
                 "armor": equipment.armor.map(|id|to_item_desc(id, item_props.fetch(id).unwrap()))
             }))
@@ -385,12 +385,12 @@ impl Core {
                     .collect::<Vec<_>>()
             });
 
-        JsValue::from_serde(&inventory).unwrap()
+        serde_wasm_bindgen::to_value(&inventory).unwrap()
     }
 
     #[wasm_bindgen(js_name = "useItem")]
     pub fn use_item(&mut self, id: JsValue) {
-        let id: EntityId = JsValue::into_serde(&id).unwrap();
+        let id: EntityId = serde_wasm_bindgen::from_value(id).unwrap();
         if !self.world.borrow().is_id_valid(id) {
             error!("use_item id is not valid");
             return;
@@ -404,7 +404,7 @@ impl Core {
 
     #[wasm_bindgen(js_name = "dropItem")]
     pub fn drop_item(&mut self, id: JsValue) {
-        let id: EntityId = JsValue::into_serde(&id).unwrap();
+        let id: EntityId = serde_wasm_bindgen::from_value(id).unwrap();
         if !self.world.borrow().is_id_valid(id) {
             error!("drop_item id is not valid");
             return;
@@ -445,7 +445,7 @@ impl Core {
 
     #[wasm_bindgen(js_name = "setTarget")]
     pub fn set_target(&mut self, id: JsValue) {
-        let id: EntityId = JsValue::into_serde(&id).unwrap();
+        let id: EntityId = serde_wasm_bindgen::from_value(id).unwrap();
         debug!("set_target {}", id);
         self.world
             .borrow_mut()
@@ -456,7 +456,7 @@ impl Core {
 
     #[wasm_bindgen(js_name = "setSelection")]
     pub fn set_selection(&mut self, id: JsValue) {
-        let id: EntityId = JsValue::into_serde(&id).unwrap();
+        let id: EntityId = serde_wasm_bindgen::from_value(id).unwrap();
         debug!("set_selection {}", id);
         let mut world = self.world.borrow_mut();
         if world.is_id_valid(id) {
@@ -467,7 +467,7 @@ impl Core {
 
     #[wasm_bindgen(js_name = "fetchEntity")]
     pub fn fetch_entity(&self, id: JsValue) -> JsValue {
-        let id: EntityId = JsValue::into_serde(&id).unwrap();
+        let id: EntityId = serde_wasm_bindgen::from_value(id).unwrap();
         let mut world = self.world.borrow_mut();
         if !world.is_id_valid(id) {
             return JsValue::null();
@@ -571,7 +571,7 @@ impl Core {
 
     #[wasm_bindgen(js_name = "setLevelupStat")]
     pub fn set_levelup_stat(&mut self, stat: JsValue) {
-        let stat: DesiredStat = stat.into_serde().unwrap();
+        let stat: DesiredStat = serde_wasm_bindgen::from_value(stat).unwrap();
         let mut w = self.world.borrow_mut();
         w.insert_resource(Some(stat));
     }

@@ -11,7 +11,6 @@ use crate::{
 use cecs::prelude::*;
 use rand::{prelude::SliceRandom, Rng};
 use tracing::{debug, error, info};
-use wasm_bindgen::JsValue;
 
 pub fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<PlayerActions>) {
     let mut delta = Vec2::new(0, 0);
@@ -835,7 +834,7 @@ pub fn update_output(
         selected: selected.0.clone(),
         targeting,
     };
-    output_cache.0 = JsValue::from_serde(&result).unwrap();
+    output_cache.0 = serde_wasm_bindgen::to_value(&result).unwrap();
 }
 
 pub fn should_update_player(should_tick: Res<ShouldTick>, s: Res<ShouldUpdatePlayer>) -> bool {

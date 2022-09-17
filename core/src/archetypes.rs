@@ -279,5 +279,5 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
             }}
         }
     };
-    JsValue::from_serde(&payload).unwrap()
+    serde_wasm_bindgen::to_value(&payload).unwrap()
 }
