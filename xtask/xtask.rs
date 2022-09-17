@@ -89,7 +89,7 @@ fn zip_dir(
             f.read_to_end(&mut buffer).unwrap();
             zip.write_all(&buffer).unwrap();
             buffer.clear();
-        } else if path.is_dir() && name.as_os_str().len() != 0 {
+        } else if path.is_dir() && !name.as_os_str().is_empty() {
             zip.add_directory(name.to_string_lossy(), options).unwrap();
         }
     }

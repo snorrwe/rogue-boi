@@ -191,7 +191,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                 "tag": tag,
                 "name": "The player",
                 "description": "Yourself",
-                "icon": icon.0.clone(),
+                "icon": icon.0,
                 "hp": hp,
                 "melee": melee,
                 "defense": defense
@@ -203,7 +203,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                 "id": id,
                 "tag": tag,
                 "description": "Wall",
-                "icon": icon.0.clone(),
+                "icon": icon.0,
                 "color": color.and_then(|c|c.0.as_string())
             }}
         }
@@ -212,12 +212,12 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                 query.q2().fetch(id).unwrap();
             json! {{
                 "id": id,
-                "name": name.0.clone(),
+                "name": name.0,
                 "tag": tag,
-                "ranged": ranged.clone(),
-                "melee": melee.clone(),
-                "description": description.clone(),
-                "icon": icon.0.clone(),
+                "ranged": ranged,
+                "melee": melee,
+                "description": description,
+                "icon": icon.0,
                 "hp": hp,
                 "targetable": true,
                 "color": color.and_then(|c|c.0.as_string()),
@@ -264,12 +264,12 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
             json! {{
                 "id": id,
                 "tag": tag,
-                "name": name.0.clone(),
-                "range": ranged.clone(),
-                "heal": heal.clone(),
-                "melee": melee.clone(),
-                "description": desc.0.clone(),
-                "icon": icon.0.clone(),
+                "name": name.0,
+                "range": ranged,
+                "heal": heal,
+                "melee": melee,
+                "description": desc.0,
+                "icon": icon.0,
                 "usable": usable,
                 "equipable": equipable,
                 "equipped": equipped,

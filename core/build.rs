@@ -15,7 +15,7 @@ fn chances_const(name: &str, groups: &mut [ChanceRow]) -> String {
     );
     let pl = &mut payload;
     groups.sort_unstable_by_key(|row| row.level);
-    for (level, group) in &groups.into_iter().group_by(|row| row.level) {
+    for (level, group) in &groups.iter_mut().group_by(|row| row.level) {
         writeln!(pl, "({}, &[", level).unwrap();
         for row in group {
             writeln!(pl, "(StuffTag::{}, {}),", row.tag, row.weight).unwrap();
@@ -27,10 +27,10 @@ fn chances_const(name: &str, groups: &mut [ChanceRow]) -> String {
 }
 
 fn read_weights(name: &str, sheet: calamine::Range<calamine::DataType>) -> String {
-    let mut iter = RangeDeserializerBuilder::new().from_range(&sheet).unwrap();
+    let iter = RangeDeserializerBuilder::new().from_range(&sheet).unwrap();
 
     let mut weights = Vec::with_capacity(1024);
-    while let Some(result) = iter.next() {
+    for result in iter {
         let row: ChanceRow = result.expect("Failed to deserialize row");
         weights.push(row);
     }
@@ -81,14 +81,14 @@ fn optional_stuff<T>(
 }
 
 fn stuff_descriptors(sheet: calamine::Range<calamine::DataType>) -> String {
-    let mut iter = RangeDeserializerBuilder::new()
+    let iter = RangeDeserializerBuilder::new()
         .from_range(&sheet)
         .unwrap()
         .enumerate();
 
     let mut body = String::with_capacity(2048);
     let mut tags = HashMap::new();
-    while let Some((i, result)) = iter.next() {
+    for (i, result) in iter {
         let row: StuffDescription = result.expect("Failed to deserialize row");
 
         writeln!(body, "(StuffTag::{}, StuffPrototype {{", row.tag).unwrap();

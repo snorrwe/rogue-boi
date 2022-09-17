@@ -211,7 +211,7 @@ pub fn generate_map(
                 if let Some(player_id) = player_id {
                     // update player pos
                     cmd.entity(player_id).insert(Pos(pos));
-                    grid[pos] = Some(player_id.into());
+                    grid[pos] = Some(player_id);
                 } else {
                     init_entity(pos, tag, &mut cmd, &mut grid);
                 }
@@ -250,7 +250,7 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
 
         let room = RectRoom::new(x, y, width, height);
         for r in rooms.iter() {
-            if room.touches(&r) {
+            if room.touches(r) {
                 continue 'outer;
             }
         }

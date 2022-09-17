@@ -1,5 +1,7 @@
 #![feature(let_else)]
 #![feature(let_chains)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::type_complexity)]
 
 mod archetypes;
 mod colors;
@@ -43,7 +45,7 @@ pub fn start() {
 fn compute_icons() -> IconCollection {
     let inner = icons::ICONS_SVG
         .iter()
-        .map(|(k, svg)| (*k, web_sys::Path2d::new_with_path_string(&svg).unwrap()))
+        .map(|(k, svg)| (*k, web_sys::Path2d::new_with_path_string(svg).unwrap()))
         .collect();
     IconCollection(inner)
 }
@@ -146,7 +148,7 @@ fn init_world_systems(world: &mut World) {
 }
 
 pub fn init_world(world_dims: Vec2, world: &mut World) {
-    let player_count = Query::<&(), With<PlayerTag>>::new(&world).count();
+    let player_count = Query::<&(), With<PlayerTag>>::new(world).count();
     assert_eq!(
         player_count, 0,
         "re-initializing exiting World will cause inconsistencies"

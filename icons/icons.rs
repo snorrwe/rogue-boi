@@ -11,14 +11,14 @@ lazy_static::lazy_static! {
     pub static ref ICONS: HashMap<&'static str, &'static str> = {
         svg_paths::ICON_LIST
             .iter()
-            .map(|x|*x)
+            .copied()
             .collect()
     };
 
     pub static ref ICONS_SVG: HashMap<&'static str, &'static str> = {
         svg_paths::SVG_PATHS
             .iter()
-            .map(|x|*x)
+            .copied()
             .collect()
     };
 }

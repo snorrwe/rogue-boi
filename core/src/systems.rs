@@ -153,7 +153,6 @@ pub fn update_player_item_use<'a>(
                     debug!("Confusion Bolt has no target!");
                     should_run.0 = false;
                     *app_mode = AppMode::Targeting;
-                    return;
                 }
                 Some(target_id) => {
                     debug!("Use ConfusionScroll");
@@ -233,7 +232,6 @@ pub fn update_player_item_use<'a>(
                     debug!("Lightning Bolt has no target!");
                     should_run.0 = false;
                     *app_mode = AppMode::Targeting;
-                    return;
                 }
             },
             Some(StuffTag::FireBallScroll) => match target_pos.pos {
@@ -272,7 +270,6 @@ pub fn update_player_item_use<'a>(
                     debug!("Fire Ball has no target!");
                     should_run.0 = false;
                     *app_mode = AppMode::TargetingPosition;
-                    return;
                 }
             },
             None => {
@@ -370,10 +367,11 @@ pub fn handle_player_move<'a>(
     for (power, pos) in player_q.iter_mut() {
         let pos = &mut pos.0;
         let new_pos: Vec2 = *pos + delta;
-        match grid.at(new_pos.x, new_pos.y).unwrap().and_then(|id| {
-            let stuff_id = id.into();
-            stuff_tags.fetch(stuff_id).map(|tag| (stuff_id, tag))
-        }) {
+        match grid
+            .at(new_pos.x, new_pos.y)
+            .unwrap()
+            .and_then(|id| stuff_tags.fetch(id).map(|tag| (id, tag)))
+        {
             Some((stuff_id, tag)) => match tag {
                 StuffTag::Player => unreachable!(),
                 StuffTag::Wall => {
@@ -485,7 +483,7 @@ fn set_visible(
     walk_square(-Vec2::splat(radius), Vec2::splat(radius))
         .map(|d| player_pos + d)
         .for_each(|limit| {
-            if walk_grid_on_segment(player_pos, limit, grid, &tags).is_none() {
+            if walk_grid_on_segment(player_pos, limit, grid, tags).is_none() {
                 if let Some(visible) = visible.at_mut(limit.x, limit.y) {
                     *visible = true;
                 }
@@ -831,7 +829,7 @@ pub fn update_output(
         app_mode: *app_mode,
         player,
         log,
-        selected: selected.0.clone(),
+        selected: selected.0,
         targeting,
     };
     output_cache.0 = serde_wasm_bindgen::to_value(&result).unwrap();
@@ -857,16 +855,12 @@ pub fn player_prepare(
     // if no player is found then don't update player logic
     should_update_player.0 = false;
     should_update.0 = true;
-    for _ in q.iter() {
+    if q.iter().next().is_some() {
         should_update_player.0 = true;
-        break;
     }
-    if should_update_player.0 {
-        if actions.wait() {
-            log.push(WHITE, "Waiting...");
-            should_update_player.0 = false;
-            return;
-        }
+    if should_update_player.0 && actions.wait() {
+        log.push(WHITE, "Waiting...");
+        should_update_player.0 = false;
     }
 }
 
@@ -928,7 +922,7 @@ pub fn render_into_canvas(
             }
 
             if explored {
-                match grid[pos].and_then(|id| stuff.fetch(id).map(|x| (id, x.clone()))) {
+                match grid[pos].and_then(|id| stuff.fetch(id).map(|x| (id, x))) {
                     Some((_id, (tag, icon, color))) => {
                         // icon background
                         if visible {
@@ -953,7 +947,7 @@ pub fn render_into_canvas(
                                     ctx.save();
                                     ctx.translate(render_x, render_y).unwrap();
                                     ctx.scale(icon_scale, icon_scale).unwrap();
-                                    ctx.fill_with_path_2d(&icon);
+                                    ctx.fill_with_path_2d(icon);
                                     ctx.restore();
                                 }
                                 None => {

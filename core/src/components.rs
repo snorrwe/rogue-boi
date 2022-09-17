@@ -248,7 +248,7 @@ pub struct LogHistory {
 }
 
 impl LogHistory {
-    pub fn push<'a>(&mut self, color: &str, line: impl AsRef<str>) {
+    pub fn push(&mut self, color: &str, line: impl AsRef<str>) {
         self.items.push_back(format!(
             "<span style=\"color:{}\">{}</span>",
             color,
@@ -342,7 +342,7 @@ impl Level {
 
     pub fn levelup(&mut self) {
         debug_assert!(self.current_xp >= self.experience_to_next_level());
-        self.current_xp = self.current_xp - self.experience_to_next_level();
+        self.current_xp -= self.experience_to_next_level();
         self.current_level += 1;
     }
 }

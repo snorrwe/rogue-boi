@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::{env, fs, path::Path};
 
-const ICONS: &'static [(&str, &str)] = &[
+const ICONS: &[(&str, &str)] = &[
     ("wall", "delapouite/brick-wall.svg"),
     ("troll", "skoll/troll.svg"),
     ("orc-head", "delapouite/orc-head.svg"),
