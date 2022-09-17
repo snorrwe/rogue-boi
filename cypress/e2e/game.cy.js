@@ -8,7 +8,15 @@ describe('newgame loads', () => {
 		cy.visit('/#newgame');
 		cy.url().should('include', '#game');
 		cy.get('.game-ui').should('exist');
+	});
+});
 
+describe('basic game tests', () => {
+	beforeEach(() => {
+		cy.visit('/#newgame');
+	});
+
+	it('should have player in the middle of the canvas', () => {
 		// player should be in the center
 		cy.get('canvas')
 			.should('exist')
