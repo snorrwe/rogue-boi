@@ -381,7 +381,7 @@ pub fn handle_player_move<'a>(
                     log.push(INVALID, "Can't move into wall");
                     should_run.0 = false;
                 }
-                StuffTag::Troll | StuffTag::Orc => {
+                StuffTag::Troll | StuffTag::Orc | StuffTag::Warlord => {
                     if skill_check(power.skill) {
                         let (hp, defense) = enemy_q.fetch_mut(stuff_id).expect("Enemy has no hp");
                         let damage = compute_damage(power.power, defense.melee_defense);

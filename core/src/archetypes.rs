@@ -49,10 +49,7 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
         StuffTag::Wall => {
             cmd.insert_bundle((StaticStuff,));
         }
-        StuffTag::Troll => {
-            cmd.insert_bundle((Ai, PathCache::default(), Velocity::default()));
-        }
-        StuffTag::Orc => {
+        StuffTag::Troll | StuffTag::Orc | StuffTag::Warlord => {
             cmd.insert_bundle((Ai, PathCache::default(), Velocity::default()));
         }
         StuffTag::LeatherArmor => {
@@ -122,6 +119,12 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
             cmd.insert_bundle((Leash {
                 origin: pos,
                 radius: 20,
+            },));
+        }
+        StuffTag::Warlord => {
+            cmd.insert_bundle((Leash {
+                origin: pos,
+                radius: 40,
             },));
         }
         StuffTag::LeatherArmor => {}
@@ -204,7 +207,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                 "color": color.and_then(|c|c.0.as_string())
             }}
         }
-        StuffTag::Troll | StuffTag::Orc => {
+        StuffTag::Troll | StuffTag::Orc | StuffTag::Warlord => {
             let (icon, name, ranged, melee, hp, description, color, defense) =
                 query.q2().fetch(id).unwrap();
             json! {{
