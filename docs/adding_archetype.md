@@ -7,8 +7,9 @@
 
 ## Adding entity archetype
 
-- Add row to `game-config.xlsx`
+- Add row to `game-config.xlsx` `stuff-desciptor` sheet
 - Fix compile errors
+- Add row to `enemy-chances` or `item-chances` sheet in `game-config.xlsx` to spawn the new archetype
 - Test
 
 ## Adding components
