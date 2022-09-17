@@ -46,7 +46,10 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
         StuffTag::Player => {
             cmd.insert_bundle((PlayerTag,));
         }
-        StuffTag::Wall | StuffTag::Tombstone => {
+        StuffTag::Wall => {
+            cmd.insert_bundle((StaticStuff, Opaque));
+        }
+        StuffTag::Tombstone => {
             cmd.insert_bundle((StaticStuff,));
         }
         StuffTag::Troll | StuffTag::Orc | StuffTag::Warlord | StuffTag::Goblin => {

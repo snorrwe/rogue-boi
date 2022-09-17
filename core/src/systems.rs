@@ -428,7 +428,7 @@ fn walk_grid_on_segment(
     from: Vec2,
     to: Vec2,
     grid: &Grid<Stuff>,
-    tags: &Query<&StuffTag>,
+    opaque: &Query<&(), With<Opaque>>,
 ) -> Option<Vec2> {
     let dx = to.x - from.x;
     let dy = to.y - from.y;
@@ -449,8 +449,8 @@ fn walk_grid_on_segment(
         if grid
             .at(p.x, p.y)
             .and_then(|x| x.as_ref())
-            .and_then(|id| tags.fetch(*id).filter(|tag| tag.is_opaque()))
-            .is_some()
+            .map(|id| opaque.contains(*id))
+            .unwrap_or(false)
         {
             return Some(p);
         }
@@ -474,7 +474,7 @@ fn step(p: &mut Vec2, ix: &mut f32, iy: &mut f32, nx: f32, ny: f32, sign_x: i32,
 fn set_visible(
     grid: &Grid<Stuff>,
     visible: &mut Grid<bool>,
-    tags: &Query<&StuffTag>,
+    opaque: &Query<&(), With<Opaque>>,
     player_pos: Vec2,
     radius: i32,
 ) {
@@ -483,7 +483,7 @@ fn set_visible(
     walk_square(-Vec2::splat(radius), Vec2::splat(radius))
         .map(|d| player_pos + d)
         .for_each(|limit| {
-            if walk_grid_on_segment(player_pos, limit, grid, tags).is_none() {
+            if walk_grid_on_segment(player_pos, limit, grid, opaque).is_none() {
                 if let Some(visible) = visible.at_mut(limit.x, limit.y) {
                     *visible = true;
                 }
@@ -521,15 +521,15 @@ fn flood_vizibility(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Ve
 /// recompute visible area
 pub fn update_fov(
     q: Query<&Pos, With<PlayerTag>>,
-    tags_q: Query<&StuffTag>,
     grid: Res<Grid<Stuff>>,
     mut explored: ResMut<Explored>,
     mut visible: ResMut<Visible>,
     viewport: Res<Visibility>,
+    opaque: Query<&(), With<Opaque>>,
 ) {
     let radius = viewport.0.x.max(viewport.0.y);
     if let Some(player_pos) = q.iter().next() {
-        set_visible(&grid, &mut visible.0, &tags_q, player_pos.0, radius);
+        set_visible(&grid, &mut visible.0, &opaque, player_pos.0, radius);
         visible.0[player_pos.0] = true;
         flood_vizibility(&grid, &mut visible.0, player_pos.0, radius);
         explored.0.or_eq(&visible.0);
@@ -603,7 +603,7 @@ pub fn update_ai_move<'a>(
     mut confused: Query<EntityId, (With<ConfusedAi>, With<Velocity>)>,
     mut q_vel: Query<&'a mut Velocity>,
     q_walk: Query<&Walkable>,
-    q_tag: Query<&StuffTag>,
+    opaque: Query<&(), With<Opaque>>,
 ) {
     let (Pos(player_pos), LastPos(last_player_pos)) = match q_player.iter().next() {
         Some(x) => x,
@@ -615,7 +615,7 @@ pub fn update_ai_move<'a>(
     for (id, cache, Pos(pos), leash) in melee.iter_mut() {
         let vel = q_vel.fetch_mut(id).unwrap();
         if pos.manhatten(*player_pos) > 1 {
-            if walk_grid_on_segment(*pos, *player_pos, &grid, &q_tag).is_none() {
+            if walk_grid_on_segment(*pos, *player_pos, &grid, &opaque).is_none() {
                 debug!("Player is visible, finding path");
                 cache.path.clear();
                 cache.path.push(*player_pos); // push the last pos, so entities can follow players

@@ -92,10 +92,6 @@ impl Inventory {
 }
 
 impl StuffTag {
-    pub fn is_opaque(self) -> bool {
-        matches!(self, StuffTag::Wall)
-    }
-
     /// once explored, these stuff remain visible on the screen, even when visibility is obstructed
     pub fn static_visiblity(self) -> bool {
         matches!(
@@ -404,3 +400,6 @@ impl std::ops::SubAssign for Defense {
         self.melee_defense -= rhs.melee_defense;
     }
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct Opaque;
