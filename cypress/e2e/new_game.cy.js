@@ -8,6 +8,25 @@ describe('newgame loads', () => {
 		cy.visit('/#newgame');
 		cy.url().should('include', '#game');
 		cy.get('.game-ui').should('exist');
-		cy.get('canvas').should('exist');
+
+		// player should be in the center
+		cy.get('canvas')
+			.should('exist')
+			.then((canva) => {
+				const w = canva.width();
+				const h = canva.height();
+
+				const cw = w / 2;
+				const ch = h / 2;
+
+				cy.wrap(canva).scrollIntoView().click(cw, ch);
+			});
+
+		// assert that the player has been selected
+		cy.get('.icon').should('exist');
+		cy.get('h3').contains('The player');
+		cy.get('h2').contains('Equipment');
+		cy.get('h2').contains('Inventory');
+		cy.get('h2').contains('Log');
 	});
 });
