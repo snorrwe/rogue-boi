@@ -5,6 +5,10 @@
 	export let core;
 	export let targetingMode;
 
+	$: icon = $icons[selected.icon];
+
+	console.assert(icon != null, 'Highlight icon not found', $icon);
+
 	const useItem = (item) => () => {
 		core.useItem(item.id);
 	};
@@ -19,16 +23,18 @@
 </script>
 
 <div class="icon" style="--fill-color: {selected.color || 'white'}">
-	{@html $icons[selected.icon]}
+	{@html $icon}
 </div>
 {#if selected.name}
 	<h3>
 		{selected.name}
 	</h3>
 {/if}
-<div>
-	{selected.description}
-</div>
+{#if selected.description}
+	<div>
+		{selected.description}
+	</div>
+{/if}
 {#if selected.hp}
 	<div>
 		Health: {selected.hp.current} / {selected.hp.max}
