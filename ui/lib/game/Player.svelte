@@ -4,7 +4,11 @@
 	import Inventory from './Inventory.svelte';
 	import Equipment from './Equipment.svelte';
 
-	$: ({ player, targeting, appMode } = $coreOutput);
+	$: ({
+		player,
+		targeting,
+		appMode: { ty: appMode }
+	} = $coreOutput);
 
 	$: alive = player != null;
 	$: ({
