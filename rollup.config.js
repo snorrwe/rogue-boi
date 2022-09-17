@@ -7,7 +7,8 @@ import rust from '@wasm-tool/rollup-plugin-rust';
 import alias from '@rollup/plugin-alias';
 import path from 'node:path';
 
-const production = !process.env.ROLLUP_WATCH;
+const shouldWatch = process.env.ROLLUP_WATCH;
+const production = process.env.BUILD === 'production';
 const projectRootDir = path.resolve(__dirname);
 
 export default [
@@ -50,17 +51,17 @@ export default [
 				debug: !production,
 				verbose: true,
 				serverPath: '/build/',
-                watchPatterns: ["src/**", "assets/**"]
+				watchPatterns: ['src/**', 'assets/**']
 			}),
 			icons(),
 
 			// In dev mode, call `npm run start` once
 			// the bundle has been generated
-			!production && serve(),
+			shouldWatch && serve(),
 
 			// Watch the `public` directory and refresh the
 			// browser on changes when not in production
-			!production && livereload('public'),
+			shouldWatch && livereload('public'),
 
 			// If we're building for production (npm run build
 			// instead of npm run dev), minify
