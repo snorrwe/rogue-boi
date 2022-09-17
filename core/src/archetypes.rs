@@ -43,38 +43,25 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
         StuffTag::Stairs => {
             cmd.insert_bundle((NextLevel,));
         }
-        StuffTag::Tombstone => {}
         StuffTag::Player => {
             cmd.insert_bundle((PlayerTag,));
         }
-        StuffTag::Wall => {
+        StuffTag::Wall | StuffTag::Tombstone => {
             cmd.insert_bundle((StaticStuff,));
         }
-        StuffTag::Troll | StuffTag::Orc | StuffTag::Warlord => {
+        StuffTag::Troll | StuffTag::Orc | StuffTag::Warlord | StuffTag::Goblin => {
             cmd.insert_bundle((Ai, PathCache::default(), Velocity::default()));
         }
-        StuffTag::LeatherArmor => {
+        StuffTag::LeatherArmor | StuffTag::ChainMailArmor => {
             cmd.insert_bundle((Item, EquipmentType::Armor));
         }
-        StuffTag::ChainMailArmor => {
-            cmd.insert_bundle((Item, EquipmentType::Armor));
-        }
-        StuffTag::Sword => {
+        StuffTag::Sword | StuffTag::Dagger => {
             cmd.insert_bundle((Item, EquipmentType::Weapon));
         }
-        StuffTag::Dagger => {
-            cmd.insert_bundle((Item, EquipmentType::Weapon));
-        }
-        StuffTag::HpPotion => {
-            cmd.insert_bundle((Item,));
-        }
-        StuffTag::LightningScroll => {
-            cmd.insert_bundle((Item,));
-        }
-        StuffTag::ConfusionScroll => {
-            cmd.insert_bundle((Item,));
-        }
-        StuffTag::FireBallScroll => {
+        StuffTag::HpPotion
+        | StuffTag::LightningScroll
+        | StuffTag::ConfusionScroll
+        | StuffTag::FireBallScroll => {
             cmd.insert_bundle((Item,));
         }
     }
@@ -110,13 +97,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         StuffTag::Wall => {
             cmd.insert_bundle((icon("wall"), Color("#d4dfd7".into()), StaticStuff));
         }
-        StuffTag::Troll => {
-            cmd.insert_bundle((Leash {
-                origin: pos,
-                radius: 20,
-            },));
-        }
-        StuffTag::Orc => {
+        StuffTag::Goblin | StuffTag::Troll | StuffTag::Orc => {
             cmd.insert_bundle((Leash {
                 origin: pos,
                 radius: 20,
@@ -128,14 +109,14 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 radius: 40,
             },));
         }
-        StuffTag::LeatherArmor => {}
-        StuffTag::ChainMailArmor => {}
-        StuffTag::Dagger => {}
-        StuffTag::Sword => {}
-        StuffTag::HpPotion => {}
-        StuffTag::LightningScroll => {}
-        StuffTag::ConfusionScroll => {}
-        StuffTag::FireBallScroll => {}
+        StuffTag::LeatherArmor
+        | StuffTag::ChainMailArmor
+        | StuffTag::Dagger
+        | StuffTag::Sword
+        | StuffTag::HpPotion
+        | StuffTag::LightningScroll
+        | StuffTag::ConfusionScroll
+        | StuffTag::FireBallScroll => {}
     }
 }
 
@@ -208,7 +189,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                 "color": color.and_then(|c|c.0.as_string())
             }}
         }
-        StuffTag::Troll | StuffTag::Orc | StuffTag::Warlord => {
+        StuffTag::Goblin | StuffTag::Troll | StuffTag::Orc | StuffTag::Warlord => {
             let (icon, name, ranged, melee, hp, description, color, defense) =
                 query.q2().fetch(id).unwrap();
             json! {{
