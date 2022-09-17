@@ -7,7 +7,7 @@
 
 	$: icon = $icons[selected.icon];
 
-	console.assert(icon != null, 'Highlight icon not found', $icon);
+	console.assert(icon != null, 'Highlight icon not found', icon);
 
 	const useItem = (item) => () => {
 		core.useItem(item.id);
@@ -23,7 +23,7 @@
 </script>
 
 <div class="icon" style="--fill-color: {selected.color || 'white'}">
-	{@html $icon}
+	{@html icon}
 </div>
 {#if selected.name}
 	<h3>

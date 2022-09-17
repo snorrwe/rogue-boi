@@ -1,4 +1,5 @@
 use cecs::prelude::*;
+use serde::Serialize;
 use serde_json::json;
 use wasm_bindgen::JsValue;
 
@@ -279,5 +280,6 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
             }}
         }
     };
-    serde_wasm_bindgen::to_value(&payload).unwrap()
+    let serializer = serde_wasm_bindgen::Serializer::json_compatible();
+    payload.serialize(&serializer).unwrap()
 }
