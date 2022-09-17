@@ -25,10 +25,6 @@ jobs:
         run: |
           yarn
 
-      - name: Build xtask
-        run: |
-          cargo build --bin xtask
-
       - name: Cypress run
         uses: cypress-io/github-action@v4
         with:
