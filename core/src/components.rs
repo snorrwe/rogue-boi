@@ -392,3 +392,7 @@ pub struct Opaque;
 /// once explored, these stuff remain visible on the screen, even when visibility is obstructed
 #[derive(Debug, Clone, Copy)]
 pub struct StaticVisibility;
+
+/// Mark this item for use in this tick
+#[derive(Debug, Clone, Copy)]
+pub struct UseItem;

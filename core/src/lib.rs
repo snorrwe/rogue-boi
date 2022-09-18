@@ -82,7 +82,6 @@ fn init_world_transient_resources(world_dims: Vec2, world: &mut World) {
     world.insert_resource(DeltaTime(0));
     world.insert_resource(TickInMs(120));
     world.insert_resource(AppMode::Game);
-    world.insert_resource(UseItem::default());
     world.insert_resource(TargetPos::default());
     world.insert_resource(None::<DesiredStat>);
 }
@@ -112,7 +111,8 @@ fn init_world_systems(world: &mut World) {
     world.add_stage(
         SystemStage::serial("player-update")
             .with_should_run(should_update_player)
-            .with_system(update_player_item_use)
+            .with_system(update_equipment_use)
+            .with_system(update_consumable_use)
             .with_system(handle_player_move)
             .with_system(update_player_world_interact)
             .with_system(update_camera_pos),
@@ -199,9 +199,6 @@ pub struct PlayerOutput {
     pub level: u32,
     pub defense: Defense,
 }
-
-#[derive(Default, Clone, Copy)]
-pub struct UseItem(Option<EntityId>);
 
 #[derive(Default, Clone)]
 pub struct PlayerActions {
@@ -316,7 +313,6 @@ impl Core {
         world.insert_resource(DungeonFloor::default());
 
         world.insert_resource(AppMode::Game);
-        world.insert_resource(UseItem::default());
 
         let log = world.get_resource_mut::<LogHistory>().unwrap();
         log.items.clear();
@@ -397,11 +393,8 @@ impl Core {
             error!("use_item id is not valid");
             return;
         }
-        self.world
-            .borrow_mut()
-            .get_resource_mut::<UseItem>()
-            .unwrap()
-            .0 = Some(id);
+        let mut w = self.world.borrow_mut();
+        w.set_bundle(id, (UseItem,)).unwrap();
     }
 
     #[wasm_bindgen(js_name = "dropItem")]
@@ -520,7 +513,13 @@ impl Core {
     #[wasm_bindgen(js_name = "cancelItemUse")]
     pub fn cancel_item_use(&mut self) {
         let mut world = self.world.borrow_mut();
-        world.get_resource_mut::<UseItem>().unwrap().0 = None;
+        world.run_system(
+            |mut cmd: Commands, q: Query<EntityId, With<UseItem>>| {
+                q.iter().for_each(|id| {
+                    cmd.entity(id).remove::<UseItem>();
+                });
+            },
+        );
         let mode = world.get_resource_mut::<AppMode>().unwrap();
         if matches!(*mode, AppMode::Targeting) {
             *mode = AppMode::Game;

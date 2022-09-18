@@ -6,11 +6,11 @@ use crate::{
     map_gen,
     math::{remap_f64, walk_square, Vec2},
     pathfinder::find_path,
-    InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff, UseItem,
+    InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff,
 };
 use cecs::prelude::*;
 use rand::{prelude::SliceRandom, Rng};
-use tracing::{debug, error, info};
+use tracing::{debug, info};
 
 pub fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<PlayerActions>) {
     let mut delta = Vec2::new(0, 0);
@@ -53,25 +53,14 @@ fn equip_item(id: EntityId, equipment: &mut Option<EntityId>, inventory: &mut In
     let _ = equipment.insert(id);
 }
 
-pub fn update_player_item_use<'a>(
+pub fn update_consumable_use<'a>(
     actions: Res<PlayerActions>,
     mut cmd: Commands,
-    mut player_query: Query<
-        (EntityId, &'a mut Inventory, &'a Pos, &'a mut Equipment),
-        With<PlayerTag>,
-    >,
-    stuff_tags: Query<&StuffTag>,
-    mut item_query: QuerySet<(
-        Query<&'a Ranged>,
-        Query<(&'a Ranged, &'a Aoe)>,
-        Query<&'a Heal>,
-        Query<&'a EquipmentType>,
-        Query<&'a mut Melee>,
-        Query<&'a mut Defense>,
-    )>,
+    mut player_query: Query<(EntityId, &'a mut Inventory, &'a Pos), With<PlayerTag>>,
+    q: Query<(EntityId, &StuffTag), (With<UseItem>, WithOut<EquipmentType>)>,
+
     mut should_run: ResMut<ShouldUpdateWorld>,
     mut app_mode: ResMut<AppMode>,
-    mut use_item: ResMut<UseItem>,
     mut target_query: QuerySet<(
         Query<(&'a Pos, Option<&'a mut ConfusedAi>, Option<&'a Name>)>,
         Query<(&'a Pos, &'a mut Hp, Option<&'a Name>)>,
@@ -81,63 +70,26 @@ pub fn update_player_item_use<'a>(
     target_pos: Res<TargetPos>,
     grid: Res<Grid<Stuff>>,
     mut log: ResMut<LogHistory>,
+    item_query: QuerySet<(
+        Query<&'a Ranged>,
+        Query<(&'a Ranged, &'a Aoe)>,
+        Query<&'a Heal>,
+        Query<&'a EquipmentType>,
+    )>,
 ) {
-    let Some((player_id, inventory, pos, equipment)) = player_query.iter_mut().next() else {
+    let Some((player_id, inventory, pos)) = player_query.iter_mut().next() else {
         return;
     };
-    let pos = *pos;
 
-    let mut cleanup = |id, use_item: &mut UseItem, cmd: &mut Commands| {
+    let mut cleanup = |id, cmd: &mut Commands| {
         inventory.remove(id);
         cmd.delete(id);
-        use_item.0 = None;
     };
+    for (id, tag) in q.iter() {
+        debug!("Using {}, tag: {:?}", id, tag);
 
-    if let Some(id) = use_item.0 {
-        debug!("Using item {}", id);
-        let tag = stuff_tags.fetch(id);
         match tag {
-            Some(
-                StuffTag::Sword
-                | StuffTag::Dagger
-                | StuffTag::ChainMailArmor
-                | StuffTag::LeatherArmor,
-            ) => {
-                use_item.0 = None;
-                debug!("Equipping {}, tag: {:?}", id, tag);
-                let ty = *item_query.q3().fetch(id).expect("Equipment type not found");
-                match ty {
-                    EquipmentType::Weapon => {
-                        let old_id = &mut equipment.weapon;
-
-                        // update power
-                        let new_power = *item_query.q4().fetch(id).unwrap();
-                        let old_power = old_id.and_then(|id| item_query.q4().fetch(id).copied());
-                        let player_power = item_query.q4_mut().fetch_mut(player_id).unwrap();
-                        *player_power += new_power;
-                        if let Some(old_power) = old_power {
-                            *player_power -= old_power;
-                        }
-
-                        equip_item(id, old_id, inventory);
-                    }
-                    EquipmentType::Armor => {
-                        let old_id = &mut equipment.armor;
-
-                        // update defense
-                        let new_defense = *item_query.q5().fetch(id).unwrap();
-                        let old_defense = old_id.and_then(|id| item_query.q5().fetch(id).copied());
-                        let player_defense = item_query.q5_mut().fetch_mut(player_id).unwrap();
-                        *player_defense += new_defense;
-                        if let Some(old_defense) = old_defense {
-                            *player_defense -= old_defense;
-                        }
-
-                        equip_item(id, old_id, inventory);
-                    }
-                }
-            }
-            Some(StuffTag::HpPotion) => {
+            StuffTag::HpPotion => {
                 log.push(HEAL, "Drink a health potion.");
                 let hp = target_query.q3_mut().fetch_mut(player_id).unwrap();
                 if hp.full() {
@@ -145,9 +97,9 @@ pub fn update_player_item_use<'a>(
                 }
                 let heal = item_query.q2().fetch(id).unwrap();
                 hp.current = (hp.current + heal.hp).min(hp.max);
-                cleanup(id, &mut use_item, &mut cmd);
+                cleanup(id, &mut cmd);
             }
-            Some(StuffTag::ConfusionScroll) => match actions.target() {
+            StuffTag::ConfusionScroll => match actions.target() {
                 None => {
                     log.push(WHITE, "Select a target");
                     debug!("Confusion Bolt has no target!");
@@ -191,10 +143,10 @@ pub fn update_player_item_use<'a>(
                     } else {
                         log.push(WHITE, "Confusion Bolt misses!");
                     }
-                    cleanup(id, &mut use_item, &mut cmd);
+                    cleanup(id, &mut cmd);
                 }
             },
-            Some(StuffTag::LightningScroll) => match actions.target() {
+            StuffTag::LightningScroll => match actions.target() {
                 Some(target_id) => {
                     debug!("Use lightning scroll {}", id);
                     let (target_pos, target_hp, target_name) =
@@ -225,7 +177,7 @@ pub fn update_player_item_use<'a>(
                     } else {
                         log.push(INVALID, "Lightning Bolt misses!");
                     }
-                    cleanup(id, &mut use_item, &mut cmd);
+                    cleanup(id, &mut cmd);
                 }
                 None => {
                     log.push(NEEDS_TARGET, "Select a target");
@@ -234,7 +186,7 @@ pub fn update_player_item_use<'a>(
                     *app_mode = AppMode::Targeting;
                 }
             },
-            Some(StuffTag::FireBallScroll) => match target_pos.pos {
+            StuffTag::FireBallScroll => match target_pos.pos {
                 Some(target_pos) => {
                     let (range, aoe) = item_query.q1().fetch(id).unwrap();
                     if target_pos.chebyshev(pos.0) > range.range {
@@ -263,7 +215,7 @@ pub fn update_player_item_use<'a>(
                             }
                         }
                     });
-                    cleanup(id, &mut use_item, &mut cmd)
+                    cleanup(id, &mut cmd)
                 }
                 None => {
                     log.push(NEEDS_TARGET, "Select a target position");
@@ -272,12 +224,67 @@ pub fn update_player_item_use<'a>(
                     *app_mode = AppMode::TargetingPosition;
                 }
             },
-            None => {
-                error!("Item has no stuff tag");
-                cleanup(id, &mut use_item, &mut cmd)
+            StuffTag::Stairs
+            | StuffTag::Tombstone
+            | StuffTag::Player
+            | StuffTag::Wall
+            | StuffTag::Troll
+            | StuffTag::Orc
+            | StuffTag::LeatherArmor
+            | StuffTag::ChainMailArmor
+            | StuffTag::Sword
+            | StuffTag::Dagger
+            | StuffTag::Warlord
+            | StuffTag::Goblin => {
+                // TODO: introduce a usable item tag?
+                unreachable!("Not a usable item");
             }
-            _ => {
-                unreachable!("Bad item use")
+        }
+    }
+}
+
+pub fn update_equipment_use<'a>(
+    mut cmd: Commands,
+    mut player_query: Query<(EntityId, &'a mut Inventory, &'a mut Equipment), With<PlayerTag>>,
+    q: Query<(EntityId, &EquipmentType), With<UseItem>>,
+    mut item_query: QuerySet<(Query<&'a mut Melee>, Query<&'a mut Defense>)>,
+) {
+    let Some((player_id, inventory, equipment)) = player_query.iter_mut().next() else {
+        return;
+    };
+    for (id, ty) in q.iter() {
+        debug!("Equipping {}, tag: {:?}", id, ty);
+
+        cmd.entity(id).remove::<UseItem>();
+
+        match ty {
+            EquipmentType::Weapon => {
+                let old_id = &mut equipment.weapon;
+
+                // update power
+                let new_power = *item_query.q0().fetch(id).unwrap();
+                let old_power = old_id.and_then(|id| item_query.q0().fetch(id).copied());
+                let player_power = item_query.q0_mut().fetch_mut(player_id).unwrap();
+                *player_power += new_power;
+                if let Some(old_power) = old_power {
+                    *player_power -= old_power;
+                }
+
+                equip_item(id, old_id, inventory);
+            }
+            EquipmentType::Armor => {
+                let old_id = &mut equipment.armor;
+
+                // update defense
+                let new_defense = *item_query.q1().fetch(id).unwrap();
+                let old_defense = old_id.and_then(|id| item_query.q1().fetch(id).copied());
+                let player_defense = item_query.q1_mut().fetch_mut(player_id).unwrap();
+                *player_defense += new_defense;
+                if let Some(old_defense) = old_defense {
+                    *player_defense -= old_defense;
+                }
+
+                equip_item(id, old_id, inventory);
             }
         }
     }
@@ -1039,14 +1046,14 @@ pub fn update_should_tick(
     mut time: ResMut<BounceOffTime>,
     mut should_tick: ResMut<ShouldTick>,
     actions: Res<PlayerActions>,
-    use_item: Res<UseItem>,
     tick_time: Res<TickInMs>,
     q_player: Query<&(), With<PlayerTag>>,
+    q_item_use: Query<&(), With<UseItem>>,
 ) {
     time.0 += dt.0;
     dt.0 = 0;
     should_tick.0 = !q_player.is_empty()
-        && (use_item.0.is_some() || !actions.is_empty())
+        && (!q_item_use.is_empty() || !actions.is_empty())
         && time.0 >= tick_time.0;
     if should_tick.0 {
         debug!("Running update after {} ms", time.0);
