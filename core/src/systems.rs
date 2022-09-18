@@ -286,7 +286,7 @@ pub fn update_player_item_use<'a>(
 pub fn update_player_world_interact<'a>(
     mut q_player: Query<(EntityId, &'a mut Inventory, &'a Pos), With<PlayerTag>>,
     mut cmd: Commands,
-    q_item: Query<(&StuffTag, Option<&Name>)>,
+    q_item: Query<(Option<&Item>, Option<&NextLevel>, Option<&Name>)>,
     grid: Res<Grid<Stuff>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     actions: Res<PlayerActions>,
@@ -299,42 +299,30 @@ pub fn update_player_world_interact<'a>(
     for (id, inventory, pos) in q_player.iter_mut() {
         if grid[pos.0] != Some(id) {
             let stuff_id = grid[pos.0].unwrap();
-            let (tag, name) = q_item.fetch(stuff_id).unwrap();
+            let (item_tag, next_level_tag, name) = q_item.fetch(stuff_id).unwrap();
             debug!(
                 id = tracing::field::display(stuff_id),
-                "Interacting with {:?}", tag
+                "Interacting with entity"
             );
-            match tag {
-                StuffTag::Sword
-                | StuffTag::Dagger
-                | StuffTag::HpPotion
-                | StuffTag::LightningScroll
-                | StuffTag::ConfusionScroll
-                | StuffTag::LeatherArmor
-                | StuffTag::ChainMailArmor
-                | StuffTag::FireBallScroll => {
-                    // pick up item
-                    match inventory.add(stuff_id) {
-                        Ok(_) => {
-                            cmd.entity(stuff_id).remove::<Pos>();
-                            let Name(ref name) = name.unwrap();
-                            log.push(WHITE, format!("Picked up a {}", name));
-                        }
-                        Err(err) => match err {
-                            crate::components::InventoryError::Full => {
-                                log.push(INVALID, "Inventory is full");
-                                should_run.0 = false;
-                            }
-                        },
+            if item_tag.is_some() {
+                match inventory.add(stuff_id) {
+                    Ok(_) => {
+                        cmd.entity(stuff_id).remove::<Pos>();
+                        let Name(ref name) = name.unwrap();
+                        log.push(WHITE, format!("Picked up a {}", name));
                     }
+                    Err(err) => match err {
+                        crate::components::InventoryError::Full => {
+                            log.push(INVALID, "Inventory is full");
+                            should_run.0 = false;
+                        }
+                    },
                 }
-                StuffTag::Stairs => {
-                    log.push(WHITE, "You descend the staircase");
-                    level.desired += 1;
-                }
-                _ => {
-                    debug!("Cant interact with {}", id);
-                }
+            } else if next_level_tag.is_some() {
+                log.push(WHITE, "You descend the staircase");
+                level.desired += 1;
+            } else {
+                debug!("Cant interact with {}", id);
             }
         } else {
             log.push(IMPOSSIBLE, "Nothing to do...");
