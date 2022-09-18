@@ -41,7 +41,7 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
     insert_default_transient_components(cmd, tag);
     match tag {
         StuffTag::Stairs => {
-            cmd.insert_bundle((NextLevel,));
+            cmd.insert_bundle((NextLevel, StaticVisibility));
         }
         StuffTag::Player => {
             cmd.insert_bundle((PlayerTag,));
