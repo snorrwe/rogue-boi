@@ -1,33 +1,31 @@
 <script>
-	import { icons, coreStore, equipment as equs } from '@rogueBoi/store.js';
+	import { icons, coreStore, equipment } from '@rogueBoi/store.js';
 
-	$: equipment = $equs;
+	$: armor = $equipment && $equipment.get('armor');
+	$: weapon = $equipment && $equipment.get('weapon');
 
-	const useItem = (item) => {
-		$coreStore.setSelection(item.id);
+	const selectItem = (item) => {
+		$coreStore.setSelection(item.get('id'));
 	};
 </script>
 
 <div>
 	<h2>Equipment</h2>
 	<ul>
-		{#if equipment && equipment.armor}
-			<li class="item" on:click={() => useItem(equipment.armor)}>
-				<div
-					title={equipment.armor.description}
-					style="--fill-color: {equipment.armor.color || 'white'}"
-				>
-					{@html $icons[equipment.armor.icon]}
+		{#if armor != null}
+			<li class="item" on:click={() => selectItem(armor)}>
+				<div title={armor.get('description')} style="--fill-color: {armor.get('color') || 'white'}">
+					{@html $icons[armor.get('icon')]}
 				</div>
 			</li>
 		{/if}
-		{#if equipment && equipment.weapon}
-			<li class="item" on:click={() => useItem(equipment.weapon)}>
+		{#if weapon != null}
+			<li class="item" on:click={() => selectItem(weapon)}>
 				<div
-					title={equipment.weapon.description}
-					style="--fill-color: {equipment.weapon.color || 'white'}"
+					title={weapon.get('description')}
+					style="--fill-color: {weapon.get('color') || 'white'}"
 				>
-					{@html $icons[equipment.weapon.icon]}
+					{@html $icons[weapon.get('icon')]}
 				</div>
 			</li>
 		{/if}
