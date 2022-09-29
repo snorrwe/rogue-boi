@@ -52,7 +52,11 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
         StuffTag::Tombstone => {
             cmd.insert_bundle((StaticStuff,));
         }
-        StuffTag::Troll | StuffTag::Orc | StuffTag::Warlord | StuffTag::Goblin => {
+        StuffTag::Gargoyle
+        | StuffTag::Troll
+        | StuffTag::Orc
+        | StuffTag::Warlord
+        | StuffTag::Goblin => {
             cmd.insert_bundle((Ai, PathCache::default(), Velocity::default()));
         }
         StuffTag::LeatherArmor | StuffTag::ChainMailArmor => {
@@ -100,7 +104,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         StuffTag::Wall => {
             cmd.insert_bundle((icon("wall"), Color("#d4dfd7".into()), StaticStuff));
         }
-        StuffTag::Goblin | StuffTag::Troll | StuffTag::Orc => {
+        StuffTag::Gargoyle | StuffTag::Goblin | StuffTag::Troll | StuffTag::Orc => {
             cmd.insert_bundle((Leash {
                 origin: pos,
                 radius: 20,
@@ -192,7 +196,11 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                 "color": color.and_then(|c|c.0.as_string())
             }}
         }
-        StuffTag::Goblin | StuffTag::Troll | StuffTag::Orc | StuffTag::Warlord => {
+        StuffTag::Gargoyle
+        | StuffTag::Goblin
+        | StuffTag::Troll
+        | StuffTag::Orc
+        | StuffTag::Warlord => {
             let (icon, name, ranged, melee, hp, description, color, defense) =
                 query.q2().fetch(id).unwrap();
             json! {{

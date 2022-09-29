@@ -16,6 +16,7 @@ const ICONS: &[(&str, &str)] = &[
     ("leather-vest", "lorc/leather-vest.svg"),
     ("warlord-helmet", "caro-asercion/warlord-helmet.svg"),
     ("goblin", "caro-asercion/goblin.svg"),
+    ("gargoyle", "delapouite/gargoyle.svg"),
 ];
 
 #[derive(Deserialize)]
