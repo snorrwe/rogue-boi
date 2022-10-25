@@ -80,7 +80,7 @@ fn init_world_transient_resources(world_dims: Vec2, world: &mut World) {
     world.insert_resource(BounceOffTime(0));
     world.insert_resource(ShouldTick(false));
     world.insert_resource(DeltaTime(0));
-    world.insert_resource(TickInMs(120));
+    world.insert_resource(TickInMs(100));
     world.insert_resource(AppMode::Game);
     world.insert_resource(TargetPos::default());
     world.insert_resource(None::<DesiredStat>);

@@ -15,7 +15,7 @@
 	let core;
 	coreStore.subscribe((c) => (core = c));
 
-	let last = new Date().getTime();
+	let last = performance.now();
 
 	canvasStore.subscribe((canvas) => core.setCanvas(canvas));
 
@@ -28,7 +28,7 @@
 
 	const gameLoop = () => {
 		if (core) {
-			const now = new Date().getTime();
+			const now = performance.now();
 
 			core.tick(now - last);
 

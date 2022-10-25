@@ -1056,14 +1056,14 @@ pub fn update_should_tick(
     q_item_use: Query<&(), With<UseItem>>,
 ) {
     time.0 += dt.0;
-    dt.0 = 0;
     should_tick.0 = !q_player.is_empty()
         && (!q_item_use.is_empty() || !actions.is_empty())
-        && time.0 >= tick_time.0;
+        && (time.0 >= tick_time.0 || tick_time.0.abs_diff(time.0) <= 5); // lag compensation
     if should_tick.0 {
         debug!("Running update after {} ms", time.0);
         time.0 = 0;
     }
+    dt.0 = 0;
 }
 
 pub fn handle_targeting(
