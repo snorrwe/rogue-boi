@@ -819,7 +819,7 @@ pub fn update_output(
             player_pos: pos.0,
             defense: *defense,
         });
-    let mut log = Vec::with_capacity(100);
+    let mut log = Vec::with_capacity(128);
     for line in history.items.iter() {
         log.push(line.clone());
     }
