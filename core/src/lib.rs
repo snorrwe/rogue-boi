@@ -1,4 +1,3 @@
-#![feature(let_else)]
 #![feature(let_chains)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::type_complexity)]
@@ -513,13 +512,11 @@ impl Core {
     #[wasm_bindgen(js_name = "cancelItemUse")]
     pub fn cancel_item_use(&mut self) {
         let mut world = self.world.borrow_mut();
-        world.run_system(
-            |mut cmd: Commands, q: Query<EntityId, With<UseItem>>| {
-                q.iter().for_each(|id| {
-                    cmd.entity(id).remove::<UseItem>();
-                });
-            },
-        );
+        world.run_system(|mut cmd: Commands, q: Query<EntityId, With<UseItem>>| {
+            q.iter().for_each(|id| {
+                cmd.entity(id).remove::<UseItem>();
+            });
+        });
         let mode = world.get_resource_mut::<AppMode>().unwrap();
         if matches!(*mode, AppMode::Targeting) {
             *mode = AppMode::Game;

@@ -53,28 +53,28 @@ fn equip_item(id: EntityId, equipment: &mut Option<EntityId>, inventory: &mut In
     let _ = equipment.insert(id);
 }
 
-pub fn update_consumable_use<'a>(
+pub fn update_consumable_use(
     actions: Res<PlayerActions>,
     mut cmd: Commands,
-    mut player_query: Query<(EntityId, &'a mut Inventory, &'a Pos), With<PlayerTag>>,
+    mut player_query: Query<(EntityId, &mut Inventory, &Pos), With<PlayerTag>>,
     q: Query<(EntityId, &StuffTag), (With<UseItem>, WithOut<EquipmentType>)>,
 
     mut should_run: ResMut<ShouldUpdateWorld>,
     mut app_mode: ResMut<AppMode>,
     mut target_query: QuerySet<(
-        Query<(&'a Pos, Option<&'a mut ConfusedAi>, Option<&'a Name>)>,
-        Query<(&'a Pos, &'a mut Hp, Option<&'a Name>)>,
-        Query<(&'a mut Hp, Option<&'a Name>)>,
-        Query<&'a mut Hp>,
+        Query<(&Pos, Option<&mut ConfusedAi>, Option<&Name>)>,
+        Query<(&Pos, &mut Hp, Option<&Name>)>,
+        Query<(&mut Hp, Option<&Name>)>,
+        Query<&mut Hp>,
     )>,
     target_pos: Res<TargetPos>,
     grid: Res<Grid<Stuff>>,
     mut log: ResMut<LogHistory>,
     item_query: QuerySet<(
-        Query<&'a Ranged>,
-        Query<(&'a Ranged, &'a Aoe)>,
-        Query<&'a Heal>,
-        Query<&'a EquipmentType>,
+        Query<&Ranged>,
+        Query<(&Ranged, &Aoe)>,
+        Query<&Heal>,
+        Query<&EquipmentType>,
     )>,
 ) {
     let Some((player_id, inventory, pos)) = player_query.iter_mut().next() else {
@@ -244,11 +244,11 @@ pub fn update_consumable_use<'a>(
     }
 }
 
-pub fn update_equipment_use<'a>(
+pub fn update_equipment_use(
     mut cmd: Commands,
-    mut player_query: Query<(EntityId, &'a mut Inventory, &'a mut Equipment), With<PlayerTag>>,
+    mut player_query: Query<(EntityId, &mut Inventory, &mut Equipment), With<PlayerTag>>,
     q: Query<(EntityId, &EquipmentType), With<UseItem>>,
-    mut item_query: QuerySet<(Query<&'a mut Melee>, Query<&'a mut Defense>)>,
+    mut item_query: QuerySet<(Query<&mut Melee>, Query<&mut Defense>)>,
 ) {
     let Some((player_id, inventory, equipment)) = player_query.iter_mut().next() else {
         return;
@@ -291,8 +291,8 @@ pub fn update_equipment_use<'a>(
     }
 }
 
-pub fn update_player_world_interact<'a>(
-    mut q_player: Query<(EntityId, &'a mut Inventory, &'a Pos), With<PlayerTag>>,
+pub fn update_player_world_interact(
+    mut q_player: Query<(EntityId, &mut Inventory, &Pos), With<PlayerTag>>,
     mut cmd: Commands,
     q_item: Query<(Option<&Item>, Option<&NextLevel>, Option<&Name>)>,
     grid: Res<Grid<Stuff>>,
@@ -344,11 +344,11 @@ fn compute_damage(power: i32, defense: i32) -> i32 {
     (power - defense).max(1)
 }
 
-pub fn handle_player_move<'a>(
+pub fn handle_player_move(
     actions: Res<PlayerActions>,
-    mut player_q: Query<(&'a Melee, &'a mut Pos), With<PlayerTag>>,
+    mut player_q: Query<(&Melee, &mut Pos), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
-    mut enemy_q: Query<(&'a mut Hp, &'a Defense)>,
+    mut enemy_q: Query<(&mut Hp, &Defense)>,
     mut grid: ResMut<Grid<Stuff>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     names: Query<&Name>,
@@ -557,10 +557,7 @@ pub fn update_grid(
     }
 }
 
-pub fn perform_move<'a>(
-    mut q: Query<(&'a mut Pos, &'a mut Velocity)>,
-    mut grid: ResMut<Grid<Stuff>>,
-) {
+pub fn perform_move(mut q: Query<(&mut Pos, &mut Velocity)>, mut grid: ResMut<Grid<Stuff>>) {
     for (pos, vel) in q.iter_mut() {
         if vel.0 == Vec2::ZERO {
             continue;
@@ -577,9 +574,9 @@ pub fn perform_move<'a>(
     }
 }
 
-pub fn update_confusion<'a>(
+pub fn update_confusion(
     mut cmd: Commands,
-    mut confused: Query<(EntityId, Option<&'a Name>, &'a mut ConfusedAi)>,
+    mut confused: Query<(EntityId, Option<&Name>, &mut ConfusedAi)>,
     mut log: ResMut<LogHistory>,
 ) {
     for (id, name, confusion) in confused.iter_mut() {
@@ -593,15 +590,15 @@ pub fn update_confusion<'a>(
     }
 }
 
-pub fn update_ai_move<'a>(
-    q_player: Query<(&'a Pos, &'a LastPos), (With<Pos>, With<PlayerTag>)>,
+pub fn update_ai_move(
+    q_player: Query<(&Pos, &LastPos), (With<Pos>, With<PlayerTag>)>,
     grid: Res<Grid<Stuff>>,
     mut melee: Query<
-        (EntityId, &'a mut PathCache, &'a Pos, Option<&'a Leash>),
+        (EntityId, &mut PathCache, &Pos, Option<&Leash>),
         (With<Melee>, With<Velocity>, WithOut<ConfusedAi>),
     >,
     mut confused: Query<EntityId, (With<ConfusedAi>, With<Velocity>)>,
-    mut q_vel: Query<&'a mut Velocity>,
+    mut q_vel: Query<&mut Velocity>,
     q_walk: Query<&Walkable>,
     opaque: Query<&(), With<Opaque>>,
 ) {
@@ -666,17 +663,17 @@ pub fn update_ai_move<'a>(
     }
 }
 
-pub fn update_melee_ai<'a>(
-    mut q_player: Query<(EntityId, &'a Pos, &'a Defense), (With<Hp>, With<PlayerTag>)>,
-    mut q_target: Query<(&'a mut Hp, Option<&'a Name>)>,
+pub fn update_melee_ai(
+    mut q_player: Query<(EntityId, &Pos, &Defense), (With<Hp>, With<PlayerTag>)>,
+    mut q_target: Query<(&mut Hp, Option<&Name>)>,
     mut q_enemy: Query<
         (
             EntityId,
-            Option<&'a Name>,
-            &'a Melee,
-            &'a Pos,
-            Option<&'a ConfusedAi>,
-            Option<&'a Velocity>,
+            Option<&Name>,
+            &Melee,
+            &Pos,
+            Option<&ConfusedAi>,
+            Option<&Velocity>,
         ),
         With<Ai>,
     >,
@@ -732,9 +729,9 @@ pub fn update_melee_ai<'a>(
     }
 }
 
-pub fn update_player_hp<'a>(
+pub fn update_player_hp(
     mut cmd: Commands,
-    query_player: Query<(EntityId, &'a Hp), With<PlayerTag>>,
+    query_player: Query<(EntityId, &Hp), With<PlayerTag>>,
     mut log: ResMut<LogHistory>,
 ) {
     for (player_id, hp) in query_player.iter() {
@@ -755,10 +752,10 @@ pub fn update_player_hp<'a>(
     }
 }
 
-pub fn update_ai_hp<'a>(
+pub fn update_ai_hp(
     mut cmd: Commands,
     query_hp: Query<(EntityId, &Hp, Option<&Name>, Option<&Exp>), (With<Ai>, WithOut<PlayerTag>)>,
-    mut query_player: Query<&'a mut Level, With<PlayerTag>>,
+    mut query_player: Query<&mut Level, With<PlayerTag>>,
     mut log: ResMut<LogHistory>,
 ) {
     let mut player = query_player.iter_mut().next();
@@ -1020,7 +1017,7 @@ pub fn handle_click(
     debug!("targeting entity {:?}", result);
 }
 
-pub fn record_last_pos<'a>(mut q: Query<(&'a mut LastPos, &'a Pos)>) {
+pub fn record_last_pos(mut q: Query<(&mut LastPos, &Pos)>) {
     for (last, current) in q.iter_mut() {
         last.0 = current.0
     }
@@ -1145,13 +1142,10 @@ pub fn regenerate_dungeon(mut access: WorldAccess) {
     );
 }
 
-pub fn handle_levelup<'a>(
+pub fn handle_levelup(
     mut app_mode: ResMut<AppMode>,
     mut stat: ResMut<Option<DesiredStat>>,
-    mut player_q: Query<
-        (&'a mut Hp, &'a mut Melee, &'a mut Level, &'a mut Defense),
-        With<PlayerTag>,
-    >,
+    mut player_q: Query<(&mut Hp, &mut Melee, &mut Level, &mut Defense), With<PlayerTag>>,
     mut log: ResMut<LogHistory>,
 ) {
     if let Some((hp, melee, level, defense)) = player_q.iter_mut().next() {
