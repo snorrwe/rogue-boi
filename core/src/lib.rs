@@ -310,6 +310,7 @@ impl Core {
         world.insert_resource(DeltaTime(0));
         world.insert_resource(GameTick::default());
         world.insert_resource(DungeonFloor::default());
+        world.insert_resource(Selected::default());
 
         world.insert_resource(AppMode::Game);
 
