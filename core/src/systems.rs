@@ -236,6 +236,7 @@ pub fn update_consumable_use(
             | StuffTag::Dagger
             | StuffTag::Warlord
             | StuffTag::Goblin
+            | StuffTag::Minotaur
             | StuffTag::Gargoyle => {
                 // TODO: introduce a usable item tag?
                 unreachable!("Not a usable item");
@@ -378,7 +379,8 @@ pub fn handle_player_move(
                 | StuffTag::Goblin
                 | StuffTag::Troll
                 | StuffTag::Orc
-                | StuffTag::Warlord => {
+                | StuffTag::Warlord
+                | StuffTag::Minotaur => {
                     if skill_check(power.skill) {
                         let (hp, defense) = enemy_q.fetch_mut(stuff_id).expect("Enemy has no hp");
                         let damage = compute_damage(power.power, defense.melee_defense);
