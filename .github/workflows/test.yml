@@ -16,6 +16,9 @@ jobs:
       - uses: Swatinem/rust-cache@v1
       - name: wasm-pack-action
         uses: jetli/wasm-pack-action@v0.3.0
+      - uses: actions-rs/install@v0.1
+        with:
+          crate: rsw
       - name: Setup Node.js environment
         uses: actions/setup-node@v2.4.1
         with:
