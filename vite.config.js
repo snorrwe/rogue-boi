@@ -21,5 +21,12 @@ export default defineConfig({
 			include: ['ui/**/*svelte'],
 			emitCss: false
 		})
-	]
+	],
+	experimental: {
+		renderBuiltUrl(filename) {
+			// get rid of all prefixes
+            // base: '' will insert the relative prefix ./
+			return filename;
+		}
+	}
 });
