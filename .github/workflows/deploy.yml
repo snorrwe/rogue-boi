@@ -36,7 +36,7 @@ jobs:
 
       - name: Build
         run: |
-          yarn build
+          yarn bundle
 
       - uses: KikimoraGames/itch-publish@v0.0.3
         with:

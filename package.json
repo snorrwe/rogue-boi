@@ -2,7 +2,8 @@
 	"name": "rogue-boi",
 	"version": "0.0.1",
 	"scripts": {
-		"build": "rsw build && vite build",
+		"build": "cargo xtask clean && rsw build && vite build",
+        "bundle": "yarn build && cargo xtask bundle",
 		"dev": "rsw watch & vite",
 		"lint": "prettier --ignore-path .gitignore --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
 		"format": "prettier --ignore-path .gitignore --write --plugin-search-dir=. .",
