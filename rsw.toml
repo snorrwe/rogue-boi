@@ -1,0 +1,59 @@
+name = "rsw"
+version = "0.1.0"
+
+#! time interval for file changes to trigger wasm-pack build, default `50` milliseconds
+interval = 150
+
+#! link
+#! npm link @see https://docs.npmjs.com/cli/v8/commands/npm-link
+#! yarn link @see https://classic.yarnpkg.com/en/docs/cli/link
+#! pnpm link @see https://pnpm.io/cli/link
+#! The link command will only be executed if `[[crates]] link = true`
+#! cli: `npm` | `yarn` | `pnpm`, default is `npm`
+cli = "yarn"
+
+#! ---------------------------
+
+#! rsw new <name>
+[new]
+#! @see https://rustwasm.github.io/docs/wasm-pack/commands/new.html
+using = "wasm-pack"
+
+#! ################# NPM Package #################
+
+#! When there is only `name`, other fields will use the default configuration
+#! -------- package: rsw-hello --------
+[[crates]]
+#! npm package name
+name = "rogue-boi-core"
+#! run `npm link`: `true` | `false`, default is `false`
+link = true
+root = "."
+target = "web"
+
+#! =======================================================
+
+#! -------- package: @rsw/hello --------
+# [[crates]]
+# #! npm package name
+# name = "@rsw/hello"
+# #! default is `.`
+# root = "."
+# #! default is `pkg`
+# out-dir = "pkg"
+# #! target: bundler | nodejs | web | no-modules, default is `web`
+# target = "web"
+#! run `npm link`: `true` | `false`, default is `false`
+# link = false
+# #! rsw watch
+# [crates.watch]
+# #! default is `true`
+# run = true
+# #! profile: `dev` | `profiling`, default is `dev`
+# profile = "dev"
+# #! rsw build
+# [crates.build]
+# #! default is `true`
+# run = true
+# #! profile: `release` | `profiling`, default is `release`
+# profile = "release"

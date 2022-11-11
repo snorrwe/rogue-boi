@@ -13,6 +13,7 @@ The game is available on [itch.io](https://snorrwe.itch.io/rogue-boi).
 - [nodejs](https://nodejs.org/en/)
 - yarn `npm install -g yarn`
 - Run `yarn`
+- [rws-rs](https://github.com/rwasm/rsw-rs) `cargo install rsw`
 
 ### Run
 

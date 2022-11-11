@@ -10,3 +10,5 @@ public/**/*zip
 
 bundle.zip
 target
+dist
+.rsw

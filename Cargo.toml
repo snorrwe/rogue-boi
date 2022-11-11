@@ -1,5 +1,5 @@
 [workspace]
-members=["core", "xtask", "icons"]
+members=["rogue-boi-core", "xtask", "icons"]
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
