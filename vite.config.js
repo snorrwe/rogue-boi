@@ -4,6 +4,7 @@ import { ViteRsw } from 'vite-plugin-rsw';
 import path from 'path';
 
 export default defineConfig({
+	base: '',
 	appType: 'spa',
 	resolve: {
 		alias: {
