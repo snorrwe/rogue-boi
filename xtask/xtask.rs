@@ -55,7 +55,7 @@ fn main() {
             std::fs::remove_dir_all(root.join("public/icons")).unwrap_or_default();
         }
         Commands::Bundle => {
-            let src_dir = root.join("public");
+            let src_dir = root.join("dist");
             let dst_file = root.join("bundle.zip");
 
             let file = File::create(dst_file).unwrap();
