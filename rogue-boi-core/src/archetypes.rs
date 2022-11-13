@@ -67,12 +67,17 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
         StuffTag::Sword | StuffTag::Dagger => {
             cmd.insert_bundle((Item, EquipmentType::Weapon, StaticVisibility));
         }
-        StuffTag::HpPotion
-        | StuffTag::PoisonScroll
-        | StuffTag::LightningScroll
-        | StuffTag::ConfusionScroll
-        | StuffTag::FireBallScroll => {
+        StuffTag::HpPotion => {
             cmd.insert_bundle((Item, StaticVisibility));
+        }
+        StuffTag::FireBallScroll => {
+            cmd.insert_bundle((Item, StaticVisibility, NeedsTargetPosition));
+        }
+        StuffTag::ConfusionScroll | StuffTag::LightningScroll => {
+            cmd.insert_bundle((Item, StaticVisibility, NeedsTargetEntity));
+        }
+        StuffTag::PoisonScroll => {
+            cmd.insert_bundle((Item, StaticVisibility, NeedsTargetEntity, PoisionAttack));
         }
     }
 }
@@ -120,13 +125,13 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
             },));
         }
         StuffTag::LeatherArmor
+        | StuffTag::PoisonScroll
         | StuffTag::ChainMailArmor
         | StuffTag::Dagger
         | StuffTag::Sword
         | StuffTag::HpPotion
         | StuffTag::LightningScroll
         | StuffTag::ConfusionScroll
-        | StuffTag::PoisonScroll
         | StuffTag::FireBallScroll => {}
     }
 }

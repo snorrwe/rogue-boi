@@ -68,243 +68,270 @@ pub fn clear_consumable(
     }
 }
 
-pub fn update_consumable_use(
-    actions: Res<PlayerActions>,
+pub fn use_poison_scroll(
     mut cmd: Commands,
-    mut player_query: Query<(EntityId, &Pos), With<PlayerTag>>,
-    q: Query<(EntityId, &StuffTag), (With<UseItem>, WithOut<EquipmentType>)>,
-    mut should_run: ResMut<ShouldUpdateWorld>,
-    mut app_mode: ResMut<AppMode>,
-    mut target_query: QuerySet<(
-        Query<(&Pos, Option<&mut ConfusedAi>, Option<&Name>)>,
-        Query<(&Pos, &mut Hp, Option<&Name>)>,
-        Query<(&mut Hp, Option<&Name>)>,
-        Query<&mut Hp>,
-        Query<(&Pos, Option<&mut Poisoned>, Option<&Name>)>,
-    )>,
-    target_pos: Res<TargetPos>,
-    grid: Res<Grid<Stuff>>,
+    mut target_query: Query<(Option<&mut Poisoned>, Option<&Name>)>,
+    item_query: Query<(EntityId, &Ranged, &Targeting), With<MarkConsume>>,
     mut log: ResMut<LogHistory>,
-    item_query: QuerySet<(
-        Query<&Ranged>,
-        Query<(&Ranged, &Aoe)>,
-        Query<&Heal>,
-        Query<&EquipmentType>,
-    )>,
+    mut should_run: ResMut<ShouldUpdateWorld>,
 ) {
-    let Some((player_id, pos)) = player_query.iter_mut().next() else {
+    for (item_id, range, Targeting(target_id)) in item_query.iter() {
+        let target_id = *target_id;
+        debug!("Use PoisonScroll");
+        let Some((target_poison, target_name)) = target_query.fetch_mut(target_id) else {
+                log.push(IMPOSSIBLE, "Invalid target");
+                should_run.0 = false;
+                return;
+        };
+
+        if skill_check(range.skill) {
+            // TODO: config duration
+            let duration = 5;
+            debug!("Poision Bolt hits {} for {} turns!", target_id, duration);
+            if let Some(poision) = target_poison {
+                poision.duration += duration;
+            } else {
+                cmd.entity(target_id).insert(Poisoned {
+                    duration,
+                    power: range.power,
+                });
+            }
+            if let Some(Name(name)) = target_name {
+                log.push(WHITE, &format!("{} suffers from poison!", name));
+            }
+        } else {
+            log.push(WHITE, "Poison Bolt misses!");
+        }
+        cmd.entity(item_id).insert(ClearInventoryItem);
+    }
+}
+
+pub fn use_hp_potion(
+    mut cmd: Commands,
+    mut player_query: Query<&mut Hp, With<PlayerTag>>,
+    item_query: Query<(EntityId, &Heal), With<MarkConsume>>,
+    mut log: ResMut<LogHistory>,
+) {
+    let Some(hp) = player_query.iter_mut().next() else {
         return;
     };
 
-    for (id, tag) in q.iter() {
-        debug!("Using {}, tag: {:?}", id, tag);
+    for (id, heal) in item_query.iter() {
+        debug!("Use hp potion");
+        log.push(HEAL, "Drink a health potion.");
+        if hp.full() {
+            log.push(INVALID, "The potion has no effect");
+        }
+        hp.current = (hp.current + heal.hp).min(hp.max);
+        cmd.entity(id).insert(ClearInventoryItem);
+    }
+}
 
-        match tag {
-            StuffTag::HpPotion => {
-                log.push(HEAL, "Drink a health potion.");
-                let hp = target_query.q3_mut().fetch_mut(player_id).unwrap();
-                if hp.full() {
-                    log.push(INVALID, "The potion has no effect");
-                }
-                let heal = item_query.q2().fetch(id).unwrap();
-                hp.current = (hp.current + heal.hp).min(hp.max);
-                cmd.entity(id).insert(ClearInventoryItem);
+pub fn use_confusion_scroll(
+    mut cmd: Commands,
+    item_query: Query<(EntityId, &Ranged, &Targeting), With<MarkConsume>>,
+    mut target_query: Query<(Option<&mut ConfusedAi>, Option<&Name>)>,
+    mut log: ResMut<LogHistory>,
+    mut should_run: ResMut<ShouldUpdateWorld>,
+) {
+    for (item_id, range, target) in item_query.iter() {
+        let target_id = target.0;
+        debug!("Use ConfusionScroll");
+        let Some((target_confusion, target_name)) = target_query.fetch_mut(target_id) else {
+            log.push(IMPOSSIBLE, "Invalid target");
+            should_run.0 = false;
+            return;
+        };
+        if skill_check(range.skill) {
+            let duration = range.power;
+            debug!("Confusion Bolt hits {} for {} turns!", target_id, duration);
+            if let Some(confusion) = target_confusion {
+                confusion.duration += duration;
+            } else {
+                cmd.entity(target_id).insert(ConfusedAi { duration });
             }
-            StuffTag::ConfusionScroll => match actions.target() {
-                None => {
-                    log.push(WHITE, "Select a target");
-                    debug!("Confusion Bolt has no target!");
-                    should_run.0 = false;
-                    *app_mode = AppMode::Targeting;
-                }
-                Some(target_id) => {
-                    debug!("Use ConfusionScroll");
-                    let (target_pos, target_confusion, target_name) =
-                        match target_query.q0_mut().fetch_mut(target_id) {
-                            Some(x) => x,
-                            None => {
-                                log.push(IMPOSSIBLE, "Invalid target");
-                                should_run.0 = false;
-                                return;
-                            }
-                        };
-                    let range = item_query.q0().fetch(id).unwrap();
-                    if target_pos.0.chebyshev(pos.0) > range.range {
-                        log.push(IMPOSSIBLE, "Target is too far away");
-                        should_run.0 = false;
-                        return;
-                    }
-                    if skill_check(range.skill) {
-                        let duration = range.power;
-                        debug!("Confusion Bolt hits {} for {} turns!", target_id, duration);
-                        if let Some(confusion) = target_confusion {
-                            confusion.duration += duration;
-                        } else {
-                            cmd.entity(target_id).insert(ConfusedAi { duration });
-                        }
-                        if let Some(Name(name)) = target_name {
-                            log.push(
-                                WHITE,
-                                &format!(
-                                "The eyes of the {} look vacant, as it starts to stumble around!",
-                                name
-                            ),
-                            );
-                        }
-                    } else {
-                        log.push(WHITE, "Confusion Bolt misses!");
-                    }
-                    cmd.entity(id).insert(ClearInventoryItem);
-                }
-            },
-            StuffTag::LightningScroll => match actions.target() {
-                Some(target_id) => {
-                    debug!("Use lightning scroll {}", id);
-                    let (target_pos, target_hp, target_name) =
-                        match target_query.q1_mut().fetch_mut(target_id) {
-                            Some(x) => x,
-                            None => {
-                                log.push(INVALID, "Invalid target");
-                                should_run.0 = false;
-                                return;
-                            }
-                        };
-                    let range = item_query.q0().fetch(id).unwrap();
-                    if target_pos.0.chebyshev(pos.0) > range.range {
-                        log.push(INVALID, "Target is too far away");
-                        should_run.0 = false;
-                        return;
-                    }
-                    if skill_check(range.skill) {
-                        let dmg = range.power;
-                        target_hp.current -= dmg;
-                        debug!("Lightning Bolt hits {} for {} damage!", target_id, dmg);
-                        if let Some(Name(name)) = target_name {
-                            log.push(
-                                WHITE,
-                                &format!("Lightning Bolt hits {} for {} damage!", name, dmg),
-                            );
-                        }
-                    } else {
-                        log.push(INVALID, "Lightning Bolt misses!");
-                    }
-                    cmd.entity(id).insert(ClearInventoryItem);
-                }
-                None => {
-                    log.push(NEEDS_TARGET, "Select a target");
-                    debug!("Lightning Bolt has no target!");
-                    should_run.0 = false;
-                    *app_mode = AppMode::Targeting;
-                }
-            },
-            StuffTag::FireBallScroll => match target_pos.pos {
-                Some(target_pos) => {
-                    let (range, aoe) = item_query.q1().fetch(id).unwrap();
-                    if target_pos.chebyshev(pos.0) > range.range {
-                        log.push(INVALID, "Target is too far away. Try again");
-                        *app_mode = AppMode::TargetingPosition;
-                        should_run.0 = false;
-                        return;
-                    }
-                    log.push(PLAYER_ATTACK, format!("Hurl a fire ball at {}", target_pos));
-                    let radius = Vec2::splat(aoe.radius as i32);
-                    let power = range.power;
-                    grid.scan_range([target_pos - radius, target_pos + radius], |_pos, id| {
-                        if let Some(id) = id {
-                            if let Some((hp, name)) = target_query.q2_mut().fetch_mut(*id) {
-                                // TODO skill check?
-                                hp.current -= power;
-                                if let Some(Name(ref name)) = name {
-                                    log.push(
-                                        PLAYER_ATTACK,
-                                        format!(
-                                            "{} is engulfed in a fiery explosion, taking {} damage",
-                                            name, power
-                                        ),
-                                    );
-                                }
-                            }
-                        }
-                    });
-                    cmd.entity(id).insert(ClearInventoryItem);
-                }
-                None => {
-                    log.push(NEEDS_TARGET, "Select a target position");
-                    debug!("Fire Ball has no target!");
-                    should_run.0 = false;
-                    *app_mode = AppMode::TargetingPosition;
-                }
-            },
-            StuffTag::PoisonScroll => match actions.target() {
-                None => {
-                    log.push(WHITE, "Select a target");
-                    debug!("Confusion Bolt has no target!");
-                    should_run.0 = false;
-                    *app_mode = AppMode::Targeting;
-                }
-                Some(target_id) => {
-                    debug!("Use PoisonScroll");
-                    let (target_pos, target_poison, target_name) =
-                        match target_query.q4_mut().fetch_mut(target_id) {
-                            Some(x) => x,
-                            None => {
-                                log.push(IMPOSSIBLE, "Invalid target");
-                                should_run.0 = false;
-                                return;
-                            }
-                        };
-                    let range = item_query.q0().fetch(id).unwrap();
-                    if target_pos.0.chebyshev(pos.0) > range.range {
-                        log.push(IMPOSSIBLE, "Target is too far away");
-                        should_run.0 = false;
-                        return;
-                    }
+            if let Some(Name(name)) = target_name {
+                log.push(
+                    WHITE,
+                    &format!(
+                        "The eyes of the {} look vacant, as it starts to stumble around!",
+                        name
+                    ),
+                );
+            }
+        } else {
+            log.push(WHITE, "Confusion Bolt misses!");
+        }
+        cmd.entity(item_id).insert(ClearInventoryItem);
+    }
+}
 
-                    let range = item_query.q0().fetch(id).unwrap();
-                    if target_pos.0.chebyshev(pos.0) > range.range {
+pub fn use_lightning_scroll(
+    mut cmd: Commands,
+    item_query: Query<(EntityId, &Ranged, &Targeting), With<MarkConsume>>,
+    mut target_query: Query<(&mut Hp, Option<&Name>)>,
+    mut log: ResMut<LogHistory>,
+    mut should_run: ResMut<ShouldUpdateWorld>,
+) {
+    for (item_id, range, target) in item_query.iter() {
+        let target_id = target.0;
+        debug!("Use lightning scroll {}", item_id);
+        let (target_hp, target_name) = match target_query.fetch_mut(target_id) {
+            Some(x) => x,
+            None => {
+                log.push(INVALID, "Invalid target");
+                should_run.0 = false;
+                return;
+            }
+        };
+        if skill_check(range.skill) {
+            let dmg = range.power;
+            target_hp.current -= dmg;
+            debug!("Lightning Bolt hits {} for {} damage!", target_id, dmg);
+            if let Some(Name(name)) = target_name {
+                log.push(
+                    WHITE,
+                    &format!("Lightning Bolt hits {} for {} damage!", name, dmg),
+                );
+            }
+        } else {
+            log.push(INVALID, "Lightning Bolt misses!");
+        }
+        cmd.entity(item_id).insert(ClearInventoryItem);
+    }
+}
+
+pub fn update_aoe_item_use(
+    mut cmd: Commands,
+    item_query: Query<(EntityId, &Ranged, &Aoe, &TargetingPos), With<MarkConsume>>,
+    mut target_query: Query<(&mut Hp, Option<&Name>)>,
+    mut log: ResMut<LogHistory>,
+    mut should_run: ResMut<ShouldUpdateWorld>,
+    mut app_mode: ResMut<AppMode>,
+    grid: Res<Grid<Stuff>>,
+) {
+    for (item_id, range, aoe, target_pos) in item_query.iter() {
+        if target_pos.src.chebyshev(target_pos.dst) > range.range {
+            log.push(INVALID, "Target is too far away. Try again");
+            *app_mode = AppMode::TargetingPosition;
+            should_run.0 = false;
+            return;
+        }
+        // TODO: put the log line as component
+        log.push(
+            PLAYER_ATTACK,
+            format!("Hurl a fire ball at {}", target_pos.dst),
+        );
+        let radius = Vec2::splat(aoe.radius as i32);
+        let power = range.power;
+        grid.scan_range(
+            [target_pos.dst - radius, target_pos.dst + radius],
+            |_pos, id| {
+                if let Some(id) = id {
+                    if let Some((hp, name)) = target_query.fetch_mut(*id) {
+                        // TODO skill check?
+                        hp.current -= power;
+                        if let Some(Name(ref name)) = name {
+                            // TODO: put the log line as component
+                            // or maybe polymorphic system?
+                            log.push(
+                                PLAYER_ATTACK,
+                                format!(
+                                    "{} is engulfed in a fiery explosion, taking {} damage",
+                                    name, power
+                                ),
+                            );
+                        }
+                    }
+                }
+            },
+        );
+        cmd.entity(item_id).insert(ClearInventoryItem);
+    }
+}
+
+pub fn update_consumable_use(
+    actions: Res<PlayerActions>,
+    mut cmd: Commands,
+    mut player_query: Query<&Pos, With<PlayerTag>>,
+    q: QuerySet<(
+        Query<(EntityId, Option<&Ranged>), (With<UseItem>, With<NeedsTargetEntity>)>,
+        Query<(EntityId, &Ranged), (With<UseItem>, With<NeedsTargetPosition>)>,
+        Query<
+            EntityId,
+            (
+                With<UseItem>,
+                WithOut<EquipmentType>,
+                WithOut<NeedsTargetPosition>,
+                WithOut<NeedsTargetEntity>,
+            ),
+        >,
+    )>,
+    mut should_run: ResMut<ShouldUpdateWorld>,
+    mut app_mode: ResMut<AppMode>,
+    target_query: Query<&Pos>,
+    target_pos: Res<TargetPos>,
+    mut log: ResMut<LogHistory>,
+) {
+    let Some(player_pos) = player_query.iter_mut().next() else {
+        return;
+    };
+
+    for (id, range) in q.q0().iter() {
+        match actions.target() {
+            None => {
+                log.push(WHITE, "Select a target");
+                debug!("Targeted item has no target!");
+                should_run.0 = false;
+                *app_mode = AppMode::Targeting;
+            }
+            Some(target_id) => {
+                debug!("Use PoisonScroll");
+                let Some(target_pos) = target_query.fetch(target_id) else{
+                    log.push(IMPOSSIBLE, "Invalid target");
+                    should_run.0 = false;
+                    return;
+                };
+                if let Some(range) = range {
+                    if target_pos.0.chebyshev(player_pos.0) > range.range {
                         log.push(IMPOSSIBLE, "Target is too far away");
                         should_run.0 = false;
                         return;
                     }
-                    if skill_check(range.skill) {
-                        // TODO: config duration
-                        let duration = 5;
-                        debug!("Poision Bolt hits {} for {} turns!", target_id, duration);
-                        if let Some(poision) = target_poison {
-                            poision.duration += duration;
-                        } else {
-                            cmd.entity(target_id).insert(Poisoned {
-                                duration,
-                                power: range.power,
-                            });
-                        }
-                        if let Some(Name(name)) = target_name {
-                            log.push(WHITE, &format!("{} suffers from poison!", name));
-                        }
-                    } else {
-                        log.push(WHITE, "Poison Bolt misses!");
-                    }
-                    cmd.entity(id).insert(ClearInventoryItem);
                 }
-            },
-            StuffTag::Stairs
-            | StuffTag::Tombstone
-            | StuffTag::Player
-            | StuffTag::Wall
-            | StuffTag::Troll
-            | StuffTag::Orc
-            | StuffTag::LeatherArmor
-            | StuffTag::ChainMailArmor
-            | StuffTag::Sword
-            | StuffTag::Dagger
-            | StuffTag::Warlord
-            | StuffTag::Goblin
-            | StuffTag::Minotaur
-            | StuffTag::Gargoyle => {
-                // TODO: introduce a usable item tag?
-                unreachable!("Not a usable item");
+
+                cmd.entity(id)
+                    .insert_bundle((MarkConsume, Targeting(target_id)));
             }
         }
+    }
+    for (id, range) in q.q1().iter() {
+        match target_pos.pos {
+            Some(target_pos) => {
+                if target_pos.chebyshev(player_pos.0) > range.range {
+                    log.push(INVALID, "Target is too far away. Try again");
+                    *app_mode = AppMode::TargetingPosition;
+                    should_run.0 = false;
+                    return;
+                }
+                cmd.entity(id).insert_bundle((
+                    MarkConsume,
+                    TargetingPos {
+                        src: player_pos.0,
+                        dst: target_pos,
+                    },
+                ));
+            }
+            None => {
+                log.push(NEEDS_TARGET, "Select a target position");
+                debug!("Position target item has no target!");
+                should_run.0 = false;
+                *app_mode = AppMode::TargetingPosition;
+            }
+        }
+    }
+    for id in q.q2().iter() {
+        cmd.entity(id).insert(MarkConsume);
     }
 }
 
