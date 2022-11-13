@@ -117,6 +117,15 @@ fn init_world_systems(world: &mut World) {
             .with_system(update_camera_pos),
     );
     world.add_stage(
+        SystemStage::serial("update_item_use")
+            .with_should_run(should_update_player)
+            .with_system(use_poison_scroll)
+            .with_system(use_confusion_scroll)
+            .with_system(use_lightning_scroll)
+            .with_system(use_hp_potion)
+            .with_system(update_aoe_item_use)
+    );
+    world.add_stage(
         SystemStage::serial("update-ai-hp")
             .with_system(update_poison)
             .with_system(update_ai_hp),

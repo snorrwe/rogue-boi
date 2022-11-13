@@ -404,3 +404,25 @@ pub struct Poisoned {
 /// Mark item to remove
 #[derive(Debug, Clone, Copy)]
 pub struct ClearInventoryItem;
+
+/// Mark item for consumtion
+#[derive(Debug, Clone, Copy)]
+pub struct MarkConsume;
+
+#[derive(Debug, Clone, Copy)]
+pub struct PoisionAttack;
+
+#[derive(Debug, Clone, Copy)]
+pub struct NeedsTargetEntity;
+
+#[derive(Debug, Clone, Copy)]
+pub struct NeedsTargetPosition;
+
+#[derive(Debug, Clone, Copy)]
+pub struct Targeting(pub EntityId);
+
+#[derive(Debug, Clone, Copy)]
+pub struct TargetingPos {
+    pub src: Vec2,
+    pub dst: Vec2,
+}
