@@ -35,6 +35,7 @@ pub fn register_persistent_components(
         .with_component::<Exp>()
         .with_component::<Equipment>()
         .with_component::<Defense>()
+        .with_component::<Poisoned>()
 }
 
 fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {
@@ -67,6 +68,7 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
             cmd.insert_bundle((Item, EquipmentType::Weapon, StaticVisibility));
         }
         StuffTag::HpPotion
+        | StuffTag::PoisonScroll
         | StuffTag::LightningScroll
         | StuffTag::ConfusionScroll
         | StuffTag::FireBallScroll => {
@@ -124,6 +126,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         | StuffTag::HpPotion
         | StuffTag::LightningScroll
         | StuffTag::ConfusionScroll
+        | StuffTag::PoisonScroll
         | StuffTag::FireBallScroll => {}
     }
 }
@@ -227,6 +230,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
         | StuffTag::Dagger
         | StuffTag::LightningScroll
         | StuffTag::ConfusionScroll
+        | StuffTag::PoisonScroll
         | StuffTag::FireBallScroll => {
             let (icon, name, desc, ranged, heal, melee, pos, color, defense) =
                 query.q1().fetch(id).unwrap();
@@ -255,6 +259,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                         | StuffTag::LightningScroll
                         | StuffTag::ConfusionScroll
                         | StuffTag::FireBallScroll
+                        | StuffTag::PoisonScroll
                 );
             json! {{
                 "id": id,

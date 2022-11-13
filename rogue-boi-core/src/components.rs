@@ -367,10 +367,8 @@ pub struct Defense {
 }
 
 impl Defense {
-    pub const fn new(defense: i32) -> Self {
-        Self {
-            melee_defense: defense,
-        }
+    pub const fn new(melee_defense: i32) -> Self {
+        Self { melee_defense }
     }
 }
 
@@ -396,3 +394,9 @@ pub struct StaticVisibility;
 /// Mark this item for use in this tick
 #[derive(Debug, Clone, Copy)]
 pub struct UseItem;
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+pub struct Poisoned {
+    pub duration: i32,
+    pub power: i32,
+}

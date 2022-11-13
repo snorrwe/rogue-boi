@@ -66,6 +66,7 @@ pub fn update_consumable_use(
         Query<(&Pos, &mut Hp, Option<&Name>)>,
         Query<(&mut Hp, Option<&Name>)>,
         Query<&mut Hp>,
+        Query<(&Pos, Option<&mut Poisoned>, Option<&Name>)>,
     )>,
     target_pos: Res<TargetPos>,
     grid: Res<Grid<Stuff>>,
@@ -222,6 +223,58 @@ pub fn update_consumable_use(
                     debug!("Fire Ball has no target!");
                     should_run.0 = false;
                     *app_mode = AppMode::TargetingPosition;
+                }
+            },
+            StuffTag::PoisonScroll => match actions.target() {
+                None => {
+                    log.push(WHITE, "Select a target");
+                    debug!("Confusion Bolt has no target!");
+                    should_run.0 = false;
+                    *app_mode = AppMode::Targeting;
+                }
+                Some(target_id) => {
+                    debug!("Use PoisonScroll");
+                    let (target_pos, target_poison, target_name) =
+                        match target_query.q4_mut().fetch_mut(target_id) {
+                            Some(x) => x,
+                            None => {
+                                log.push(IMPOSSIBLE, "Invalid target");
+                                should_run.0 = false;
+                                return;
+                            }
+                        };
+                    let range = item_query.q0().fetch(id).unwrap();
+                    if target_pos.0.chebyshev(pos.0) > range.range {
+                        log.push(IMPOSSIBLE, "Target is too far away");
+                        should_run.0 = false;
+                        return;
+                    }
+
+                    let range = item_query.q0().fetch(id).unwrap();
+                    if target_pos.0.chebyshev(pos.0) > range.range {
+                        log.push(IMPOSSIBLE, "Target is too far away");
+                        should_run.0 = false;
+                        return;
+                    }
+                    if skill_check(range.skill) {
+                        // TODO: config duration
+                        let duration = 5;
+                        debug!("Poision Bolt hits {} for {} turns!", target_id, duration);
+                        if let Some(poision) = target_poison {
+                            poision.duration += duration;
+                        } else {
+                            cmd.entity(target_id).insert(Poisoned {
+                                duration,
+                                power: range.power,
+                            });
+                        }
+                        if let Some(Name(name)) = target_name {
+                            log.push(WHITE, &format!("{} suffers from poison!", name));
+                        }
+                    } else {
+                        log.push(WHITE, "Poison Bolt misses!");
+                    }
+                    cleanup(id, &mut cmd);
                 }
             },
             StuffTag::Stairs
@@ -398,6 +451,7 @@ pub fn handle_player_move(
                     }
                 }
                 StuffTag::LightningScroll
+                | StuffTag::PoisonScroll
                 | StuffTag::HpPotion
                 | StuffTag::LeatherArmor
                 | StuffTag::ChainMailArmor
@@ -1189,5 +1243,38 @@ pub fn handle_levelup(
                 }
             }
         }
+    }
+}
+
+pub fn update_poison(
+    mut cmd: Commands,
+    mut q: Query<(
+        EntityId,
+        &mut Hp,
+        &mut Poisoned,
+        Option<&mut Name>,
+        Option<&PlayerTag>,
+    )>,
+    mut log: ResMut<LogHistory>,
+) {
+    for (id, hp, poison, name, player) in q.iter_mut() {
+        if poison.duration <= 0 {
+            cmd.entity(id).remove::<Poisoned>();
+            continue;
+        }
+        if let Some(name) = name {
+            let color = if player.is_some() {
+                ENEMY_ATTACK
+            } else {
+                PLAYER_ATTACK
+            };
+            log.push(
+                color,
+                format!("{} is hit for {} damage by poison", name.0, poison.power),
+            );
+        }
+        poison.duration -= 1;
+        // TODO: poison resistance
+        hp.current -= compute_damage(poison.power, 0);
     }
 }
