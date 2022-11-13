@@ -3,8 +3,8 @@
 	"version": "0.0.1",
 	"scripts": {
 		"build": "cargo xtask copy-icons && rsw build && vite build",
-        "bundle": "cargo xtask copy-icons && yarn build && cargo xtask bundle",
-		"dev": "rsw watch & vite",
+		"bundle": "cargo xtask copy-icons && yarn build && cargo xtask bundle",
+		"dev": "vite",
 		"lint": "prettier --ignore-path .gitignore --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
 		"format": "prettier --ignore-path .gitignore --write --plugin-search-dir=. .",
 		"rsw": "rsw"
