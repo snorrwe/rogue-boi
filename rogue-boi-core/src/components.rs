@@ -426,3 +426,12 @@ pub struct TargetingPos {
     pub src: Vec2,
     pub dst: Vec2,
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct LightningBolt;
+
+#[derive(Debug, Clone, Copy)]
+pub struct FireBall;
+
+#[derive(Debug, Clone, Copy)]
+pub struct ConfusionBolt;

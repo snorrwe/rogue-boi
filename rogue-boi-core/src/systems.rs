@@ -42,7 +42,7 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(use_confusion_scroll)
             .with_system(use_lightning_scroll)
             .with_system(use_hp_potion)
-            .with_system(update_aoe_item_use),
+            .with_system(use_fireball),
     );
     world.add_stage(
         SystemStage::serial("update-ai-hp")
@@ -138,7 +138,7 @@ fn clear_consumable(
 fn use_poison_scroll(
     mut cmd: Commands,
     mut target_query: Query<(Option<&mut Poisoned>, Option<&Name>)>,
-    item_query: Query<(EntityId, &Ranged, &Targeting), With<MarkConsume>>,
+    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkConsume>, With<PoisionAttack>)>,
     mut log: ResMut<LogHistory>,
     mut should_run: ResMut<ShouldUpdateWorld>,
 ) {
@@ -196,7 +196,7 @@ fn use_hp_potion(
 
 fn use_confusion_scroll(
     mut cmd: Commands,
-    item_query: Query<(EntityId, &Ranged, &Targeting), With<MarkConsume>>,
+    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkConsume>, With<ConfusionBolt>)>,
     mut target_query: Query<(Option<&mut ConfusedAi>, Option<&Name>)>,
     mut log: ResMut<LogHistory>,
     mut should_run: ResMut<ShouldUpdateWorld>,
@@ -235,7 +235,7 @@ fn use_confusion_scroll(
 
 fn use_lightning_scroll(
     mut cmd: Commands,
-    item_query: Query<(EntityId, &Ranged, &Targeting), With<MarkConsume>>,
+    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkConsume>, With<LightningBolt>)>,
     mut target_query: Query<(&mut Hp, Option<&Name>)>,
     mut log: ResMut<LogHistory>,
     mut should_run: ResMut<ShouldUpdateWorld>,
@@ -268,9 +268,12 @@ fn use_lightning_scroll(
     }
 }
 
-fn update_aoe_item_use(
+fn use_fireball(
     mut cmd: Commands,
-    item_query: Query<(EntityId, &Ranged, &Aoe, &TargetingPos), With<MarkConsume>>,
+    item_query: Query<
+        (EntityId, &Ranged, &Aoe, &TargetingPos),
+        (With<MarkConsume>, With<FireBall>),
+    >,
     mut target_query: Query<(&mut Hp, Option<&Name>)>,
     mut log: ResMut<LogHistory>,
     mut should_run: ResMut<ShouldUpdateWorld>,

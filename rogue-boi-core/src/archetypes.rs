@@ -71,10 +71,13 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
             cmd.insert_bundle((Item, StaticVisibility));
         }
         StuffTag::FireBallScroll => {
-            cmd.insert_bundle((Item, StaticVisibility, NeedsTargetPosition));
+            cmd.insert_bundle((Item, StaticVisibility, NeedsTargetPosition, FireBall));
         }
-        StuffTag::ConfusionScroll | StuffTag::LightningScroll => {
-            cmd.insert_bundle((Item, StaticVisibility, NeedsTargetEntity));
+        StuffTag::ConfusionScroll => {
+            cmd.insert_bundle((Item, StaticVisibility, NeedsTargetEntity, ConfusionBolt));
+        }
+        StuffTag::LightningScroll => {
+            cmd.insert_bundle((Item, StaticVisibility, NeedsTargetEntity, LightningBolt));
         }
         StuffTag::PoisonScroll => {
             cmd.insert_bundle((Item, StaticVisibility, NeedsTargetEntity, PoisionAttack));
