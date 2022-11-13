@@ -400,3 +400,7 @@ pub struct Poisoned {
     pub duration: i32,
     pub power: i32,
 }
+
+/// Mark item to remove
+#[derive(Debug, Clone, Copy)]
+pub struct ClearInventoryItem;

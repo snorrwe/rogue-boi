@@ -141,6 +141,7 @@ fn init_world_systems(world: &mut World) {
     world.add_stage(
         SystemStage::serial("post-render")
             .with_should_run(should_update_world)
+            .with_system(clear_consumable)
             .with_system(update_tick),
     );
     world.add_stage(
