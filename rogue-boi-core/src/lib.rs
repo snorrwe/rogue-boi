@@ -15,7 +15,9 @@ mod utils;
 
 use std::{cell::RefCell, rc::Rc};
 
-use crate::systems::*;
+use crate::systems::{
+    handle_click, init_world_systems, regenerate_dungeon, render_into_canvas, update_output,
+};
 use cecs::{persister::WorldSerializer, prelude::*};
 use colors::WHITE;
 use components::*;
@@ -91,73 +93,6 @@ fn init_world_resources(world_dims: Vec2, world: &mut World) {
     world.insert_resource(GameTick::default());
     world.insert_resource(LogHistory::default());
     world.insert_resource(Explored(Grid::new(world_dims)));
-}
-
-fn init_world_systems(world: &mut World) {
-    world.add_stage(
-        SystemStage::serial("inputs")
-            .with_system(update_input_events)
-            .with_system(update_should_tick)
-            .with_system(handle_targeting)
-            .with_system(player_prepare)
-            .with_system(handle_levelup),
-    );
-    world.add_stage(
-        SystemStage::serial("pre-update")
-            .with_should_run(|should_tick: Res<ShouldTick>| should_tick.0)
-            .with_system(record_last_pos),
-    );
-    world.add_stage(
-        SystemStage::serial("player-update")
-            .with_should_run(should_update_player)
-            .with_system(update_equipment_use)
-            .with_system(update_consumable_use)
-            .with_system(handle_player_move)
-            .with_system(update_player_world_interact)
-            .with_system(update_camera_pos),
-    );
-    world.add_stage(
-        SystemStage::serial("update_item_use")
-            .with_should_run(should_update_player)
-            .with_system(use_poison_scroll)
-            .with_system(use_confusion_scroll)
-            .with_system(use_lightning_scroll)
-            .with_system(use_hp_potion)
-            .with_system(update_aoe_item_use)
-    );
-    world.add_stage(
-        SystemStage::serial("update-ai-hp")
-            .with_system(update_poison)
-            .with_system(update_ai_hp),
-    );
-    world.add_stage(
-        SystemStage::serial("ai-update")
-            .with_should_run(should_update_world)
-            .with_system(update_ai_move)
-            .with_system(update_melee_ai)
-            .with_system(update_confusion)
-            .with_system(update_player_hp)
-            .with_system(update_grid)
-            .with_system(update_fov),
-    );
-    world.add_stage(SystemStage::serial("update-pos").with_system(perform_move));
-    world.add_stage(
-        SystemStage::serial("render")
-            .with_system(update_output)
-            .with_system(render_into_canvas)
-            .with_system(systems::clean_inputs),
-    );
-    world.add_stage(
-        SystemStage::serial("post-render")
-            .with_should_run(should_update_world)
-            .with_system(clear_consumable)
-            .with_system(update_tick),
-    );
-    world.add_stage(
-        SystemStage::serial("dungeon-delve")
-            .with_should_run(|level: Res<DungeonFloor>| level.current != level.desired)
-            .with_system(regenerate_dungeon),
-    );
 }
 
 pub fn init_world(world_dims: Vec2, world: &mut World) {

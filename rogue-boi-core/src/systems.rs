@@ -12,7 +12,74 @@ use cecs::prelude::*;
 use rand::{prelude::SliceRandom, Rng};
 use tracing::{debug, info};
 
-pub fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<PlayerActions>) {
+pub fn init_world_systems(world: &mut World) {
+    world.add_stage(
+        SystemStage::serial("inputs")
+            .with_system(update_input_events)
+            .with_system(update_should_tick)
+            .with_system(handle_targeting)
+            .with_system(player_prepare)
+            .with_system(handle_levelup),
+    );
+    world.add_stage(
+        SystemStage::serial("pre-update")
+            .with_should_run(|should_tick: Res<ShouldTick>| should_tick.0)
+            .with_system(record_last_pos),
+    );
+    world.add_stage(
+        SystemStage::serial("player-update")
+            .with_should_run(should_update_player)
+            .with_system(update_equipment_use)
+            .with_system(update_consumable_use)
+            .with_system(handle_player_move)
+            .with_system(update_player_world_interact)
+            .with_system(update_camera_pos),
+    );
+    world.add_stage(
+        SystemStage::serial("update_item_use")
+            .with_should_run(should_update_player)
+            .with_system(use_poison_scroll)
+            .with_system(use_confusion_scroll)
+            .with_system(use_lightning_scroll)
+            .with_system(use_hp_potion)
+            .with_system(update_aoe_item_use),
+    );
+    world.add_stage(
+        SystemStage::serial("update-ai-hp")
+            .with_system(update_poison)
+            .with_system(update_ai_hp),
+    );
+    world.add_stage(
+        SystemStage::serial("ai-update")
+            .with_should_run(should_update_world)
+            .with_system(update_ai_move)
+            .with_system(update_melee_ai)
+            .with_system(update_confusion)
+            .with_system(update_player_hp)
+            .with_system(update_grid)
+            .with_system(update_fov),
+    );
+    world.add_stage(SystemStage::serial("update-pos").with_system(perform_move));
+    world.add_stage(
+        SystemStage::serial("render")
+            .with_system(update_output)
+            .with_system(render_into_canvas)
+            .with_system(clean_inputs),
+    );
+    world.add_stage(
+        SystemStage::serial("post-render")
+            .with_should_run(should_update_world)
+            .with_system(clear_consumable)
+            .with_system(update_tick),
+    );
+    world.add_stage(
+        SystemStage::serial("dungeon-delve")
+            .with_should_run(|level: Res<DungeonFloor>| level.current != level.desired)
+            .with_system(regenerate_dungeon),
+    );
+}
+
+fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<PlayerActions>) {
     let mut delta = Vec2::new(0, 0);
     for event in &inputs[..] {
         match event {
@@ -53,7 +120,7 @@ fn equip_item(id: EntityId, equipment: &mut Option<EntityId>, inventory: &mut In
     let _ = equipment.insert(id);
 }
 
-pub fn clear_consumable(
+fn clear_consumable(
     mut player_query: Query<&mut Inventory, With<PlayerTag>>,
     mut cmd: Commands,
     q: Query<EntityId, With<ClearInventoryItem>>,
@@ -68,7 +135,7 @@ pub fn clear_consumable(
     }
 }
 
-pub fn use_poison_scroll(
+fn use_poison_scroll(
     mut cmd: Commands,
     mut target_query: Query<(Option<&mut Poisoned>, Option<&Name>)>,
     item_query: Query<(EntityId, &Ranged, &Targeting), With<MarkConsume>>,
@@ -106,7 +173,7 @@ pub fn use_poison_scroll(
     }
 }
 
-pub fn use_hp_potion(
+fn use_hp_potion(
     mut cmd: Commands,
     mut player_query: Query<&mut Hp, With<PlayerTag>>,
     item_query: Query<(EntityId, &Heal), With<MarkConsume>>,
@@ -127,7 +194,7 @@ pub fn use_hp_potion(
     }
 }
 
-pub fn use_confusion_scroll(
+fn use_confusion_scroll(
     mut cmd: Commands,
     item_query: Query<(EntityId, &Ranged, &Targeting), With<MarkConsume>>,
     mut target_query: Query<(Option<&mut ConfusedAi>, Option<&Name>)>,
@@ -166,7 +233,7 @@ pub fn use_confusion_scroll(
     }
 }
 
-pub fn use_lightning_scroll(
+fn use_lightning_scroll(
     mut cmd: Commands,
     item_query: Query<(EntityId, &Ranged, &Targeting), With<MarkConsume>>,
     mut target_query: Query<(&mut Hp, Option<&Name>)>,
@@ -201,7 +268,7 @@ pub fn use_lightning_scroll(
     }
 }
 
-pub fn update_aoe_item_use(
+fn update_aoe_item_use(
     mut cmd: Commands,
     item_query: Query<(EntityId, &Ranged, &Aoe, &TargetingPos), With<MarkConsume>>,
     mut target_query: Query<(&mut Hp, Option<&Name>)>,
@@ -250,7 +317,7 @@ pub fn update_aoe_item_use(
     }
 }
 
-pub fn update_consumable_use(
+fn update_consumable_use(
     actions: Res<PlayerActions>,
     mut cmd: Commands,
     mut player_query: Query<&Pos, With<PlayerTag>>,
@@ -335,7 +402,7 @@ pub fn update_consumable_use(
     }
 }
 
-pub fn update_equipment_use(
+fn update_equipment_use(
     mut cmd: Commands,
     mut player_query: Query<(EntityId, &mut Inventory, &mut Equipment), With<PlayerTag>>,
     q: Query<(EntityId, &EquipmentType), With<UseItem>>,
@@ -382,7 +449,7 @@ pub fn update_equipment_use(
     }
 }
 
-pub fn update_player_world_interact(
+fn update_player_world_interact(
     mut q_player: Query<(EntityId, &mut Inventory, &Pos), With<PlayerTag>>,
     mut cmd: Commands,
     q_item: Query<(Option<&Item>, Option<&NextLevel>, Option<&Name>)>,
@@ -435,7 +502,7 @@ fn compute_damage(power: i32, defense: i32) -> i32 {
     (power - defense).max(1)
 }
 
-pub fn handle_player_move(
+fn handle_player_move(
     actions: Res<PlayerActions>,
     mut player_q: Query<(&Melee, &mut Pos), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
@@ -629,7 +696,7 @@ pub fn update_fov(
     }
 }
 
-pub fn update_grid(
+fn update_grid(
     player: Query<(EntityId, &Pos), With<PlayerTag>>,
     mid_stuff: Query<(EntityId, &Pos), (WithOut<PlayerTag>, WithOut<Ai>, WithOut<StaticStuff>)>,
     ais: Query<(EntityId, &Pos), With<Ai>>,
@@ -650,7 +717,7 @@ pub fn update_grid(
     }
 }
 
-pub fn perform_move(mut q: Query<(&mut Pos, &mut Velocity)>, mut grid: ResMut<Grid<Stuff>>) {
+fn perform_move(mut q: Query<(&mut Pos, &mut Velocity)>, mut grid: ResMut<Grid<Stuff>>) {
     for (pos, vel) in q.iter_mut() {
         if vel.0 == Vec2::ZERO {
             continue;
@@ -667,7 +734,7 @@ pub fn perform_move(mut q: Query<(&mut Pos, &mut Velocity)>, mut grid: ResMut<Gr
     }
 }
 
-pub fn update_confusion(
+fn update_confusion(
     mut cmd: Commands,
     mut confused: Query<(EntityId, Option<&Name>, &mut ConfusedAi)>,
     mut log: ResMut<LogHistory>,
@@ -683,7 +750,7 @@ pub fn update_confusion(
     }
 }
 
-pub fn update_ai_move(
+fn update_ai_move(
     q_player: Query<(&Pos, &LastPos), (With<Pos>, With<PlayerTag>)>,
     grid: Res<Grid<Stuff>>,
     mut melee: Query<
@@ -756,7 +823,7 @@ pub fn update_ai_move(
     }
 }
 
-pub fn update_melee_ai(
+fn update_melee_ai(
     mut q_player: Query<(EntityId, &Pos, &Defense), (With<Hp>, With<PlayerTag>)>,
     mut q_target: Query<(&mut Hp, Option<&Name>)>,
     mut q_enemy: Query<
@@ -822,7 +889,7 @@ pub fn update_melee_ai(
     }
 }
 
-pub fn update_player_hp(
+fn update_player_hp(
     mut cmd: Commands,
     query_player: Query<(EntityId, &Hp), With<PlayerTag>>,
     mut log: ResMut<LogHistory>,
@@ -845,7 +912,7 @@ pub fn update_player_hp(
     }
 }
 
-pub fn update_ai_hp(
+fn update_ai_hp(
     mut cmd: Commands,
     query_hp: Query<(EntityId, &Hp, Option<&Name>, Option<&Exp>), (With<Ai>, WithOut<PlayerTag>)>,
     mut query_player: Query<&mut Level, With<PlayerTag>>,
@@ -868,16 +935,16 @@ pub fn update_ai_hp(
 }
 
 /// Throw a 1D6, if result is <= skill then the check passes
-pub fn skill_check(skill: i32) -> bool {
+fn skill_check(skill: i32) -> bool {
     let mut rng = rand::thread_rng();
     rng.gen_range(1..=6) <= skill
 }
 
-pub fn update_tick(mut t: ResMut<GameTick>) {
+fn update_tick(mut t: ResMut<GameTick>) {
     t.0 += 1;
 }
 
-pub fn should_update_world(should_tick: Res<ShouldTick>, r: Res<ShouldUpdateWorld>) -> bool {
+fn should_update_world(should_tick: Res<ShouldTick>, r: Res<ShouldUpdateWorld>) -> bool {
     r.0 && should_tick.0
 }
 
@@ -925,11 +992,11 @@ pub fn update_output(
     output_cache.0 = serde_wasm_bindgen::to_value(&result).unwrap();
 }
 
-pub fn should_update_player(should_tick: Res<ShouldTick>, s: Res<ShouldUpdatePlayer>) -> bool {
+fn should_update_player(should_tick: Res<ShouldTick>, s: Res<ShouldUpdatePlayer>) -> bool {
     s.0 && should_tick.0
 }
 
-pub fn player_prepare(
+fn player_prepare(
     mut should_update: ResMut<ShouldUpdateWorld>,
     q: Query<&(), With<PlayerTag>>,
     mut should_update_player: ResMut<ShouldUpdatePlayer>,
@@ -954,7 +1021,7 @@ pub fn player_prepare(
     }
 }
 
-pub fn canvas_cell_size(width: f64, height: f64, viewport: Vec2) -> f64 {
+fn canvas_cell_size(width: f64, height: f64, viewport: Vec2) -> f64 {
     height.min(width) / (viewport.y * 2) as f64
 }
 
@@ -1110,7 +1177,7 @@ pub fn handle_click(
     debug!("targeting entity {:?}", result);
 }
 
-pub fn record_last_pos(mut q: Query<(&mut LastPos, &Pos)>) {
+fn record_last_pos(mut q: Query<(&mut LastPos, &Pos)>) {
     for (last, current) in q.iter_mut() {
         last.0 = current.0
     }
@@ -1136,7 +1203,7 @@ pub fn init_grids(
     }
 }
 
-pub fn update_should_tick(
+fn update_should_tick(
     mut dt: ResMut<DeltaTime>,
     mut time: ResMut<BounceOffTime>,
     mut should_tick: ResMut<ShouldTick>,
@@ -1156,7 +1223,7 @@ pub fn update_should_tick(
     dt.0 = 0;
 }
 
-pub fn handle_targeting(
+fn handle_targeting(
     mut should_tick: ResMut<ShouldTick>,
     actions: Res<PlayerActions>,
     mut mode: ResMut<AppMode>,
@@ -1178,7 +1245,7 @@ pub fn handle_targeting(
     should_tick.0 = should_tick.0 && matches!(*mode, AppMode::Game);
 }
 
-pub fn clean_inputs(
+fn clean_inputs(
     should_tick: Res<ShouldTick>,
     mut inputs: ResMut<Vec<InputEvent>>,
     mut actions: ResMut<PlayerActions>,
@@ -1235,7 +1302,7 @@ pub fn regenerate_dungeon(mut access: WorldAccess) {
     );
 }
 
-pub fn handle_levelup(
+fn handle_levelup(
     mut app_mode: ResMut<AppMode>,
     mut stat: ResMut<Option<DesiredStat>>,
     mut player_q: Query<(&mut Hp, &mut Melee, &mut Level, &mut Defense), With<PlayerTag>>,
@@ -1283,7 +1350,7 @@ pub fn handle_levelup(
     }
 }
 
-pub fn update_poison(
+fn update_poison(
     mut cmd: Commands,
     mut q: Query<(
         EntityId,
