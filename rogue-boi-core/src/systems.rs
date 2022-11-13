@@ -53,12 +53,26 @@ fn equip_item(id: EntityId, equipment: &mut Option<EntityId>, inventory: &mut In
     let _ = equipment.insert(id);
 }
 
+pub fn clear_consumable(
+    mut player_query: Query<&mut Inventory, With<PlayerTag>>,
+    mut cmd: Commands,
+    q: Query<EntityId, With<ClearInventoryItem>>,
+) {
+    let Some(inventory) = player_query.iter_mut().next() else {
+        return;
+    };
+    for id in q.iter() {
+        debug!("Deleting item in inventory: {}", id);
+        inventory.remove(id);
+        cmd.delete(id);
+    }
+}
+
 pub fn update_consumable_use(
     actions: Res<PlayerActions>,
     mut cmd: Commands,
-    mut player_query: Query<(EntityId, &mut Inventory, &Pos), With<PlayerTag>>,
+    mut player_query: Query<(EntityId, &Pos), With<PlayerTag>>,
     q: Query<(EntityId, &StuffTag), (With<UseItem>, WithOut<EquipmentType>)>,
-
     mut should_run: ResMut<ShouldUpdateWorld>,
     mut app_mode: ResMut<AppMode>,
     mut target_query: QuerySet<(
@@ -78,14 +92,10 @@ pub fn update_consumable_use(
         Query<&EquipmentType>,
     )>,
 ) {
-    let Some((player_id, inventory, pos)) = player_query.iter_mut().next() else {
+    let Some((player_id, pos)) = player_query.iter_mut().next() else {
         return;
     };
 
-    let mut cleanup = |id, cmd: &mut Commands| {
-        inventory.remove(id);
-        cmd.delete(id);
-    };
     for (id, tag) in q.iter() {
         debug!("Using {}, tag: {:?}", id, tag);
 
@@ -98,7 +108,7 @@ pub fn update_consumable_use(
                 }
                 let heal = item_query.q2().fetch(id).unwrap();
                 hp.current = (hp.current + heal.hp).min(hp.max);
-                cleanup(id, &mut cmd);
+                cmd.entity(id).insert(ClearInventoryItem);
             }
             StuffTag::ConfusionScroll => match actions.target() {
                 None => {
@@ -144,7 +154,7 @@ pub fn update_consumable_use(
                     } else {
                         log.push(WHITE, "Confusion Bolt misses!");
                     }
-                    cleanup(id, &mut cmd);
+                    cmd.entity(id).insert(ClearInventoryItem);
                 }
             },
             StuffTag::LightningScroll => match actions.target() {
@@ -178,7 +188,7 @@ pub fn update_consumable_use(
                     } else {
                         log.push(INVALID, "Lightning Bolt misses!");
                     }
-                    cleanup(id, &mut cmd);
+                    cmd.entity(id).insert(ClearInventoryItem);
                 }
                 None => {
                     log.push(NEEDS_TARGET, "Select a target");
@@ -216,7 +226,7 @@ pub fn update_consumable_use(
                             }
                         }
                     });
-                    cleanup(id, &mut cmd)
+                    cmd.entity(id).insert(ClearInventoryItem);
                 }
                 None => {
                     log.push(NEEDS_TARGET, "Select a target position");
@@ -274,7 +284,7 @@ pub fn update_consumable_use(
                     } else {
                         log.push(WHITE, "Poison Bolt misses!");
                     }
-                    cleanup(id, &mut cmd);
+                    cmd.entity(id).insert(ClearInventoryItem);
                 }
             },
             StuffTag::Stairs
