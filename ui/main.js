@@ -1,10 +1,20 @@
 import App from './App.svelte';
-import wasmInit, { initCore } from 'rogue-boi-core';
+import wasm from '../rogue-boi-core/Cargo.toml';
 
 const init = async () => {
-	await wasmInit();
-	const core = initCore();
-	return new App({
+	const core = (
+		await wasm({
+			importHook: (path) => {
+				// force relative url
+				if (path.startsWith('/')) {
+					return path.slice(1);
+				}
+				return path;
+			}
+		})
+	).initCore();
+
+	new App({
 		target: document.body,
 		props: {
 			core
