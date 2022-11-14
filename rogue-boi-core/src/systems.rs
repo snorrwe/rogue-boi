@@ -46,6 +46,7 @@ pub fn init_world_systems(world: &mut World) {
     );
     world.add_stage(
         SystemStage::serial("update-ai-hp")
+            .with_should_run(should_update_world)
             .with_system(update_poison)
             .with_system(update_ai_hp),
     );
