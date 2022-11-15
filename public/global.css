@@ -1,6 +1,6 @@
 body {
 	background: black;
-    overflow: hidden;
+	overflow: hidden;
 }
 
 path {
@@ -8,5 +8,5 @@ path {
 }
 
 a {
-    color: white;
+	color: white;
 }

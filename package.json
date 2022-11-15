@@ -8,7 +8,7 @@
 		"start": "sirv public",
 		"lint": "prettier --ignore-path .gitignore --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
 		"format": "prettier --ignore-path .gitignore --write --plugin-search-dir=. .",
-        "bundle": "cargo xtask copy-icons && yarn build && cargo xtask bundle"
+		"bundle": "cargo xtask copy-icons && yarn build && cargo xtask bundle"
 	},
 	"devDependencies": {
 		"@rollup/plugin-alias": "^3.1.9",
