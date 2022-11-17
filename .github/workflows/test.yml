@@ -10,19 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           lfs: 'true'
       - uses: Swatinem/rust-cache@v1
-      - name: wasm-pack-action
-        uses: jetli/wasm-pack-action@v0.3.0
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v2.4.1
+      - uses: cachix/install-nix-action@v17
         with:
-          node-version: 19.x
-
-      - name: Cypress run
-        uses: cypress-io/github-action@v4
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: cachix/cachix-action@v11
         with:
-          build: yarn build:dev
-          start: yarn dev
+          name: mycache
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+      - run: nix-build
+      - run: nix-shell --run "yarn"
+      - run: nix-shell --run "yarn build:dev"
+      - run: nix-shell --run "yarn dev & yarn cypress run"
