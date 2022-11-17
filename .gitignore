@@ -10,3 +10,5 @@ public/**/*zip
 
 bundle.zip
 target
+libbz2.so.1.0
+result
