@@ -50,6 +50,9 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
         StuffTag::Wall => {
             cmd.insert_bundle((StaticStuff, Opaque, StaticVisibility));
         }
+        StuffTag::Door => {
+            cmd.insert_bundle((StaticStuff, Opaque, StaticVisibility));
+        }
         StuffTag::Tombstone => {
             cmd.insert_bundle((StaticStuff,));
         }
@@ -115,6 +118,9 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         StuffTag::Wall => {
             cmd.insert_bundle((icon("wall"), Color("#d4dfd7".into()), StaticStuff));
         }
+        StuffTag::Door => {
+            cmd.insert_bundle((icon("door"), Color("#d4dfd7".into()), StaticStuff));
+        }
         StuffTag::Gargoyle | StuffTag::Goblin | StuffTag::Troll | StuffTag::Orc => {
             cmd.insert_bundle((Leash {
                 origin: pos,
@@ -175,7 +181,7 @@ pub type StuffToJsQuery<'a> = QuerySet<(
 
 pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValue {
     let payload = match tag {
-        StuffTag::Stairs | StuffTag::Tombstone => {
+        StuffTag::Door | StuffTag::Stairs | StuffTag::Tombstone => {
             let (icon, name, desc) = query.q4().fetch(id).unwrap();
             json! {{
                 "id": id,

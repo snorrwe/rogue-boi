@@ -264,7 +264,11 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
     for (r1, r2) in rooms.iter().zip(rooms.iter().skip(1)) {
         // connect these rooms
         for p in tunnel_between(&mut rng, r1.center(), r2.center()) {
-            grid[p] = None;
+            if is_on_edge(r1, p) || is_on_edge(r2, p) {
+                grid[p] = Some(StuffTag::Door);
+            } else {
+                grid[p] = None;
+            }
         }
     }
 
@@ -310,4 +314,14 @@ fn tunnel_between(mut rng: impl Rng, start: Vec2, end: Vec2) -> impl Iterator<It
     }
 
     TunnelIter::new(start, end, Vec2::new(cornerx, cornery))
+}
+
+fn is_on_edge(room: &RectRoom, point: Vec2) -> bool {
+    if room.min.x - 1 == point.x || room.max.x + 1 == point.x {
+        room.min.y <= point.y && point.y <= room.max.y
+    } else if room.min.y - 1 == point.y || room.max.y + 1 == point.y {
+        room.min.x <= point.x && point.x <= room.max.x
+    } else {
+        false
+    }
 }

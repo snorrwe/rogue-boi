@@ -515,6 +515,7 @@ fn handle_player_move(
     mut should_run: ResMut<ShouldUpdateWorld>,
     names: Query<&Name>,
     mut log: ResMut<LogHistory>,
+    mut cmd: Commands,
 ) {
     let delta = match actions.move_action() {
         Some(x) => x,
@@ -532,6 +533,11 @@ fn handle_player_move(
         {
             Some((stuff_id, tag)) => match tag {
                 StuffTag::Player => unreachable!(),
+                StuffTag::Door => {
+                    // TODO: ability to close the door?
+                    // would need some persistent state then, instead of deleting
+                    cmd.delete(stuff_id);
+                }
                 StuffTag::Wall => {
                     log.push(INVALID, "Can't move into wall");
                     should_run.0 = false;
