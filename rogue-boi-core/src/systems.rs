@@ -1297,13 +1297,15 @@ pub fn regenerate_dungeon(mut access: WorldAccess) {
 
     let log = world.get_resource_mut::<LogHistory>().unwrap();
     log.push(WHITE, format!("You're on level {}", level));
-    world.run_stage(
-        SystemStage::serial("initial-post-process")
-            .with_system(update_camera_pos)
-            .with_system(update_grid)
-            .with_system(update_fov)
-            .with_system(update_output),
-    );
+    world
+        .run_stage(
+            SystemStage::serial("initial-post-process")
+                .with_system(update_camera_pos)
+                .with_system(update_grid)
+                .with_system(update_fov)
+                .with_system(update_output),
+        )
+        .unwrap();
 }
 
 fn handle_levelup(
