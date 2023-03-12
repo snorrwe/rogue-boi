@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { fetchIcon, coreStore, coreOutput } from '@rogueBoi/store.js';
+	import { fetchIcon, coreStore, coreOutput, selected } from '@rogueBoi/store.js';
 	import Menu from './routes/Menu.svelte';
 	import Game from './routes/Game.svelte';
 	import Options from './routes/Options.svelte';
@@ -54,6 +54,7 @@
 			{
 				'#game': () => Game,
 				'#newgame': () => {
+					selected.set(null);
 					if (core) {
 						core.restart();
 						window.location.hash = 'game';
