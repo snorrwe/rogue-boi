@@ -149,10 +149,11 @@ fn place_items(
     rng: &mut impl Rng,
     grid: &mut Grid<Option<StuffTag>>,
     room: &RectRoom,
+    min_items: u32,
     max_items: u32,
     weights: &EntityChances,
 ) {
-    let n_items = rng.gen_range(0..=max_items);
+    let n_items = rng.gen_range(min_items..=max_items);
 
     let dist = rand::distributions::WeightedIndex::new(&weights.item_weights[..]).unwrap();
 
@@ -273,6 +274,14 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
     }
 
     let entity_weights = EntityChances::from_level(floor);
+    if floor == 1 {
+        // give a starting item on floor 1
+        place_items(&mut rng, grid, &rooms[0], 1, 1, &entity_weights);
+    }
+    // spawn the player in the first room
+    grid[rooms[0].center()] = Some(StuffTag::Player);
+
+    // place stuff
     for room in rooms.iter().skip(1) {
         place_entities(
             &mut rng,
@@ -285,13 +294,11 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
             &mut rng,
             grid,
             room,
+            0,
             props.max_items_per_floor,
             &entity_weights,
         );
     }
-
-    // spawn the player in the first room
-    grid[rooms[0].center()] = Some(StuffTag::Player);
 
     let end_room = rooms[1..]
         .choose(&mut rng)
