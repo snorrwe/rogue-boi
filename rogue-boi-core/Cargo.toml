@@ -14,8 +14,8 @@ default = ["console_error_panic_hook"]
 [dependencies]
 cecs = { git = "https://github.com/caolo-game/cecs", default-features=false, features=["serde"]}
 rand = { version = "0.8.5", features = [] }
-wasm-bindgen = { version = "0.2.83", features = ["serde-serialize"] }
-serde = { version = "1.0.147", features = ["derive"] }
+wasm-bindgen = { version = "0.2.84", features = ["serde-serialize"] }
+serde = { version = "1.0.159", features = ["derive"] }
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
@@ -27,18 +27,18 @@ smallvec = "1.10.0"
 arrayvec = "0.7.2"
 lazy_static = "1.4.0"
 getrandom = { version = "0.2.8", features = ["js"] }
-thiserror = "1.0.37"
-serde_json = "1.0.87"
+thiserror = "1.0.40"
+serde_json = "1.0.95"
 icons = { version = "0.1.0", path = "../icons" }
-web-sys = { version = "0.3.60", features = ["CanvasRenderingContext2d", "HtmlCanvasElement", "Path2d", "DomMatrix", "MouseEvent"] }
+web-sys = { version = "0.3.61", features = ["CanvasRenderingContext2d", "HtmlCanvasElement", "Path2d", "DomMatrix", "MouseEvent"] }
 bincode = "1.3.3"
-base64 = "0.13.1"
-serde-wasm-bindgen = "0.4.5"
+base64 = "0.21.0"
+serde-wasm-bindgen = "0.5.0"
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.33"
+wasm-bindgen-test = "0.3.34"
 
 [build-dependencies]
 calamine = "0.19.1"
 itertools = "0.10.5"
-serde = { version = "1.0.147", features = ["derive"] }
+serde = { version = "1.0.159", features = ["derive"] }
