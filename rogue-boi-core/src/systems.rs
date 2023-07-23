@@ -14,7 +14,7 @@ use tracing::{debug, info};
 
 pub fn init_world_systems(world: &mut World) {
     world.add_stage(
-        SystemStage::serial("inputs")
+        SystemStage::parallel("inputs")
             .with_system(update_input_events)
             .with_system(update_should_tick)
             .with_system(handle_targeting)
@@ -22,12 +22,12 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(handle_levelup),
     );
     world.add_stage(
-        SystemStage::serial("pre-update")
+        SystemStage::parallel("pre-update")
             .with_should_run(|should_tick: Res<ShouldTick>| should_tick.0)
             .with_system(record_last_pos),
     );
     world.add_stage(
-        SystemStage::serial("player-update")
+        SystemStage::parallel("player-update")
             .with_should_run(should_update_player)
             .with_system(update_equipment_use)
             .with_system(update_consumable_use)
@@ -36,7 +36,7 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(update_camera_pos),
     );
     world.add_stage(
-        SystemStage::serial("update_item_use")
+        SystemStage::parallel("update_item_use")
             .with_should_run(should_update_player)
             .with_system(use_poison_scroll)
             .with_system(use_confusion_scroll)
@@ -45,13 +45,13 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(use_fireball),
     );
     world.add_stage(
-        SystemStage::serial("update-ai-hp")
+        SystemStage::parallel("update-ai-hp")
             .with_should_run(should_update_world)
             .with_system(update_poison)
             .with_system(update_ai_hp),
     );
     world.add_stage(
-        SystemStage::serial("ai-update")
+        SystemStage::parallel("ai-update")
             .with_should_run(should_update_world)
             .with_system(update_ai_move)
             .with_system(update_melee_ai)
@@ -60,21 +60,21 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(update_grid)
             .with_system(update_fov),
     );
-    world.add_stage(SystemStage::serial("update-pos").with_system(perform_move));
+    world.add_stage(SystemStage::parallel("update-pos").with_system(perform_move));
     world.add_stage(
-        SystemStage::serial("render")
+        SystemStage::parallel("render")
             .with_system(update_output)
             .with_system(render_into_canvas)
             .with_system(clean_inputs),
     );
     world.add_stage(
-        SystemStage::serial("post-render")
+        SystemStage::parallel("post-render")
             .with_should_run(should_update_world)
             .with_system(clear_consumable)
             .with_system(update_tick),
     );
     world.add_stage(
-        SystemStage::serial("dungeon-delve")
+        SystemStage::parallel("dungeon-delve")
             .with_should_run(|level: Res<DungeonFloor>| level.current != level.desired)
             .with_system(regenerate_dungeon),
     );
@@ -147,9 +147,9 @@ fn use_poison_scroll(
         let target_id = *target_id;
         debug!("Use PoisonScroll");
         let Some((target_poison, target_name)) = target_query.fetch_mut(target_id) else {
-                log.push(IMPOSSIBLE, "Invalid target");
-                should_run.0 = false;
-                return;
+            log.push(IMPOSSIBLE, "Invalid target");
+            should_run.0 = false;
+            return;
         };
 
         if skill_check(range.skill) {
@@ -358,7 +358,7 @@ fn update_consumable_use(
             }
             Some(target_id) => {
                 debug!("Use PoisonScroll");
-                let Some(target_pos) = target_query.fetch(target_id) else{
+                let Some(target_pos) = target_query.fetch(target_id) else {
                     log.push(IMPOSSIBLE, "Invalid target");
                     should_run.0 = false;
                     return;

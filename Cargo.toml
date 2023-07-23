@@ -1,5 +1,6 @@
 [workspace]
-members=["rogue-boi-core", "xtask", "icons"]
+members = ["rogue-boi-core", "xtask", "icons"]
+resolver = "2"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.

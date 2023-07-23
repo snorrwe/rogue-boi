@@ -18,6 +18,7 @@ use std::{cell::RefCell, rc::Rc};
 use crate::systems::{
     handle_click, init_world_systems, regenerate_dungeon, render_into_canvas, update_output,
 };
+use base64::{engine::GeneralPurpose, Engine};
 use cecs::{persister::WorldSerializer, prelude::*};
 use colors::WHITE;
 use components::*;
@@ -243,6 +244,8 @@ fn to_item_desc(id: EntityId, i: ItemPropsTuple) -> ItemDesc {
         range: ranged.map(|r| r.range).unwrap_or(0),
     }
 }
+
+const BASE64_ENGINE: GeneralPurpose = base64::engine::general_purpose::STANDARD_NO_PAD;
 
 #[wasm_bindgen]
 impl Core {
@@ -479,13 +482,13 @@ impl Core {
         let p = get_world_persister();
         let world = self.world.borrow();
 
-        let mut result = Vec::<u8>::new();
+        let mut result = Vec::<u8>::with_capacity(36000);
         let mut s = bincode::Serializer::new(&mut result, bincode::config::DefaultOptions::new());
 
         p.save(&mut s, &world).unwrap();
 
         debug!("bincode size {}", result.len());
-        let encoded = base64::encode(result);
+        let encoded = BASE64_ENGINE.encode(result);
         debug!("encoded size {}", encoded.len());
 
         encoded
@@ -493,7 +496,7 @@ impl Core {
 
     pub fn load(&mut self, pl: String) {
         let p = get_world_persister();
-        let pl = base64::decode(pl).unwrap();
+        let pl = BASE64_ENGINE.decode(pl).unwrap();
 
         let mut world = p
             .load(&mut bincode::de::Deserializer::from_slice(
@@ -501,8 +504,6 @@ impl Core {
                 bincode::config::DefaultOptions::new(),
             ))
             .unwrap();
-
-        world.gc_empty_entities();
 
         let dims = *world.get_resource::<WorldDims>().unwrap();
         init_world_transient_resources(dims.0, &mut world);

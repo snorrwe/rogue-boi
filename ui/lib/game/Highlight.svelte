@@ -1,5 +1,6 @@
 <script>
 	import { icons } from '@rogueBoi/store.js';
+    import Hp from './Hp.svelte';
 
 	export let selected;
 	export let core;
@@ -36,9 +37,7 @@
 	</div>
 {/if}
 {#if selected.hp}
-	<div>
-		Health: {selected.hp.current} / {selected.hp.max}
-	</div>
+    <Hp currentHp={selected.hp.current} maxHp={selected.hp.max} />
 {/if}
 {#if selected.melee}
 	<div>Melee Power: {selected.melee.power}</div>

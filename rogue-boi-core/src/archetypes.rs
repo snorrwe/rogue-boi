@@ -158,6 +158,7 @@ pub type StuffToJsQuery<'a> = QuerySet<(
             Option<&'a Pos>,
             Option<&'a Color>,
             Option<&'a Defense>,
+            Option<&'a EquipmentType>,
         ),
         With<Item>,
     >,
@@ -246,7 +247,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
         | StuffTag::ConfusionScroll
         | StuffTag::PoisonScroll
         | StuffTag::FireBallScroll => {
-            let (icon, name, desc, ranged, heal, melee, pos, color, defense) =
+            let (icon, name, desc, ranged, heal, melee, pos, color, defense, eq_ty) =
                 query.q1().fetch(id).unwrap();
 
             let equipped = query
@@ -256,15 +257,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
                 .map(|eq| eq.contains(id))
                 .unwrap_or(false);
 
-            let equipable = pos.is_none()
-                && !equipped
-                && matches!(
-                    tag,
-                    StuffTag::Dagger
-                        | StuffTag::Sword
-                        | StuffTag::LeatherArmor
-                        | StuffTag::ChainMailArmor
-                );
+            let equipable = pos.is_none() && !equipped && eq_ty.is_some();
 
             let usable = pos.is_none()
                 && matches!(

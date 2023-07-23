@@ -39,29 +39,29 @@ fn read_weights(name: &str, sheet: calamine::Range<calamine::DataType>) -> Strin
 }
 
 #[derive(Deserialize, Debug)]
-pub struct ChanceRow {
-    pub level: u32,
-    pub tag: String,
-    pub weight: i32,
+struct ChanceRow {
+    level: u32,
+    tag: String,
+    weight: i32,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct StuffDescription {
-    pub tag: String,
-    pub icon: String,
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub color: Option<String>,
-    pub exp: Option<u32>,
-    pub hp: Option<i32>,
-    pub melee_power: Option<i32>,
-    pub melee_skill: Option<i32>,
-    pub defense: Option<i32>,
-    pub heal: Option<i32>,
-    pub ranged_power: Option<i32>,
-    pub ranged_range: Option<i32>,
-    pub ranged_skill: Option<i32>,
-    pub aoe: Option<u32>,
+struct StuffDescription {
+    tag: String,
+    icon: String,
+    name: Option<String>,
+    description: Option<String>,
+    color: Option<String>,
+    exp: Option<u32>,
+    hp: Option<i32>,
+    melee_power: Option<i32>,
+    melee_skill: Option<i32>,
+    defense: Option<i32>,
+    heal: Option<i32>,
+    ranged_power: Option<i32>,
+    ranged_range: Option<i32>,
+    ranged_skill: Option<i32>,
+    aoe: Option<u32>,
 }
 
 fn optional_stuff<T>(
