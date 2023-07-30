@@ -49,14 +49,12 @@ Debug tool to visualize the map generator's behaviour
 
 <style>
 	.gridContainer {
-		width: 100%;
-		height: 60%;
+		width: 100vw;
+		height: 80vh;
 		overflow: auto;
 	}
 
 	.grid {
-		max-width: 100%;
-		max-height: 100%;
 		display: grid;
 		grid-template-columns: repeat(var(--cols), 1em);
 		grid-auto-rows: 1em;
