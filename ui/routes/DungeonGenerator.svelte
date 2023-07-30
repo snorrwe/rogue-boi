@@ -36,7 +36,7 @@ Debug tool to visualize the map generator's behaviour
 <input type="number" placeholder="level" min="1" bind:value={level} />
 <button on:click={() => regenerate({ dims, level })}>Regen</button>
 <div class="gridContainer">
-	<div class="grid">
+	<div class="grid" style="--cols:{dims[0]}">
 		{#each tiles as tile}
 			{#if tile}
 				<img src={icons[tile]} alt={tile} />
@@ -58,7 +58,7 @@ Debug tool to visualize the map generator's behaviour
 		max-width: 100%;
 		max-height: 100%;
 		display: grid;
-		grid-template-columns: repeat(64, 1em);
+		grid-template-columns: repeat(var(--cols), 1em);
 		grid-auto-rows: 1em;
 	}
 </style>
