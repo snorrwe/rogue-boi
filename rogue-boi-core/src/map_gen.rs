@@ -218,7 +218,9 @@ pub fn generate_map(
                 // leave walls around the edge of the map just to be safe
                 for y in -1..=1 {
                     for x in -1..=1 {
-                        let stuff = working_set.at(pos.x + x, pos.y + y).and_then(|x| x.as_ref());
+                        let stuff = working_set
+                            .at(pos.x + x, pos.y + y)
+                            .and_then(|x| x.as_ref());
                         match stuff {
                             None | Some(StuffTag::Door) => {
                                 init_entity(pos, tag, &mut cmd, &mut grid);
