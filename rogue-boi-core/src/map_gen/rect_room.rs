@@ -40,6 +40,6 @@ impl RectRoom {
         let w = (self.max.x - self.min.x) + (other.max.x - other.min.x);
         let h = (self.max.y - self.min.y) + (other.max.y - other.min.y);
 
-        d.x.abs() < w + 1 && d.y.abs() < h + 1
+        d.x.abs() < w + 2 && d.y.abs() < h + 2
     }
 }
