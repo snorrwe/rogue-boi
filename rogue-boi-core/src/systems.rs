@@ -14,7 +14,7 @@ use tracing::{debug, info};
 
 pub fn init_world_systems(world: &mut World) {
     world.add_stage(
-        SystemStage::parallel("inputs")
+        SystemStage::new("inputs")
             .with_system(update_input_events)
             .with_system(update_should_tick)
             .with_system(handle_targeting)
@@ -22,12 +22,12 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(handle_levelup),
     );
     world.add_stage(
-        SystemStage::parallel("pre-update")
+        SystemStage::new("pre-update")
             .with_should_run(|should_tick: Res<ShouldTick>| should_tick.0)
             .with_system(record_last_pos),
     );
     world.add_stage(
-        SystemStage::parallel("player-update")
+        SystemStage::new("player-update")
             .with_should_run(should_update_player)
             .with_system(update_equipment_use)
             .with_system(update_consumable_use)
@@ -36,7 +36,7 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(update_camera_pos),
     );
     world.add_stage(
-        SystemStage::parallel("update_item_use")
+        SystemStage::new("update_item_use")
             .with_should_run(should_update_player)
             .with_system(use_poison_scroll)
             .with_system(use_confusion_scroll)
@@ -45,13 +45,13 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(use_fireball),
     );
     world.add_stage(
-        SystemStage::parallel("update-ai-hp")
+        SystemStage::new("update-ai-hp")
             .with_should_run(should_update_world)
             .with_system(update_poison)
             .with_system(update_ai_hp),
     );
     world.add_stage(
-        SystemStage::parallel("ai-update")
+        SystemStage::new("ai-update")
             .with_should_run(should_update_world)
             .with_system(update_ai_move)
             .with_system(update_melee_ai)
@@ -60,21 +60,21 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(update_grid)
             .with_system(update_fov),
     );
-    world.add_stage(SystemStage::parallel("update-pos").with_system(perform_move));
+    world.add_stage(SystemStage::new("update-pos").with_system(perform_move));
     world.add_stage(
-        SystemStage::parallel("render")
+        SystemStage::new("render")
             .with_system(update_output)
             .with_system(render_into_canvas)
             .with_system(clean_inputs),
     );
     world.add_stage(
-        SystemStage::parallel("post-render")
+        SystemStage::new("post-render")
             .with_should_run(should_update_world)
             .with_system(clear_consumable)
             .with_system(update_tick),
     );
     world.add_stage(
-        SystemStage::parallel("dungeon-delve")
+        SystemStage::new("dungeon-delve")
             .with_should_run(|level: Res<DungeonFloor>| level.current != level.desired)
             .with_system(regenerate_dungeon),
     );
@@ -1305,7 +1305,7 @@ pub fn regenerate_dungeon(mut access: WorldAccess) {
     log.push(WHITE, format!("You're on level {}", level));
     world
         .run_stage(
-            SystemStage::serial("initial-post-process")
+            SystemStage::new("initial-post-process")
                 .with_system(update_camera_pos)
                 .with_system(update_grid)
                 .with_system(update_fov)
