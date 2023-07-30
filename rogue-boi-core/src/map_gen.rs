@@ -181,11 +181,6 @@ pub fn generate_map(
 ) {
     // player may or may not exist at this point
     let player_id = player_q.iter().next();
-    let mut working_set = Grid::new(dims.0);
-    // fill the map with walls and delete old entities
-    //
-    // FIXME: this is a lot of wall, use None pls
-    working_set.splat_set([Vec2::ZERO, dims.0], Some(StuffTag::Wall));
     for (_p, stuff) in grid.iter_mut() {
         if let Some(id) = stuff {
             // delete all but player entities from the database
@@ -199,6 +194,11 @@ pub fn generate_map(
         *stuff = None;
     }
 
+    let mut working_set = Grid::new(dims.0);
+    // fill the map with walls and delete old entities
+    //
+    // TODO: this is a lot of walls, clean all unreachable walls
+    working_set.fill(Some(StuffTag::Wall));
     build_rooms(&mut working_set, &props, floor.current);
 
     // insert entities into db
@@ -265,10 +265,17 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
     for (r1, r2) in rooms.iter().zip(rooms.iter().skip(1)) {
         // connect these rooms
         for p in tunnel_between(&mut rng, r1.center(), r2.center()) {
-            if is_on_edge(r1, p) || is_on_edge(r2, p) {
+            grid[p] = None;
+        }
+    }
+
+    // place doors in room gaps
+    // tunnels between room A and B may cut through room C so use a separate loop to fill doors
+    // instead of eagerly in the connector loop
+    for room in rooms.iter() {
+        for p in iter_edge(room) {
+            if grid[p].is_none() {
                 grid[p] = Some(StuffTag::Door);
-            } else {
-                grid[p] = None;
             }
         }
     }
@@ -323,12 +330,12 @@ fn tunnel_between(mut rng: impl Rng, start: Vec2, end: Vec2) -> impl Iterator<It
     TunnelIter::new(start, end, Vec2::new(cornerx, cornery))
 }
 
-fn is_on_edge(room: &RectRoom, point: Vec2) -> bool {
-    if room.min.x - 1 == point.x || room.max.x + 1 == point.x {
-        room.min.y <= point.y && point.y <= room.max.y
-    } else if room.min.y - 1 == point.y || room.max.y + 1 == point.y {
-        room.min.x <= point.x && point.x <= room.max.x
-    } else {
-        false
-    }
+fn iter_edge<'a>(room: &'a RectRoom) -> impl Iterator<Item = Vec2> + 'a {
+    // +-1 in x to touch the corners
+    (room.min.x - 1..=room.max.x + 1)
+        .flat_map(|x| [Vec2::new(x, room.min.y - 1), Vec2::new(x, room.max.y + 1)])
+        .chain(
+            (room.min.y..room.max.y)
+                .flat_map(|y| [Vec2::new(room.min.x - 1, y), Vec2::new(room.max.x + 1, y)]),
+        )
 }
