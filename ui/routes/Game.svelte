@@ -19,14 +19,14 @@
 
 	canvasStore.subscribe((canvas) => core.setCanvas(canvas));
 
-	const onKey = (event) => {
+	function onKey(event) {
 		core.pushEvent({
 			ty: 'KeyDown',
 			key: event.key
 		});
-	};
+	}
 
-	const gameLoop = () => {
+	function gameLoop() {
 		if (core) {
 			const now = performance.now();
 
@@ -43,7 +43,7 @@
 			}
 		}
 		requestAnimationFrame(gameLoop);
-	};
+	}
 	requestAnimationFrame(gameLoop);
 </script>
 
