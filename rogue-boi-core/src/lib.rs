@@ -106,11 +106,12 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     init_world_systems(world);
 }
 
-fn default_world() -> World {
-    let world_dims = Vec2 { x: 64, y: 64 };
-    let mut world = World::new(world_dims.x as u32 * world_dims.y as u32);
+pub const WORLD_DIMS: Vec2 = Vec2 { x: 64, y: 64 };
 
-    init_world(world_dims, &mut world);
+fn default_world() -> World {
+    let mut world = World::new(WORLD_DIMS.x as u32 * WORLD_DIMS.y as u32);
+
+    init_world(WORLD_DIMS, &mut world);
     world
 }
 
@@ -252,6 +253,21 @@ fn to_item_desc(id: EntityId, i: ItemPropsTuple) -> ItemDesc {
 
 const BASE64_ENGINE: GeneralPurpose = base64::engine::general_purpose::STANDARD_NO_PAD;
 
+#[derive(serde::Deserialize)]
+pub struct MapGenParams {
+    pub dims: Vec2,
+    pub level: u32,
+}
+
+impl Default for MapGenParams {
+    fn default() -> Self {
+        MapGenParams {
+            dims: WORLD_DIMS,
+            level: 1,
+        }
+    }
+}
+
 #[wasm_bindgen]
 impl Core {
     pub fn restart(&mut self) {
@@ -279,11 +295,17 @@ impl Core {
     }
 
     /// Generate a dungoen without altering the world state
-    pub fn generate_dungeon(&self) -> JsValue {
-        let mut world = default_world();
-        // TODO: pass size as parameter
-        // TODO: pass as parameter
-        world.insert_resource(DungeonFloor::default());
+    pub fn generate_dungeon(&self, params: JsValue) -> JsValue {
+        let params: Option<MapGenParams> =
+            serde_wasm_bindgen::from_value(params).expect("Failed to deserialize params");
+        let params = params.unwrap_or_default();
+
+        let mut world = World::new(params.dims.x as u32 * params.dims.y as u32);
+        init_world(params.dims, &mut world);
+        world.insert_resource(DungeonFloor {
+            current: 0,
+            desired: params.level,
+        });
         world.run_system(regenerate_dungeon);
 
         world.run_system(move |tags: Query<(EntityId, &Icon, &Pos)>| {

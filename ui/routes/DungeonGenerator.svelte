@@ -5,6 +5,7 @@
 	let dungeon;
 	let tiles = [];
 	let icons;
+	let level = 1;
 
 	iconsSvg.subscribe((i) => {
 		icons = {};
@@ -17,12 +18,11 @@
 
 	coreStore.subscribe((c) => {
 		core = c;
-		regenerate(dims);
+		regenerate({ dims, level });
 	});
 	// Debug ui for dungeon generation
-	function regenerate(dims) {
-		// TODO: pass args
-		dungeon = core.generate_dungeon();
+	function regenerate({ dims, level }) {
+		dungeon = core.generate_dungeon({ level, dims: { x: dims[0], y: dims[1] } });
 		tiles.length = 0;
 		for (let y = 0; y < dims[1]; ++y) {
 			for (let x = 0; x < dims[0]; ++x) {
@@ -33,7 +33,8 @@
 </script>
 
 Debug tool to visualize the map generator's behaviour
-<button on:click={() => regenerate(dims)}>Regen</button>
+<input type="number" placeholder="level" min="1" bind:value={level} />
+<button on:click={() => regenerate({ dims, level })}>Regen</button>
 <div class="gridContainer">
 	<div class="grid">
 		{#each tiles as tile}
