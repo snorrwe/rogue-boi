@@ -193,11 +193,7 @@ pub fn generate_map(
         }
         *stuff = None;
     }
-
     let mut working_set = Grid::new(dims.0);
-    // fill the map with walls and delete old entities
-    //
-    // TODO: this is a lot of walls, clean all unreachable walls
     working_set.fill(Some(StuffTag::Wall));
     build_rooms(&mut working_set, &props, floor.current);
 
