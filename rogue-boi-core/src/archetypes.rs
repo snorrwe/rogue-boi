@@ -67,7 +67,7 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
         StuffTag::LeatherArmor | StuffTag::ChainMailArmor => {
             cmd.insert_bundle((Item, EquipmentType::Armor, StaticVisibility));
         }
-        StuffTag::Sword | StuffTag::Dagger => {
+        StuffTag::Sword | StuffTag::RareDagger | StuffTag::RareSword | StuffTag::Dagger => {
             cmd.insert_bundle((Item, EquipmentType::Weapon, StaticVisibility));
         }
         StuffTag::HpPotion => {
@@ -138,6 +138,8 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         | StuffTag::ChainMailArmor
         | StuffTag::Dagger
         | StuffTag::Sword
+        | StuffTag::RareSword
+        | StuffTag::RareDagger
         | StuffTag::HpPotion
         | StuffTag::LightningScroll
         | StuffTag::ConfusionScroll
@@ -242,6 +244,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValu
         | StuffTag::ChainMailArmor
         | StuffTag::LeatherArmor
         | StuffTag::Sword
+        | StuffTag::RareSword
+        | StuffTag::RareDagger
         | StuffTag::Dagger
         | StuffTag::LightningScroll
         | StuffTag::ConfusionScroll

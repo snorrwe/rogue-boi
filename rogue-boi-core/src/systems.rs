@@ -570,7 +570,9 @@ fn handle_player_move(
                 | StuffTag::LeatherArmor
                 | StuffTag::ChainMailArmor
                 | StuffTag::Sword
+                | StuffTag::RareSword
                 | StuffTag::Dagger
+                | StuffTag::RareDagger
                 | StuffTag::ConfusionScroll
                 | StuffTag::FireBallScroll
                 | StuffTag::Tombstone
