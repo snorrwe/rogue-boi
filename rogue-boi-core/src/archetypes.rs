@@ -182,7 +182,7 @@ pub type StuffToJsQuery<'a> = QuerySet<(
     Query<&'a Equipment, With<PlayerTag>>,
 )>;
 
-pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: StuffToJsQuery) -> JsValue {
+pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsValue {
     let payload = match tag {
         StuffTag::Door | StuffTag::Stairs | StuffTag::Tombstone => {
             let (icon, name, desc) = query.q4().fetch(id).unwrap();

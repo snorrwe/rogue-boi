@@ -12,6 +12,7 @@
 		{/if}
 		<li><a href="#newgame">New Game</a></li>
 		<li><a href="#options">Options</a></li>
+		<li><a href="#dungeon-gen">Map generator</a></li>
 	</ul>
 </nav>
 

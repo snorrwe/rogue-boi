@@ -4,6 +4,7 @@
 	import Menu from './routes/Menu.svelte';
 	import Game from './routes/Game.svelte';
 	import Options from './routes/Options.svelte';
+	import DungeonGenerator from './routes/DungeonGenerator.svelte';
 
 	export let core;
 	let page = Menu;
@@ -63,7 +64,8 @@
 					return Menu;
 				},
 				'#menu': () => Menu,
-				'#options': () => Options
+				'#options': () => Options,
+				'#dungeon-gen': () => DungeonGenerator
 			}[location.hash] || (() => Menu);
 		page = factory();
 	};

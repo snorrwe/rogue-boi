@@ -106,12 +106,17 @@ pub fn init_world(world_dims: Vec2, world: &mut World) {
     init_world_systems(world);
 }
 
-#[wasm_bindgen(js_name = "initCore")]
-pub fn init_core() -> Core {
+fn default_world() -> World {
     let world_dims = Vec2 { x: 64, y: 64 };
     let mut world = World::new(world_dims.x as u32 * world_dims.y as u32);
 
     init_world(world_dims, &mut world);
+    world
+}
+
+#[wasm_bindgen(js_name = "initCore")]
+pub fn init_core() -> Core {
+    let world = default_world();
 
     let world = Rc::new(RefCell::new(world));
     Core { world }
@@ -273,6 +278,23 @@ impl Core {
         world.run_system(regenerate_dungeon);
     }
 
+    /// Generate a dungoen without altering the world state
+    pub fn generate_dungeon(&self) -> JsValue {
+        let mut world = default_world();
+        // TODO: pass size as parameter
+        // TODO: pass as parameter
+        world.insert_resource(DungeonFloor::default());
+        world.run_system(regenerate_dungeon);
+
+        world.run_system(move |tags: Query<(EntityId, &Icon, &Pos)>| {
+            let map = tags
+                .iter()
+                .map(|(_id, icon, pos)| (format!("{};{}", pos.0.x, pos.0.y), &icon.0))
+                .collect::<std::collections::HashMap<_, _>>();
+            serde_wasm_bindgen::to_value(&map).unwrap()
+        })
+    }
+
     /// return the name of the icons (without the extension!)
     pub fn icons(&self) -> JsValue {
         let entries: Vec<_> = ICONS.iter().map(|(k, _x)| k).collect();
@@ -420,7 +442,7 @@ impl Core {
             return JsValue::null();
         }
         world.run_system(move |tags: Query<&StuffTag>, q| {
-            archetypes::stuff_to_js(id, *tags.fetch(id).unwrap(), q)
+            archetypes::stuff_to_js(id, *tags.fetch(id).unwrap(), &q)
         })
     }
 
