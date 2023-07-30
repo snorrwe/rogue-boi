@@ -39,7 +39,7 @@
 				let pl = $coreStore.save();
 				localStorage.setItem('save', pl);
 			}
-		}, 10000);
+		}, 30000);
 		return () => clearInterval(autoSaveHandle);
 	});
 
