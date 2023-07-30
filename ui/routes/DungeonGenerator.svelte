@@ -1,9 +1,17 @@
 <script>
-	import { coreStore } from '@rogueBoi/store.js';
+	import { coreStore, icons as iconsSvg } from '@rogueBoi/store.js';
 
 	let core;
 	let dungeon;
 	let tiles = [];
+	let icons;
+
+	iconsSvg.subscribe((i) => {
+		icons = {};
+		for (const [k, v] of Object.entries(i)) {
+			icons[k] = `data:image/svg+xml;base64,${btoa(v)}`;
+		}
+	});
 
 	const dims = [64, 64]; // FIXME: query from core, or set on dungeon generation
 
@@ -30,7 +38,7 @@ Debug tool to visualize the map generator's behaviour
 	<div class="grid">
 		{#each tiles as tile}
 			{#if tile}
-				<embed type="image/svg+xml" src={`icons/${tile}.svg`} />
+				<img src={icons[tile]} alt={tile} />
 			{:else}
 				<div />
 			{/if}
