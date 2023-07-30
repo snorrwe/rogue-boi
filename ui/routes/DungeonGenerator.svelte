@@ -35,18 +35,24 @@
 
 <div>Debug tool to visualize the map generator's behaviour</div>
 <div>
-	<label for="level">Level</label>
-	<input type="number" name="level" placeholder="level" min="1" bind:value={level} />
-	<label for="x">Width</label>
-	<input type="number" name="x" placeholder="x" min="1" bind:value={desiredDims[0]} />
-	<label for="y">Height</label>
-	<input type="number" name="y" placeholder="y" min="1" bind:value={desiredDims[1]} />
-	<button
-		on:click={() => {
-			dims = desiredDims;
-			regenerate({ dims, level });
-		}}>Regen</button
-	>
+	<div>
+		<label for="level">Level</label>
+		<input type="number" name="level" placeholder="level" min="1" bind:value={level} />
+	</div>
+	<div>
+		<label for="x">Width</label>
+		<input type="number" name="x" placeholder="x" min="1" bind:value={desiredDims[0]} />
+		<label for="y">Height</label>
+		<input type="number" name="y" placeholder="y" min="1" bind:value={desiredDims[1]} />
+	</div>
+	<div>
+		<button
+			on:click={() => {
+				dims = desiredDims;
+				regenerate({ dims, level });
+			}}>Regen</button
+		>
+	</div>
 	<div class="gridContainer">
 		<div class="grid" style="--cols:{dims[0]}">
 			{#each tiles as tile}
