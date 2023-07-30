@@ -14,7 +14,8 @@
 		}
 	});
 
-	const dims = [64, 64]; // FIXME: query from core, or set on dungeon generation
+	let dims = [64, 64]; // FIXME: query from core, or set on dungeon generation
+	let desiredDims = dims;
 
 	coreStore.subscribe((c) => {
 		core = c;
@@ -32,18 +33,30 @@
 	}
 </script>
 
-Debug tool to visualize the map generator's behaviour
-<input type="number" placeholder="level" min="1" bind:value={level} />
-<button on:click={() => regenerate({ dims, level })}>Regen</button>
-<div class="gridContainer">
-	<div class="grid" style="--cols:{dims[0]}">
-		{#each tiles as tile}
-			{#if tile}
-				<img src={icons[tile]} alt={tile} />
-			{:else}
-				<div />
-			{/if}
-		{/each}
+<div>Debug tool to visualize the map generator's behaviour</div>
+<div>
+	<label for="level">Level</label>
+	<input type="number" name="level" placeholder="level" min="1" bind:value={level} />
+	<label for="x">Width</label>
+	<input type="number" name="x" placeholder="x" min="1" bind:value={desiredDims[0]} />
+	<label for="y">Height</label>
+	<input type="number" name="y" placeholder="y" min="1" bind:value={desiredDims[1]} />
+	<button
+		on:click={() => {
+			dims = desiredDims;
+			regenerate({ dims, level });
+		}}>Regen</button
+	>
+	<div class="gridContainer">
+		<div class="grid" style="--cols:{dims[0]}">
+			{#each tiles as tile}
+				{#if tile}
+					<img src={icons[tile]} alt={tile} />
+				{:else}
+					<div />
+				{/if}
+			{/each}
+		</div>
 	</div>
 </div>
 

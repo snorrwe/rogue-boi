@@ -303,10 +303,11 @@ impl Core {
         let mut world = World::new(params.dims.x as u32 * params.dims.y as u32);
         init_world(params.dims, &mut world);
         world.insert_resource(DungeonFloor {
-            current: 0,
+            current: params.level,
             desired: params.level,
         });
-        world.run_system(regenerate_dungeon);
+        world.insert_resource(map_gen::MapGenProps::from_level(params.level));
+        world.run_system(map_gen::generate_map);
 
         world.run_system(move |tags: Query<(EntityId, &Icon, &Pos)>| {
             let map = tags
