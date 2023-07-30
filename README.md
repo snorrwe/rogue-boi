@@ -8,11 +8,21 @@ The game is available on [itch.io](https://snorrwe.itch.io/rogue-boi).
 
 ### Install dependencies
 
+You can either install dependencies yourself or use [Nix](https://nixos.org/manual/nix/stable/installation/installation.html)
+
+Manual installation:
+
 - [rust](https://www.rust-lang.org/tools/install)
 - [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)
 - [nodejs](https://nodejs.org/en/)
 - yarn `npm install -g yarn`
 - Run `yarn`
+
+Via nix:
+
+```sh
+nix-shell
+```
 
 ### Run
 
