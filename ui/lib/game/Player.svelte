@@ -3,7 +3,7 @@
 
 	import Inventory from './Inventory.svelte';
 	import Equipment from './Equipment.svelte';
-    import Hp from './Hp.svelte';
+	import Hp from './Hp.svelte';
 
 	$: ({ player, targeting, appMode } = $coreOutput);
 
@@ -36,7 +36,12 @@
 
 		<h2>Player stats</h2>
 		{#if hp != null}
-            <Hp currentHp={hp.current} maxHp={hp.max} />
+			<div>
+				{#if levelup}
+					<button on:click={() => $coreStore.setLevelupStat({ ty: 'Hp' })}>+</button>
+				{/if}
+				<Hp currentHp={hp.current} maxHp={hp.max} />
+			</div>
 		{/if}
 		{#if attack != null}
 			<p>
