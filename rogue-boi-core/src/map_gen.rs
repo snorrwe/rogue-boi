@@ -1,7 +1,7 @@
 mod rect_room;
 mod tunnel_iter;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
@@ -187,16 +187,16 @@ pub fn generate_map(
         }
         *stuff = None;
     }
-    let mut working_set = Grid::new(dims.0);
-    working_set.fill(Some(StuffTag::Wall));
-    build_rooms(&mut working_set, &props, floor.current);
+    let mut working_grid = Grid::new(dims.0);
+    working_grid.fill(Some(StuffTag::Wall));
+    build_rooms(&mut working_grid, &props, floor.current);
 
     // insert entities into db
     //
     if dims.0 != grid.dims() {
         *grid = Grid::new(dims.0);
     }
-    'insert_loop: for (pos, tag) in working_set.iter().filter_map(|(p, t)| t.map(|t| (p, t))) {
+    'insert_loop: for (pos, tag) in working_grid.iter().filter_map(|(p, t)| t.map(|t| (p, t))) {
         match tag {
             StuffTag::Player => {
                 if let Some(player_id) = player_id {
@@ -207,29 +207,75 @@ pub fn generate_map(
                     init_entity(pos, tag, &mut cmd, &mut grid);
                 }
             }
-            StuffTag::Wall => {
-                // clear invisible walls
-                // leave walls around the edge of the map just to be safe
-                for y in -1..=1 {
-                    for x in -1..=1 {
-                        let stuff = working_set
-                            .at(pos.x + x, pos.y + y)
-                            .and_then(|x| x.as_ref());
-                        match stuff {
-                            None | Some(StuffTag::Door) => {
-                                init_entity(pos, tag, &mut cmd, &mut grid);
-                                continue 'insert_loop;
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-            }
+            // StuffTag::Wall => {
+            //     // clear invisible walls
+            //     // leave walls around the edge of the map just to be safe
+            //     for y in -1..=1 {
+            //         for x in -1..=1 {
+            //             let stuff = working_grid
+            //                 .at(pos.x + x, pos.y + y)
+            //                 .and_then(|x| x.as_ref());
+            //             match stuff {
+            //                 None | Some(StuffTag::Door) => {
+            //                     init_entity(pos, tag, &mut cmd, &mut grid);
+            //                     continue 'insert_loop;
+            //                 }
+            //                 _ => {}
+            //             }
+            //         }
+            //     }
+            // }
             _ => {
                 init_entity(pos, tag, &mut cmd, &mut grid);
             }
         }
     }
+}
+
+fn build_tunnels(mut rng: impl Rng, grid: &mut Grid<Option<StuffTag>>, rooms: &mut [RectRoom]) {
+    let mut stack = Vec::new();
+    // find the first valid position for tunnels
+    'find: for room in rooms.iter() {
+        let edge = RectRoom {
+            min: room.min - Vec2::ONE,
+            max: room.max + Vec2::ONE,
+        };
+        for pos in iter_edge(&edge)
+            .filter(|Vec2 { x, y }| grid.contains(*x, *y))
+            .filter(|pos| rooms.iter().all(|r| !r.contains_point(*pos)))
+        {
+            stack.push(pos);
+            break 'find;
+        }
+    }
+
+    assert!(!stack.is_empty());
+
+    let mut visited = HashSet::new();
+
+    while let Some(pos) = stack.pop() {
+        visited.insert(pos);
+        if rooms.iter().all(|r| !r.touches_point(pos)) {
+            let _old = grid[pos].take();
+            for d in [-Vec2::Y, Vec2::Y, -Vec2::X, Vec2::X] {
+                let pos = pos + d;
+                if !visited.contains(&pos)
+                    && grid.at(pos.x, pos.y).and_then(|t| t.as_ref()).is_some()
+                {
+                    stack.push(Vec2::new(pos.x, pos.y));
+                }
+            }
+        }
+    }
+
+    // rooms.shuffle(&mut rng);
+    //
+    // for (r1, r2) in rooms.iter().zip(rooms.iter().skip(1)) {
+    //     // connect these rooms
+    //     for p in tunnel_between(&mut rng, r1.center(), r2.center()) {
+    //         grid[p] = None;
+    //     }
+    // }
 }
 
 fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u32) {
@@ -240,9 +286,10 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
         let width = rng.gen_range(props.room_min_size..props.room_max_size) as i32;
         let height = rng.gen_range(props.room_min_size..props.room_max_size) as i32;
 
-        // -2 so all rooms have walls, even those that touch the end of the map
-        let x = rng.gen_range(1..grid.width() - 2 - width);
-        let y = rng.gen_range(1..grid.height() - 2 - height);
+        // -3 so all rooms have walls, even those that touch the end of the map
+        const PADDING: i32 = 3;
+        let x = rng.gen_range(PADDING..grid.width() - 1 - PADDING - width);
+        let y = rng.gen_range(PADDING..grid.height() - 1 - PADDING - height);
 
         let room = RectRoom::new(x, y, width, height);
         for r in rooms.iter() {
@@ -254,15 +301,9 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
         rooms.push(room);
     }
 
-    assert!(rooms.len() >= 2);
-    rooms.shuffle(&mut rng);
+    debug!("Rooms: {rooms:?}");
 
-    for (r1, r2) in rooms.iter().zip(rooms.iter().skip(1)) {
-        // connect these rooms
-        for p in tunnel_between(&mut rng, r1.center(), r2.center()) {
-            grid[p] = None;
-        }
-    }
+    build_tunnels(&mut rng, grid, &mut rooms);
 
     // place doors in room gaps
     // tunnels between room A and B may cut through room C so use a separate loop to fill doors
@@ -330,7 +371,7 @@ fn iter_edge<'a>(room: &'a RectRoom) -> impl Iterator<Item = Vec2> + 'a {
     (room.min.x - 1..=room.max.x + 1)
         .flat_map(|x| [Vec2::new(x, room.min.y - 1), Vec2::new(x, room.max.y + 1)])
         .chain(
-            (room.min.y..room.max.y)
+            (room.min.y..=room.max.y)
                 .flat_map(|y| [Vec2::new(room.min.x - 1, y), Vec2::new(room.max.x + 1, y)]),
         )
 }

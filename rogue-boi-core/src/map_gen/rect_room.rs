@@ -1,5 +1,6 @@
 use crate::{grid::Grid, math::Vec2};
 
+#[derive(Debug)]
 pub struct RectRoom {
     pub(crate) min: Vec2,
     pub(crate) max: Vec2,
@@ -41,5 +42,16 @@ impl RectRoom {
         let h = (self.max.y - self.min.y) + (other.max.y - other.min.y);
 
         d.x.abs() < w + 3 && d.y.abs() < h + 3
+    }
+
+    pub fn contains_point(&self, p: Vec2) -> bool {
+        self.min.x <= p.x && p.x <= self.max.x && self.min.y <= p.y && p.y <= self.max.y
+    }
+
+    pub fn touches_point(&self, p: Vec2) -> bool {
+        self.min.x - 1 <= p.x
+            && p.x <= self.max.x + 1
+            && self.min.y - 1 <= p.y
+            && p.y <= self.max.y + 1
     }
 }
