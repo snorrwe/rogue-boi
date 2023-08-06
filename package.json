@@ -25,10 +25,9 @@
 		"rollup-plugin-livereload": "^1.0.0",
 		"rollup-plugin-svelte": "^7.1",
 		"rollup-plugin-terser": "^5.1.2",
-		"svelte": "^3.42.6"
+		"svelte": "^3.42.6",
+		"sirv-cli": "^1.0.14"
 	},
 	"type": "module",
-	"dependencies": {
-		"sirv-cli": "^1.0.14"
-	}
+	"dependencies": {}
 }
