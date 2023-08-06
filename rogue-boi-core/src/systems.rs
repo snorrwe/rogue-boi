@@ -547,6 +547,7 @@ fn handle_player_move(
                 | StuffTag::Troll
                 | StuffTag::Orc
                 | StuffTag::Warlord
+                | StuffTag::Zombie
                 | StuffTag::Minotaur => {
                     if skill_check(power.skill) {
                         let (hp, defense) = enemy_q.fetch_mut(stuff_id).expect("Enemy has no hp");

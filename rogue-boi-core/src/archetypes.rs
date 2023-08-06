@@ -61,6 +61,7 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
         | StuffTag::Orc
         | StuffTag::Warlord
         | StuffTag::Goblin
+        | StuffTag::Zombie
         | StuffTag::Minotaur => {
             cmd.insert_bundle((Ai, PathCache::default(), Velocity::default()));
         }
@@ -127,7 +128,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
                 radius: 20,
             },));
         }
-        StuffTag::Warlord | StuffTag::Minotaur => {
+        StuffTag::Zombie | StuffTag::Warlord | StuffTag::Minotaur => {
             cmd.insert_bundle((Leash {
                 origin: pos,
                 radius: 40,
@@ -222,6 +223,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
         | StuffTag::Troll
         | StuffTag::Orc
         | StuffTag::Warlord
+        | StuffTag::Zombie
         | StuffTag::Minotaur => {
             let (icon, name, ranged, melee, hp, description, color, defense) =
                 query.q2().fetch(id).unwrap();
