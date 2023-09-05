@@ -1058,16 +1058,18 @@ pub fn render_into_canvas(
         }
     };
 
-    ctx.set_fill_style(&"gray".into());
-    ctx.fill_rect(0.0, 0.0, width, height);
     let min = camera_pos.0 - viewport.0;
     let max = camera_pos.0 + viewport.0;
+
     let cell_size = canvas_cell_size(width, height, viewport.0);
     let icon_scale = cell_size / 512.0;
 
     let black = "black".into();
     let darkgrey = "darkgrey".into();
     let white = "white".into();
+
+    ctx.set_fill_style(&"gray".into());
+    ctx.fill_rect(0.0, 0.0, width, height);
 
     for y in min.y.max(0)..(max.y + 1).min(grid.height()) {
         for x in min.x.max(0)..(max.x + 1).min(grid.width()) {
@@ -1084,55 +1086,43 @@ pub fn render_into_canvas(
             let render_x = render_pos.x as f64 * cell_size;
             let render_y = render_pos.y as f64 * cell_size;
 
-            if !visible {
+            if visible {
+                ctx.set_fill_style(&black);
+            } else {
                 ctx.set_fill_style(&darkgrey);
             }
+            // either the icon background or the empty space
+            ctx.fill_rect(render_x, render_y, cell_size, cell_size);
 
-            if explored {
-                match grid[pos].and_then(|id| stuff.fetch(id).map(|x| (id, x))) {
-                    Some((_id, (static_vis_tag, icon, color))) => {
-                        // icon background
-                        if visible {
-                            ctx.set_fill_style(&black);
-                        } else {
-                            ctx.set_fill_style(&darkgrey);
-                        }
-                        ctx.fill_rect(render_x, render_y, cell_size, cell_size);
-                        // render icon
-                        if visible || static_vis_tag.is_some() {
-                            ctx.fill_rect(render_x, render_y, cell_size, cell_size);
-                            match icons.0.get(icon.0) {
-                                Some(icon) => {
-                                    match color {
-                                        Some(Color(ref color)) => {
-                                            ctx.set_fill_style(color);
-                                        }
-                                        None => {
-                                            ctx.set_fill_style(&white);
-                                        }
-                                    }
-                                    ctx.save();
-                                    ctx.translate(render_x, render_y).unwrap();
-                                    ctx.scale(icon_scale, icon_scale).unwrap();
-                                    ctx.fill_with_path_2d(icon);
-                                    ctx.restore();
+            if let Some((_id, (static_vis_tag, icon, color))) =
+                grid[pos].and_then(|id| stuff.fetch(id).map(|x| (id, x)))
+            {
+                // render icon
+                if visible || static_vis_tag.is_some() {
+                    ctx.fill_rect(render_x, render_y, cell_size, cell_size);
+                    match icons.0.get(icon.0) {
+                        Some(icon) => {
+                            match color {
+                                Some(Color(ref color)) => {
+                                    ctx.set_fill_style(color);
                                 }
                                 None => {
-                                    // if icon can not be fetched
-                                    if let Some(Color(ref color)) = color {
-                                        ctx.set_fill_style(color);
-                                    }
-                                    ctx.fill_rect(render_x, render_y, cell_size, cell_size);
+                                    ctx.set_fill_style(&white);
                                 }
                             }
+                            ctx.save();
+                            ctx.translate(render_x, render_y).unwrap();
+                            ctx.scale(icon_scale, icon_scale).unwrap();
+                            ctx.fill_with_path_2d(icon);
+                            ctx.restore();
                         }
-                    }
-                    None => {
-                        // empty space
-                        if visible {
-                            ctx.set_fill_style(&black);
+                        None => {
+                            // if icon can not be fetched
+                            if let Some(Color(ref color)) = color {
+                                ctx.set_fill_style(color);
+                            }
+                            ctx.fill_rect(render_x, render_y, cell_size, cell_size);
                         }
-                        ctx.fill_rect(render_x, render_y, cell_size, cell_size);
                     }
                 }
             }
