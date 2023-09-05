@@ -1068,7 +1068,6 @@ pub fn render_into_canvas(
     let black = "black".into();
     let darkgrey = "darkgrey".into();
     let white = "white".into();
-    let yellow = "yellow".into();
 
     for y in min.y.max(0)..(max.y + 1).min(grid.height()) {
         for x in min.x.max(0)..(max.x + 1).min(grid.width()) {
@@ -1085,9 +1084,7 @@ pub fn render_into_canvas(
             let render_x = render_pos.x as f64 * cell_size;
             let render_y = render_pos.y as f64 * cell_size;
 
-            if visible {
-                ctx.set_fill_style(&yellow);
-            } else {
+            if !visible {
                 ctx.set_fill_style(&darkgrey);
             }
 
