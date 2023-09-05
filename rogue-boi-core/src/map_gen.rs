@@ -60,20 +60,14 @@ impl MapGenProps {
 
 #[derive(Default, Debug)]
 struct EntityChances {
-    enemy_tags: smallvec::SmallVec<[StuffTag; 8]>,
-    enemy_weights: smallvec::SmallVec<[i32; 8]>,
-    item_tags: smallvec::SmallVec<[StuffTag; 8]>,
-    item_weights: smallvec::SmallVec<[i32; 8]>,
+    enemy_tags: Vec<StuffTag>,
+    enemy_weights: Vec<i32>,
+    item_tags: Vec<StuffTag>,
+    item_weights: Vec<i32>,
 }
 
 pub type EntityChanceList<'a> = &'a [(u32, &'a [(StuffTag, i32)])];
-fn entity_weighted_chances(
-    floor: u32,
-    chances: EntityChanceList,
-) -> (
-    smallvec::SmallVec<[StuffTag; 8]>,
-    smallvec::SmallVec<[i32; 8]>,
-) {
+fn entity_weighted_chances(floor: u32, chances: EntityChanceList) -> (Vec<StuffTag>, Vec<i32>) {
     // allow overriding chances on higher floors
     let mut weighted_chances = HashMap::new();
     for (key, weights) in chances {
