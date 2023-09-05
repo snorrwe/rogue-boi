@@ -1,8 +1,11 @@
 # Rogue Boi
 
-Loosely following http://rogueliketutorials.com/tutorials/tcod/v2/
+A classic rogue-like in the browser. Started by loosely following http://rogueliketutorials.com/tutorials/tcod/v2/ .
 
 The game is available on [itch.io](https://snorrwe.itch.io/rogue-boi).
+
+I use this project as both a recreational coding excercise and to try out new techniques and libraries.
+For this reason the codebase is at times ridiculously over-engineered for what it does.
 
 ## Start local
 
@@ -33,3 +36,10 @@ yarn dev
 ### Icons
 
 Icons are from [game-icons.net](https://game-icons.net/)
+
+### Generating the CHANGELOG
+
+```sh
+git cliff
+```
+
