@@ -1288,8 +1288,8 @@ pub fn regenerate_dungeon(mut access: WorldAccess) {
     world.insert_resource(map_gen::MapGenProps::from_level(level));
     world.insert_resource(PlayerActions::new());
 
-    world.run_system(map_gen::generate_map);
-    world.run_system(init_grids);
+    world.run_system(map_gen::generate_map).unwrap();
+    world.run_system(init_grids).unwrap();
 
     let log = world.get_resource_mut::<LogHistory>().unwrap();
     log.push(WHITE, format!("You're on level {}", level));

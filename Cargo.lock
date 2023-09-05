@@ -164,7 +164,7 @@ dependencies = [
 [[package]]
 name = "cecs"
 version = "0.1.4"
-source = "git+https://github.com/caolo-game/cecs#bcec8c1cf6ed95822a2ff60dcc8ef2f4f7fc9538"
+source = "git+https://github.com/caolo-game/cecs#a3f978429ea9f81c85dfd3bd6714d70f461df6d5"
 dependencies = [
  "serde",
  "smallvec",

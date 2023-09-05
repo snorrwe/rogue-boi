@@ -274,11 +274,13 @@ impl Core {
         let mut world = self.world.borrow_mut();
 
         // delete the player
-        world.run_system(|mut cmd: Commands, q: Query<EntityId, With<PlayerTag>>| {
-            for id in q.iter() {
-                cmd.delete(id);
-            }
-        });
+        world
+            .run_system(|mut cmd: Commands, q: Query<EntityId, With<PlayerTag>>| {
+                for id in q.iter() {
+                    cmd.delete(id);
+                }
+            })
+            .unwrap();
 
         world.insert_resource(DeltaTime(0));
         world.insert_resource(GameTick::default());
@@ -291,7 +293,7 @@ impl Core {
         log.items.clear();
         log.push(WHITE, "Hello wanderer!");
 
-        world.run_system(regenerate_dungeon);
+        world.run_system(regenerate_dungeon).unwrap();
     }
 
     /// Generate a dungoen without altering the world state
@@ -307,15 +309,17 @@ impl Core {
             desired: params.level,
         });
         world.insert_resource(map_gen::MapGenProps::from_level(params.level));
-        world.run_system(map_gen::generate_map);
+        world.run_system(map_gen::generate_map).unwrap();
 
-        world.run_system(move |tags: Query<(EntityId, &Icon, &Pos)>| {
-            let map = tags
-                .iter()
-                .map(|(_id, icon, pos)| (format!("{};{}", pos.0.x, pos.0.y), &icon.0))
-                .collect::<std::collections::HashMap<_, _>>();
-            serde_wasm_bindgen::to_value(&map).unwrap()
-        })
+        world
+            .run_system(move |tags: Query<(EntityId, &Icon, &Pos)>| {
+                let map = tags
+                    .iter()
+                    .map(|(_id, icon, pos)| (format!("{};{}", pos.0.x, pos.0.y), &icon.0))
+                    .collect::<std::collections::HashMap<_, _>>();
+                serde_wasm_bindgen::to_value(&map).unwrap()
+            })
+            .unwrap()
     }
 
     /// return the name of the icons (without the extension!)
@@ -422,7 +426,7 @@ impl Core {
         }
         let mut world = self.world.borrow_mut();
         world.insert_resource(DropItem(id));
-        world.run_system(sys);
+        world.run_system(sys).unwrap();
         world.remove_resource::<DropItem>();
     }
 
@@ -453,7 +457,7 @@ impl Core {
         let mut world = self.world.borrow_mut();
         if world.is_id_valid(id) {
             world.get_resource_mut::<Selected>().unwrap().0 = Some(id);
-            world.run_system(update_output);
+            world.run_system(update_output).unwrap();
         }
     }
 
@@ -464,9 +468,11 @@ impl Core {
         if !world.is_id_valid(id) {
             return JsValue::null();
         }
-        world.run_system(move |tags: Query<&StuffTag>, q| {
-            archetypes::stuff_to_js(id, *tags.fetch(id).unwrap(), &q)
-        })
+        world
+            .run_system(move |tags: Query<&StuffTag>, q| {
+                archetypes::stuff_to_js(id, *tags.fetch(id).unwrap(), &q)
+            })
+            .unwrap()
     }
 
     #[wasm_bindgen(js_name = "setCanvas")]
@@ -494,8 +500,8 @@ impl Core {
                 let [x, y] = [event.offset_x() as f64, event.offset_y() as f64];
                 let mut world = world.borrow_mut();
                 world.insert_resource(ClickPosition(Some([x, y])));
-                world.run_system(handle_click);
-                world.run_system(update_output);
+                world.run_system(handle_click).unwrap();
+                world.run_system(update_output).unwrap();
             });
             canvas
                 .add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())
@@ -504,17 +510,22 @@ impl Core {
         }
 
         self.world.borrow_mut().insert_resource(resources);
-        self.world.borrow_mut().run_system(render_into_canvas);
+        self.world
+            .borrow_mut()
+            .run_system(render_into_canvas)
+            .unwrap();
     }
 
     #[wasm_bindgen(js_name = "cancelItemUse")]
     pub fn cancel_item_use(&mut self) {
         let mut world = self.world.borrow_mut();
-        world.run_system(|mut cmd: Commands, q: Query<EntityId, With<UseItem>>| {
-            q.iter().for_each(|id| {
-                cmd.entity(id).remove::<UseItem>();
-            });
-        });
+        world
+            .run_system(|mut cmd: Commands, q: Query<EntityId, With<UseItem>>| {
+                q.iter().for_each(|id| {
+                    cmd.entity(id).remove::<UseItem>();
+                });
+            })
+            .unwrap();
         let mode = world.get_resource_mut::<AppMode>().unwrap();
         if matches!(*mode, AppMode::Targeting) {
             *mode = AppMode::Game;
@@ -553,10 +564,12 @@ impl Core {
         let dims = *world.get_resource::<WorldDims>().unwrap();
         init_world_transient_resources(dims.0, &mut world);
 
-        world.run_system(archetypes::insert_transient_components);
-        world.run_system(systems::init_grids);
-        world.run_system(systems::update_camera_pos);
-        world.run_system(systems::update_fov);
+        world
+            .run_system(archetypes::insert_transient_components)
+            .unwrap();
+        world.run_system(systems::init_grids).unwrap();
+        world.run_system(systems::update_camera_pos).unwrap();
+        world.run_system(systems::update_fov).unwrap();
         init_world_systems(&mut world);
 
         *self.world.borrow_mut() = world;
