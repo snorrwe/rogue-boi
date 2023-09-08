@@ -42,4 +42,3 @@ Icons are from [game-icons.net](https://game-icons.net/)
 ```sh
 git cliff
 ```
-
