@@ -16,7 +16,7 @@
 		neededXp,
 		level,
 		defense
-	} = player);
+	} = player ? player : {});
 	$: levelup = appMode && appMode.ty == 'Levelup';
 
 	function restartGame() {
