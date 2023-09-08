@@ -16,7 +16,7 @@
 		neededXp,
 		level,
 		defense
-	} = player ?? {});
+	} = player);
 	$: levelup = appMode && appMode.ty == 'Levelup';
 
 	function restartGame() {
@@ -71,9 +71,7 @@
 			<p>Experience: {currentXp} / {neededXp}</p>
 		{/if}
 		<button on:click={() => $coreStore.wait()}>Wait</button>
-	{/if}
-
-	{#if !alive}
+	{:else}
 		<p>You died!</p>
 		<button on:click={() => restartGame()}>Restart</button>
 	{/if}

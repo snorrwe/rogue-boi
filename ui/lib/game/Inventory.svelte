@@ -11,7 +11,7 @@
 <div>
 	<h2>Inventory</h2>
 	<ul>
-		{#each inventory ?? [] as item}
+		{#each inventory as item}
 			<li class="item" on:keyup={() => useItem(item)} on:click={() => useItem(item)}>
 				<div title={item.description} style="--fill-color: {item.color || 'white'}">
 					{@html $icons[item.icon]}

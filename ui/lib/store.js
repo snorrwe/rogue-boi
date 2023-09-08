@@ -4,7 +4,7 @@ export const coreStore = writable(null);
 export const coreOutput = writable({});
 export const canvasStore = writable(null);
 export const icons = writable({});
-export const inventory = writable(null);
+export const inventory = writable([]);
 export const equipment = writable(null);
 export const selected = writable(null);
 
