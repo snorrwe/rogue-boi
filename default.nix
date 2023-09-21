@@ -10,7 +10,7 @@ with nixpkgs;
 pkgs.mkShell {
   nativeBuildInputs = [
     nixpkgs.bzip2
-    nodePackages.yarn
+    nodePackages.npm
     rust_channel # Full rust from overlay, includes cargo
     wasm-pack
   ];
@@ -18,6 +18,6 @@ pkgs.mkShell {
     ${nixpkgs.bzip2.postInstall}
   '';
   shellHook = ''
-    yarn
+    npm i
   '';
 }

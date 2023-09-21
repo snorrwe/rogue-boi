@@ -18,8 +18,7 @@ Manual installation:
 - [rust](https://www.rust-lang.org/tools/install)
 - [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)
 - [nodejs](https://nodejs.org/en/)
-- yarn `npm install -g yarn`
-- Run `yarn`
+- Run `npm i`
 
 Via nix:
 
@@ -30,7 +29,7 @@ nix-shell
 ### Run
 
 ```sh
-yarn dev
+npm run dev
 ```
 
 ### Icons

@@ -26,7 +26,7 @@ jobs:
 
       - name: Install deps
         run: |
-          nix-shell --run yarn
+          nix-shell --run npm i
 
       - name: Build xtask
         run: |
@@ -34,7 +34,7 @@ jobs:
 
       - name: Bundle
         run: |
-          nix-shell --run "yarn bundle"
+          nix-shell --run "npm run bundle"
 
       - uses: KikimoraGames/itch-publish@v0.0.3
         with:
