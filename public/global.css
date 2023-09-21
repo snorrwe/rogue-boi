@@ -1,12 +1,12 @@
 body {
-	background: black;
-	overflow: hidden;
+  background: black;
+  overflow: hidden;
 }
 
 path {
-	fill: var(--fill-color);
+  fill: var(--fill-color);
 }
 
 a {
-	color: white;
+  color: white;
 }

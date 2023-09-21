@@ -1,17 +1,17 @@
 <script>
-	export let log;
+  export let log;
 </script>
 
 {#if log}
-	<ul>
-		{#each log as line}
-			<li>{@html line}</li>
-		{/each}
-	</ul>
+  <ul>
+    {#each log as line}
+      <li>{@html line}</li>
+    {/each}
+  </ul>
 {/if}
 
 <style>
-	ul {
-		list-style: none;
-	}
+  ul {
+    list-style: none;
+  }
 </style>
