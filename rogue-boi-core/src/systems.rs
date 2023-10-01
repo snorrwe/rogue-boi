@@ -41,6 +41,7 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(use_poison_scroll)
             .with_system(use_confusion_scroll)
             .with_system(use_lightning_scroll)
+            .with_system(use_ward_scroll)
             .with_system(use_hp_potion)
             .with_system(use_fireball),
     );
@@ -231,6 +232,25 @@ fn use_confusion_scroll(
             log.push(WHITE, "Confusion Bolt misses!");
         }
         cmd.entity(item_id).insert(ClearInventoryItem);
+    }
+}
+
+fn use_ward_scroll(
+    mut cmd: Commands,
+    item_query: Query<(EntityId, &Ranged), (With<MarkConsume>, With<WardScroll>)>,
+    mut player_query: Query<&mut Defense, With<PlayerTag>>,
+    mut log: ResMut<LogHistory>,
+) {
+    // assumes there's only 1 player and 1 ward being used per tick
+    for ((item_id, range), player_def) in item_query.iter().zip(player_query.iter_mut()) {
+        cmd.entity(item_id).insert(ClearInventoryItem);
+
+        log.push(
+            WHITE,
+            &format!("Gain ward, negating {} instances of damage", range.power),
+        );
+        player_def.ward = player_def.ward.saturating_add(range.power as u8);
+        debug!("Player ward: {}", player_def.ward);
     }
 }
 
@@ -501,16 +521,21 @@ fn update_player_world_interact(
     }
 }
 
-fn compute_damage(power: i32, defense: i32) -> i32 {
+fn compute_melee_damage(power: i32, defense: &mut Defense) -> i32 {
+    debug!(?defense, ?power, "compute_melee_damage");
+    if defense.ward > 0 {
+        defense.ward -= 1;
+        return 0;
+    }
     // all damage must be at least 1
-    (power - defense).max(1)
+    (power - defense.melee_defense).max(1)
 }
 
 fn handle_player_move(
     actions: Res<PlayerActions>,
     mut player_q: Query<(&Melee, &mut Pos), With<PlayerTag>>,
     stuff_tags: Query<&StuffTag>,
-    mut enemy_q: Query<(&mut Hp, &Defense)>,
+    mut enemy_q: Query<(&mut Hp, &mut Defense)>,
     mut grid: ResMut<Grid<Stuff>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     names: Query<&Name>,
@@ -551,7 +576,7 @@ fn handle_player_move(
                 | StuffTag::Minotaur => {
                     if skill_check(power.skill) {
                         let (hp, defense) = enemy_q.fetch_mut(stuff_id).expect("Enemy has no hp");
-                        let damage = compute_damage(power.power, defense.melee_defense);
+                        let damage = compute_melee_damage(power.power, defense);
                         hp.current -= damage;
                         debug!("kick enemy {}: {:?}", stuff_id, hp);
                         if let Some(Name(name)) = names.fetch(stuff_id) {
@@ -567,6 +592,7 @@ fn handle_player_move(
                 }
                 StuffTag::LightningScroll
                 | StuffTag::PoisonScroll
+                | StuffTag::WardScroll
                 | StuffTag::HpPotion
                 | StuffTag::LeatherArmor
                 | StuffTag::ChainMailArmor
@@ -837,7 +863,7 @@ fn update_ai_move(
 }
 
 fn update_melee_ai(
-    mut q_player: Query<(EntityId, &Pos, &Defense), (With<Hp>, With<PlayerTag>)>,
+    mut q_player: Query<(EntityId, &Pos, &mut Defense), (With<Hp>, With<PlayerTag>)>,
     mut q_target: Query<(&mut Hp, Option<&Name>)>,
     mut q_enemy: Query<
         (
@@ -865,7 +891,6 @@ fn update_melee_ai(
         let name = name
             .map(|name| name.0.clone())
             .unwrap_or_else(|| id.to_string());
-        let damage = compute_damage(*power, player_defense.melee_defense);
         let mut target = None;
         if confused.is_some() {
             if let Some(vel) = vel {
@@ -887,6 +912,7 @@ fn update_melee_ai(
                 log.push(ENEMY_ATTACK, format!("{} misses", name));
                 continue;
             }
+            let damage = compute_melee_damage(*power, player_defense);
             target_hp.current -= damage;
             let target_name = target_name.unwrap_or("");
             debug!(
@@ -1381,6 +1407,6 @@ fn update_poison(
         }
         poison.duration -= 1;
         // TODO: poison resistance
-        hp.current -= compute_damage(poison.power, 0);
+        hp.current -= poison.power;
     }
 }

@@ -58,6 +58,11 @@
         {/if}
         Melee Defense: {defense.meleeDefense}
       </p>
+      {#if defense.ward > 0}
+        <p>
+          Ward: {defense.ward}
+        </p>
+      {/if}
     {/if}
     {#if pos != null}
       <p id="player-pos">

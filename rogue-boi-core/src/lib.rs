@@ -245,8 +245,7 @@ fn to_item_desc(id: EntityId, i: ItemPropsTuple) -> ItemDesc {
         name: name.map(|n| n.0.clone()),
         description: desc.map(|desc| desc.0.clone()),
         icon: icon.map(|icon| icon.0.to_string()),
-        usable: matches!(tag, StuffTag::HpPotion | StuffTag::LightningScroll),
-        target_enemy: matches!(tag, StuffTag::LightningScroll),
+        usable: archetypes::usable(*tag),
         range: ranged.map(|r| r.range).unwrap_or(0),
     }
 }
@@ -593,6 +592,5 @@ struct ItemDesc {
     pub icon: Option<String>,
     pub color: Option<String>,
     pub usable: bool,
-    pub target_enemy: bool,
     pub range: i32,
 }

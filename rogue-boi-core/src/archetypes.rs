@@ -16,6 +16,18 @@ pub fn icon(key: &'static str) -> Icon {
     Icon(key)
 }
 
+pub fn usable(tag: StuffTag) -> bool {
+    matches!(
+        tag,
+        StuffTag::HpPotion
+            | StuffTag::LightningScroll
+            | StuffTag::ConfusionScroll
+            | StuffTag::FireBallScroll
+            | StuffTag::PoisonScroll
+            | StuffTag::WardScroll
+    )
+}
+
 pub fn register_persistent_components(
     persister: impl cecs::persister::WorldSerializer,
 ) -> impl cecs::persister::WorldSerializer {
@@ -86,6 +98,9 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
         StuffTag::PoisonScroll => {
             cmd.insert_bundle((Item, StaticVisibility, NeedsTargetEntity, PoisionAttack));
         }
+        StuffTag::WardScroll => {
+            cmd.insert_bundle((Item, StaticVisibility, WardScroll));
+        }
     }
 }
 
@@ -144,6 +159,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         | StuffTag::HpPotion
         | StuffTag::LightningScroll
         | StuffTag::ConfusionScroll
+        | StuffTag::WardScroll
         | StuffTag::FireBallScroll => {}
     }
 }
@@ -252,6 +268,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
         | StuffTag::LightningScroll
         | StuffTag::ConfusionScroll
         | StuffTag::PoisonScroll
+        | StuffTag::WardScroll
         | StuffTag::FireBallScroll => {
             let (icon, name, desc, ranged, heal, melee, pos, color, defense, eq_ty) =
                 query.q1().fetch(id).unwrap();
@@ -265,15 +282,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
 
             let equipable = pos.is_none() && !equipped && eq_ty.is_some();
 
-            let usable = pos.is_none()
-                && matches!(
-                    tag,
-                    StuffTag::HpPotion
-                        | StuffTag::LightningScroll
-                        | StuffTag::ConfusionScroll
-                        | StuffTag::FireBallScroll
-                        | StuffTag::PoisonScroll
-                );
+            let usable = pos.is_none() && usable(tag);
             json! {{
                 "id": id,
                 "tag": tag,

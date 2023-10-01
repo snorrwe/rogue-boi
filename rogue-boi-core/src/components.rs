@@ -364,23 +364,29 @@ impl Equipment {
 #[serde(rename_all = "camelCase")]
 pub struct Defense {
     pub melee_defense: i32,
+    pub ward: u8,
 }
 
 impl Defense {
     pub const fn new(melee_defense: i32) -> Self {
-        Self { melee_defense }
+        Self {
+            melee_defense,
+            ward: 0,
+        }
     }
 }
 
 impl std::ops::AddAssign for Defense {
     fn add_assign(&mut self, rhs: Self) {
         self.melee_defense += rhs.melee_defense;
+        self.ward = self.ward.saturating_add(rhs.ward);
     }
 }
 
 impl std::ops::SubAssign for Defense {
     fn sub_assign(&mut self, rhs: Self) {
         self.melee_defense -= rhs.melee_defense;
+        self.ward = self.ward.saturating_sub(rhs.ward);
     }
 }
 
@@ -435,3 +441,6 @@ pub struct FireBall;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ConfusionBolt;
+
+#[derive(Debug, Clone, Copy)]
+pub struct WardScroll;
