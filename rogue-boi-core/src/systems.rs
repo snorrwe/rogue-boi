@@ -65,7 +65,7 @@ pub fn init_world_systems(world: &mut World) {
     world.add_stage(
         SystemStage::new("render")
             .with_system(update_output)
-            .with_system(render_into_canvas)
+            .with_system(render_onto_canvas)
             .with_system(clean_inputs),
     );
     world.add_stage(
@@ -1064,7 +1064,7 @@ fn canvas_cell_size(width: f64, height: f64, viewport: Vec2) -> f64 {
     height.min(width) / (viewport.y * 2) as f64
 }
 
-pub fn render_into_canvas(
+pub fn render_onto_canvas(
     mut res: ResMut<RenderResources>,
     grid: Res<Grid<Stuff>>,
     viewport: Res<Viewport>,
