@@ -47,7 +47,7 @@ export default [
         debug: !production,
         verbose: true,
         serverPath: "/build/",
-        watchPatterns: ["src/**", "assets/**"]
+        watchPatterns: ["**/src/**/*rs", "rogue-boi-core/assets/**"]
       }),
       icons(),
 
