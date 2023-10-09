@@ -26,10 +26,8 @@
     });
   }
 
-  function gameLoop() {
+  function gameLoop(now) {
     if (core) {
-      const now = performance.now();
-
       core.tick(now - last);
 
       const output = core.getOutput();
