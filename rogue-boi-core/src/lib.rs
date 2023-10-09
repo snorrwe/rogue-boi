@@ -293,6 +293,7 @@ impl Core {
         log.push(WHITE, "Hello wanderer!");
 
         world.run_system(regenerate_dungeon).unwrap();
+        world.run_system(update_output).unwrap();
     }
 
     /// Generate a dungoen without altering the world state
@@ -343,12 +344,14 @@ impl Core {
 
     #[wasm_bindgen(js_name = "getOutput")]
     pub fn get_output(&self) -> JsValue {
-        self.world
-            .borrow()
-            .get_resource::<Output>()
-            .unwrap()
-            .0
-            .clone()
+        let mut world = self.world.borrow_mut();
+        let mut output = world.get_resource::<Output>().unwrap().0.clone();
+        if output.is_null() {
+            // Kinda lame, but ensure that the output is not null
+            world.run_system(update_output).unwrap();
+            output = world.get_resource::<Output>().unwrap().0.clone();
+        }
+        output
     }
 
     #[wasm_bindgen(js_name = "getEquipment")]
