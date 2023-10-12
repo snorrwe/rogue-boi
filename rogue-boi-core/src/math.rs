@@ -61,6 +61,10 @@ impl Vec2 {
     pub const fn splat(val: i32) -> Self {
         Self::new(val, val)
     }
+
+    pub fn dot(self, rhs: Vec2) -> i32 {
+        self.x * rhs.x + self.y * rhs.y
+    }
 }
 
 impl Add for Vec2 {
