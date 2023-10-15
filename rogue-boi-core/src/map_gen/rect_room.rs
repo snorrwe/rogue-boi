@@ -40,6 +40,52 @@ impl RectRoom {
             && self.max.y >= other.min.y
     }
 
+    /// p : start of ray
+    /// d : direction
+    ///
+    /// Ray = R(t) = p + td
+    ///
+    /// param t is the intersection point on the ray
+    pub fn intersects_ray(&self, p: Vec2, d: Vec2, t: &mut f32) -> bool {
+        let tmin = t;
+        let mut tmax = f32::MAX;
+
+        // include walls
+        let min = self.min - Vec2::ONE;
+        let max = self.min + Vec2::ONE;
+
+        for i in 0..2 {
+            if d[i] == 0 {
+                // parallel to slab, no hit if origin not within slab
+                if p[i] < min[i] || max[i] < p[i] {
+                    return false;
+                }
+            }
+            let ood = 1.0 / d[i] as f32;
+            let mut t1 = (min[i] - p[i]) as f32 * ood;
+            let mut t2 = (max[i] - p[i]) as f32 * ood;
+
+            if t1 > t2 {
+                std::mem::swap(&mut t1, &mut t2);
+            }
+            *tmin = tmin.max(t1);
+            tmax = tmax.min(t2);
+
+            if tmax > *tmin {
+                return false;
+            }
+        }
+        true
+    }
+
+    pub fn intersects_segment(&self, p: Vec2, q: Vec2) -> bool {
+        let mut t = 0.0;
+        if !self.intersects_ray(p, q - p, &mut t) {
+            return false;
+        }
+        t <= 1.0
+    }
+
     pub fn touches(&self, other: &Self) -> bool {
         let d = other.center() - self.center();
 

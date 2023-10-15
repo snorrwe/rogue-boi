@@ -207,24 +207,24 @@ pub fn generate_map(
                     init_entity(pos, tag, &mut cmd, &mut grid);
                 }
             }
-            // StuffTag::Wall => {
-            //     // clear invisible walls
-            //     // leave walls around the edge of the map just to be safe
-            //     for y in -1..=1 {
-            //         for x in -1..=1 {
-            //             let stuff = working_grid
-            //                 .at(pos.x + x, pos.y + y)
-            //                 .and_then(|x| x.as_ref());
-            //             match stuff {
-            //                 None | Some(StuffTag::Door) => {
-            //                     init_entity(pos, tag, &mut cmd, &mut grid);
-            //                     continue 'insert_loop;
-            //                 }
-            //                 _ => {}
-            //             }
-            //         }
-            //     }
-            // }
+            StuffTag::Wall => {
+                // clear invisible walls
+                // leave walls around the edge of the map just to be safe
+                for y in -1..=1 {
+                    for x in -1..=1 {
+                        let stuff = working_grid
+                            .at(pos.x + x, pos.y + y)
+                            .and_then(|x| x.as_ref());
+                        match stuff {
+                            None | Some(StuffTag::Door) => {
+                                init_entity(pos, tag, &mut cmd, &mut grid);
+                                continue 'insert_loop;
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
             _ => {
                 init_entity(pos, tag, &mut cmd, &mut grid);
             }
@@ -267,15 +267,6 @@ fn build_tunnels(mut rng: impl Rng, grid: &mut Grid<Option<StuffTag>>, rooms: &m
             }
         }
     }
-
-    // rooms.shuffle(&mut rng);
-    //
-    // for (r1, r2) in rooms.iter().zip(rooms.iter().skip(1)) {
-    //     // connect these rooms
-    //     for p in tunnel_between(&mut rng, r1.center(), r2.center()) {
-    //         grid[p] = None;
-    //     }
-    // }
 }
 
 fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u32) {
@@ -303,7 +294,42 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
 
     debug!("Rooms: {rooms:?}");
 
-    build_tunnels(&mut rng, grid, &mut rooms);
+    for (r1, r2) in rooms.iter().zip(rooms.iter().skip(1)) {
+        let mut stack = smallvec::SmallVec::<[TunnelIter; 2]>::new();
+        stack.push(tunnel_between(&mut rng, r1.center(), r2.center()));
+        let mut tries = 1000;
+        'outer: while let Some(tunnel) = stack.pop() {
+            assert!(tries > 0);
+            tries -= 1;
+            // check if the tunnel between (a, b) crosses another room (d)
+            // if yes then replace it with two tunnels (a, d) (d, b)
+            //
+            let a = tunnel.current;
+            let b = tunnel.end;
+            let c = tunnel.corner;
+
+            for room in rooms.iter() {
+                let center = room.center();
+                if center == a || center == b {
+                    continue;
+                }
+                if room.intersects_segment(a, c) || room.intersects_segment(c, b) {
+                    debug!(
+                        "Splitting tunnel between {} and {} to include {}",
+                        a, b, center
+                    );
+                    stack.push(tunnel_between(&mut rng, a, center));
+                    stack.push(tunnel_between(&mut rng, center, b));
+                    continue 'outer;
+                }
+            }
+
+            // carve the tunnel
+            for p in tunnel {
+                grid[p] = None;
+            }
+        }
+    }
 
     // place doors in room gaps
     // tunnels between room A and B may cut through room C so use a separate loop to fill doors
@@ -349,7 +375,7 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
     place_stairs(&mut rng, grid, end_room);
 }
 
-fn tunnel_between(mut rng: impl Rng, start: Vec2, end: Vec2) -> impl Iterator<Item = Vec2> {
+fn tunnel_between(mut rng: impl Rng, start: Vec2, end: Vec2) -> TunnelIter {
     let Vec2 { x: x1, y: y1 } = start;
     let Vec2 { x: x2, y: y2 } = end;
 
