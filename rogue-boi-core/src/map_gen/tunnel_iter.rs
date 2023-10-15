@@ -2,9 +2,9 @@ use crate::math::Vec2;
 
 /// Produces an L shaped tunnel between start and end, bending at corner
 pub struct TunnelIter {
-    current: Vec2,
-    end: Vec2,
-    corner: Vec2,
+    pub current: Vec2,
+    pub end: Vec2,
+    pub corner: Vec2,
 }
 
 impl TunnelIter {
