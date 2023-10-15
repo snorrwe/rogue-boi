@@ -232,35 +232,6 @@ pub fn generate_map(
     }
 }
 
-fn carve_tunnel(
-    pos: Vec2,
-    dir: Vec2,
-    rng: &mut impl Rng,
-    grid: &mut Grid<Option<StuffTag>>,
-    visited: &mut HashSet<Vec2>,
-    rooms: &mut [RectRoom],
-) {
-    let mut directions = [-Vec2::Y, Vec2::Y, -Vec2::X, Vec2::X];
-    directions.shuffle(rng);
-
-    for d in directions {
-        let n = pos + d;
-        if !visited.contains(&n)
-            && matches!(
-                grid.at(n.x, n.y).and_then(|x| x.as_ref()),
-                Some(StuffTag::Wall)
-            )
-        {
-            let ortho = Vec2::new(-d.y, d.x);
-            visited.insert(n);
-            visited.insert(pos + ortho);
-            visited.insert(pos - ortho);
-            grid[n].take();
-            carve_tunnel(n, d, rng, grid, visited, rooms);
-        }
-    }
-}
-
 fn build_tunnels(mut rng: impl Rng, grid: &mut Grid<Option<StuffTag>>, rooms: &mut [RectRoom]) {
     let mut stack = Vec::new();
     // find the first valid position for tunnels
@@ -277,20 +248,34 @@ fn build_tunnels(mut rng: impl Rng, grid: &mut Grid<Option<StuffTag>>, rooms: &m
             break 'find;
         }
     }
-    let mut visited: HashSet<Vec2> = HashSet::new();
-    // insert rooms into visited
-    for room in rooms.iter() {
-        for point in room.iter() {
-            visited.insert(point);
-        }
-    }
-    // insert map edge into visited
-    for point in iter_edge(&RectRoom::new(0, 0, grid.width(), grid.height())) {
-        visited.insert(point);
-    }
 
     assert!(!stack.is_empty());
-    carve_tunnel(stack[0], Vec2::ZERO, &mut rng, grid, &mut visited, rooms);
+
+    let mut visited = HashSet::new();
+
+    while let Some(pos) = stack.pop() {
+        visited.insert(pos);
+        if rooms.iter().all(|r| !r.touches_point(pos)) {
+            let _old = grid[pos].take();
+            for d in [-Vec2::Y, Vec2::Y, -Vec2::X, Vec2::X] {
+                let pos = pos + d;
+                if !visited.contains(&pos)
+                    && grid.at(pos.x, pos.y).and_then(|t| t.as_ref()).is_some()
+                {
+                    stack.push(Vec2::new(pos.x, pos.y));
+                }
+            }
+        }
+    }
+
+    // rooms.shuffle(&mut rng);
+    //
+    // for (r1, r2) in rooms.iter().zip(rooms.iter().skip(1)) {
+    //     // connect these rooms
+    //     for p in tunnel_between(&mut rng, r1.center(), r2.center()) {
+    //         grid[p] = None;
+    //     }
+    // }
 }
 
 fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u32) {
