@@ -269,6 +269,45 @@ fn build_tunnels(mut rng: impl Rng, grid: &mut Grid<Option<StuffTag>>, rooms: &m
     }
 }
 
+/// return edges, which are indices into `points`
+///
+/// the edges in the fully connected graph are sorted by the rooms' manhatten distance
+fn minimum_spanning_tree(points: &[RectRoom]) -> Vec<[u32; 2]> {
+    let mut f = Vec::with_capacity(points.len());
+    let mut edges = points
+        .iter()
+        .enumerate()
+        .skip(1)
+        .flat_map(|(i, a)| {
+            points[..i]
+                .iter()
+                .enumerate()
+                .map(move |(j, b)| (a.center().manhatten(b.center()), [i, j]))
+        })
+        .collect::<Vec<_>>();
+    edges.sort_by_key(|(w, _)| *w);
+
+    let mut parents = vec![-1; points.len()];
+
+    'edges: for (_, [i, j]) in edges {
+        for mut ii in [i, j] {
+            while parents[ii] != -1 {
+                if parents[ii] == j as i32 {
+                    // graph would have a circle
+                    continue 'edges;
+                }
+                ii = parents[ii] as usize;
+            }
+        }
+        if parents[j] == -1 {
+            parents[j] = i as i32;
+            f.push([i as u32, j as u32]);
+        }
+    }
+
+    f
+}
+
 fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u32) {
     let mut rng = rand::thread_rng();
     let mut rooms = Vec::<RectRoom>::with_capacity(props.max_rooms as usize);
@@ -294,42 +333,53 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
 
     debug!("Rooms: {rooms:?}");
 
-    for (r1, r2) in rooms.iter().zip(rooms.iter().skip(1)) {
-        let mut stack = smallvec::SmallVec::<[TunnelIter; 2]>::new();
-        stack.push(tunnel_between(&mut rng, r1.center(), r2.center()));
-        let mut tries = 1000;
-        'outer: while let Some(tunnel) = stack.pop() {
-            assert!(tries > 0);
-            tries -= 1;
-            // check if the tunnel between (a, b) crosses another room (d)
-            // if yes then replace it with two tunnels (a, d) (d, b)
-            //
-            let a = tunnel.current;
-            let b = tunnel.end;
-            let c = tunnel.corner;
-
-            for room in rooms.iter() {
-                let center = room.center();
-                if center == a || center == b {
-                    continue;
-                }
-                if room.intersects_segment(a, c) || room.intersects_segment(c, b) {
-                    debug!(
-                        "Splitting tunnel between {} and {} to include {}",
-                        a, b, center
-                    );
-                    stack.push(tunnel_between(&mut rng, a, center));
-                    stack.push(tunnel_between(&mut rng, center, b));
-                    continue 'outer;
-                }
-            }
-
-            // carve the tunnel
-            for p in tunnel {
-                grid[p] = None;
-            }
+    let tree = minimum_spanning_tree(&rooms);
+    // TODO put some edges back into the tree to get a more interesting dungeon
+    for [i, j] in tree {
+        let r1 = &rooms[i as usize];
+        let r2 = &rooms[j as usize];
+        // carve the tunnel
+        for p in tunnel_between(&mut rng, r1.center(), r2.center()) {
+            grid[p] = None;
         }
     }
+
+    // for (r1, r2) in rooms.iter().zip(rooms.iter().skip(1)) {
+    //     let mut stack = smallvec::SmallVec::<[TunnelIter; 2]>::new();
+    //     stack.push(tunnel_between(&mut rng, r1.center(), r2.center()));
+    //     let mut tries = 1000;
+    //     'outer: while let Some(tunnel) = stack.pop() {
+    //         assert!(tries > 0);
+    //         tries -= 1;
+    //         // check if the tunnel between (a, b) crosses another room (d)
+    //         // if yes then replace it with two tunnels (a, d) (d, b)
+    //         //
+    //         let a = tunnel.current;
+    //         let b = tunnel.end;
+    //         let c = tunnel.corner;
+    //
+    //         for room in rooms.iter() {
+    //             let center = room.center();
+    //             if center == a || center == b {
+    //                 continue;
+    //             }
+    //             if room.intersects_segment(a, c) || room.intersects_segment(c, b) {
+    //                 debug!(
+    //                     "Splitting tunnel between {} and {} to include {}",
+    //                     a, b, center
+    //                 );
+    //                 stack.push(tunnel_between(&mut rng, a, center));
+    //                 stack.push(tunnel_between(&mut rng, center, b));
+    //                 continue 'outer;
+    //             }
+    //         }
+    //
+    //         // carve the tunnel
+    //         for p in tunnel {
+    //             grid[p] = None;
+    //         }
+    //     }
+    // }
 
     // place doors in room gaps
     // tunnels between room A and B may cut through room C so use a separate loop to fill doors
