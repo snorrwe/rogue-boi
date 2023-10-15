@@ -344,43 +344,6 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
         }
     }
 
-    // for (r1, r2) in rooms.iter().zip(rooms.iter().skip(1)) {
-    //     let mut stack = smallvec::SmallVec::<[TunnelIter; 2]>::new();
-    //     stack.push(tunnel_between(&mut rng, r1.center(), r2.center()));
-    //     let mut tries = 1000;
-    //     'outer: while let Some(tunnel) = stack.pop() {
-    //         assert!(tries > 0);
-    //         tries -= 1;
-    //         // check if the tunnel between (a, b) crosses another room (d)
-    //         // if yes then replace it with two tunnels (a, d) (d, b)
-    //         //
-    //         let a = tunnel.current;
-    //         let b = tunnel.end;
-    //         let c = tunnel.corner;
-    //
-    //         for room in rooms.iter() {
-    //             let center = room.center();
-    //             if center == a || center == b {
-    //                 continue;
-    //             }
-    //             if room.intersects_segment(a, c) || room.intersects_segment(c, b) {
-    //                 debug!(
-    //                     "Splitting tunnel between {} and {} to include {}",
-    //                     a, b, center
-    //                 );
-    //                 stack.push(tunnel_between(&mut rng, a, center));
-    //                 stack.push(tunnel_between(&mut rng, center, b));
-    //                 continue 'outer;
-    //             }
-    //         }
-    //
-    //         // carve the tunnel
-    //         for p in tunnel {
-    //             grid[p] = None;
-    //         }
-    //     }
-    // }
-
     // place doors in room gaps
     // tunnels between room A and B may cut through room C so use a separate loop to fill doors
     // instead of eagerly in the connector loop
