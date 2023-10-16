@@ -47,7 +47,7 @@ impl RectRoom {
 
         // include walls
         let min = self.min - Vec2::ONE;
-        let max = self.min + Vec2::ONE;
+        let max = self.max + Vec2::ONE;
 
         for i in 0..2 {
             if d[i] == 0 {
