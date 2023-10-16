@@ -326,11 +326,26 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
     debug!(?rooms, "Rooms");
 
     let tree = minimum_spanning_tree(&rooms);
-    // TODO put some edges back into the tree to get a more interesting dungeon
     let mut edges = tree.edges;
     let mut adjacency = Grid::new(Vec2::splat(rooms.len() as i32));
     for [i, j] in edges.iter() {
         adjacency_set(&mut adjacency, *i as i32, *j as i32, 1);
+    }
+
+    // let's put some edges back into the graph to produce some circles
+    // the way we connect can produce circles by itself, but it's not that reliable
+    for _ in 0..(rooms.len() / 4).max(1) {
+        let [i, j] = loop {
+            let [i, j] = [
+                rng.gen_range(0..rooms.len()) as i32,
+                rng.gen_range(0..rooms.len()) as i32,
+            ];
+            if i != j && adjacency[Vec2::new(i, j)] == 0 {
+                break [i, j];
+            }
+        };
+        adjacency_set(&mut adjacency, i, j, 1);
+        edges.push([i as u32, j as u32]);
     }
 
     'edges: while let Some([i, j]) = edges.pop() {
