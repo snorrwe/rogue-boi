@@ -302,8 +302,17 @@ fn minimum_spanning_tree(points: &[RectRoom]) -> Vec<[u32; 2]> {
         if parents[j] == -1 {
             parents[j] = i as i32;
             f.push([i as u32, j as u32]);
+            if f.len() == points.len() {
+                break 'edges;
+            }
         }
     }
+
+    assert_eq!(
+        1,
+        parents.iter().filter(|i| i == &&-1).count(),
+        "there must be exactly 1 node with no parent in the minimum spanning tree"
+    );
 
     f
 }
