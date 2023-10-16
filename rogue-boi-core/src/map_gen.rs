@@ -316,13 +316,48 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
 
     let tree = minimum_spanning_tree(&rooms);
     // TODO put some edges back into the tree to get a more interesting dungeon
-    for [i, j] in tree.edges {
+    let mut edges = tree.edges;
+    let mut adjacency = Grid::new(Vec2::splat(rooms.len() as i32));
+    for [i, j] in edges.iter() {
+        adjacency[Vec2::new(*i as i32, *j as i32)] = 1i8;
+        adjacency[Vec2::new(*j as i32, *i as i32)] = 1i8;
+    }
+
+    'edges: while let Some([i, j]) = edges.pop() {
         let r1 = &rooms[i as usize];
         let r2 = &rooms[j as usize];
         let c1 = r1.center();
         let c2 = r2.center();
 
-        for p in tunnel_between(&mut rng, c1, c2) {
+        // if the tunnel would cut through a room replace it with two tunnels
+        let tunnel = tunnel_between(&mut rng, c1, c2);
+        for (k, room) in rooms.iter().enumerate() {
+            if k == i as usize || k == j as usize {
+                continue;
+            }
+            if room.intersects_segment(tunnel.current, tunnel.corner)
+                || room.intersects_segment(tunnel.end, tunnel.corner)
+            {
+                debug!(i, j, k, "Splitting tunnel");
+                // avoid duplicate edges to the same pair of rooms
+                adjacency[Vec2::new(i as i32, j as i32)] = 0;
+                adjacency[Vec2::new(j as i32, i as i32)] = 0;
+
+                if adjacency[Vec2::new(i as i32, k as i32)] == 0 {
+                    adjacency[Vec2::new(i as i32, k as i32)] = 1;
+                    adjacency[Vec2::new(k as i32, i as i32)] = 1;
+                    edges.push([i, k as u32]);
+                }
+                if adjacency[Vec2::new(j as i32, k as i32)] == 0 {
+                    adjacency[Vec2::new(j as i32, k as i32)] = 1;
+                    adjacency[Vec2::new(k as i32, j as i32)] = 1;
+                    edges.push([j, k as u32]);
+                }
+                continue 'edges;
+            }
+        }
+
+        for p in tunnel {
             grid[p] = None;
         }
     }
