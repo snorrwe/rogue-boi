@@ -209,13 +209,12 @@ pub fn generate_map(
             }
             StuffTag::Wall => {
                 // clear invisible walls
-                // leave walls around the edge of the map just to be safe
                 for y in -1..=1 {
                     for x in -1..=1 {
-                        let stuff = working_grid
-                            .at(pos.x + x, pos.y + y)
-                            .and_then(|x| x.as_ref());
-                        match stuff {
+                        let Some(stuff) = working_grid.at(pos.x + x, pos.y + y) else {
+                            continue;
+                        };
+                        match stuff.as_ref() {
                             None | Some(StuffTag::Door) => {
                                 init_entity(pos, tag, &mut cmd, &mut grid);
                                 continue 'insert_loop;
