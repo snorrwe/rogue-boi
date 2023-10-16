@@ -27,7 +27,7 @@
     tiles.length = 0;
     for (let y = 0; y < dims[1]; ++y) {
       for (let x = 0; x < dims[0]; ++x) {
-        tiles.push(dungeon.get(`${x};${y}`));
+        tiles.push({ x, y, icon: dungeon.get(`${x};${y}`) });
       }
     }
   }
@@ -56,8 +56,12 @@
   <div class="gridContainer">
     <div class="grid" style="--cols:{dims[0]}">
       {#each tiles as tile}
-        {#if tile}
-          <img src={icons[tile]} alt={tile} />
+        {#if tile.icon}
+          <img
+            src={icons[tile.icon]}
+            alt={tile.icon}
+            title={`(${tile.x}, ${tile.y}): ${tile.icon}`}
+          />
         {:else}
           <div />
         {/if}
