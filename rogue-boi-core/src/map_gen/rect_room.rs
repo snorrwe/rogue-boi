@@ -27,11 +27,6 @@ impl RectRoom {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = Vec2> + '_ {
-        (self.min.y..=self.max.y)
-            .flat_map(|y| (self.min.x..=self.max.x).map(move |x| Vec2::new(x, y)))
-    }
-
     #[allow(unused)]
     pub fn intersects(&self, other: &Self) -> bool {
         self.min.x <= other.max.x
