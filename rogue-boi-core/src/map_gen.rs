@@ -313,7 +313,7 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
         rooms.push(room);
     }
 
-    debug!("Rooms: {rooms:?}");
+    debug!(?rooms, "Rooms");
 
     let tree = minimum_spanning_tree(&rooms);
     // TODO put some edges back into the tree to get a more interesting dungeon
