@@ -292,6 +292,11 @@ fn minimum_spanning_tree(points: &[RectRoom]) -> Mst {
     }
 }
 
+fn adjacency_set(matrix: &mut Grid<i8>, i: i32, j: i32, val: i8) {
+    matrix[Vec2::new(i, j)] = val;
+    matrix[Vec2::new(j, i)] = val;
+}
+
 fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u32) {
     let mut rng = rand::thread_rng();
     let mut rooms = Vec::<RectRoom>::with_capacity(props.max_rooms as usize);
@@ -322,8 +327,7 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
     let mut edges = tree.edges;
     let mut adjacency = Grid::new(Vec2::splat(rooms.len() as i32));
     for [i, j] in edges.iter() {
-        adjacency[Vec2::new(*i as i32, *j as i32)] = 1i8;
-        adjacency[Vec2::new(*j as i32, *i as i32)] = 1i8;
+        adjacency_set(&mut adjacency, *i as i32, *j as i32, 1);
     }
 
     'edges: while let Some([i, j]) = edges.pop() {
@@ -343,17 +347,14 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
             {
                 debug!(i, j, k, "Splitting tunnel");
                 // avoid duplicate edges to the same pair of rooms
-                adjacency[Vec2::new(i as i32, j as i32)] = 0;
-                adjacency[Vec2::new(j as i32, i as i32)] = 0;
+                adjacency_set(&mut adjacency, i as i32, j as i32, 0);
 
                 if adjacency[Vec2::new(i as i32, k as i32)] == 0 {
-                    adjacency[Vec2::new(i as i32, k as i32)] = 1;
-                    adjacency[Vec2::new(k as i32, i as i32)] = 1;
+                    adjacency_set(&mut adjacency, i as i32, k as i32, 1);
                     edges.push([i, k as u32]);
                 }
                 if adjacency[Vec2::new(j as i32, k as i32)] == 0 {
-                    adjacency[Vec2::new(j as i32, k as i32)] = 1;
-                    adjacency[Vec2::new(k as i32, j as i32)] = 1;
+                    adjacency_set(&mut adjacency, i as i32, k as i32, 1);
                     edges.push([j, k as u32]);
                 }
                 continue 'edges;
