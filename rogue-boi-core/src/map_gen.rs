@@ -232,43 +232,6 @@ pub fn generate_map(
     }
 }
 
-fn build_tunnels(mut rng: impl Rng, grid: &mut Grid<Option<StuffTag>>, rooms: &mut [RectRoom]) {
-    let mut stack = Vec::new();
-    // find the first valid position for tunnels
-    'find: for room in rooms.iter() {
-        let edge = RectRoom {
-            min: room.min - Vec2::ONE,
-            max: room.max + Vec2::ONE,
-        };
-        for pos in iter_edge(&edge)
-            .filter(|Vec2 { x, y }| grid.contains(*x, *y))
-            .filter(|pos| rooms.iter().all(|r| !r.contains_point(*pos)))
-        {
-            stack.push(pos);
-            break 'find;
-        }
-    }
-
-    assert!(!stack.is_empty());
-
-    let mut visited = HashSet::new();
-
-    while let Some(pos) = stack.pop() {
-        visited.insert(pos);
-        if rooms.iter().all(|r| !r.touches_point(pos)) {
-            let _old = grid[pos].take();
-            for d in [-Vec2::Y, Vec2::Y, -Vec2::X, Vec2::X] {
-                let pos = pos + d;
-                if !visited.contains(&pos)
-                    && grid.at(pos.x, pos.y).and_then(|t| t.as_ref()).is_some()
-                {
-                    stack.push(Vec2::new(pos.x, pos.y));
-                }
-            }
-        }
-    }
-}
-
 /// return edges, which are indices into `points`
 ///
 /// the edges in the fully connected graph are sorted by the rooms' manhatten distance
