@@ -43,11 +43,11 @@ impl RectRoom {
     /// param t is the intersection point on the ray
     pub fn intersects_ray(&self, p: Vec2, d: Vec2, t: &mut f32) -> bool {
         let tmin = t;
+        *tmin = 0.0;
         let mut tmax = f32::MAX;
 
-        // include walls
-        let min = self.min - Vec2::ONE;
-        let max = self.max + Vec2::ONE;
+        let min = self.min;
+        let max = self.max;
 
         for i in 0..2 {
             if d[i] == 0 {
@@ -66,7 +66,7 @@ impl RectRoom {
             *tmin = tmin.max(t1);
             tmax = tmax.min(t2);
 
-            if tmax > *tmin {
+            if tmax < *tmin {
                 return false;
             }
         }
@@ -74,11 +74,18 @@ impl RectRoom {
     }
 
     pub fn intersects_segment(&self, p: Vec2, q: Vec2) -> bool {
-        let mut t = 0.0;
-        if !self.intersects_ray(p, q - p, &mut t) {
+        let c = self.center();
+        let e = self.max - c; // halfwidth extents
+        let m = (p + q) / 2;
+        let d = p - m;
+        let m = m - c; // translate to origin
+
+        let abx = d.x.abs();
+        if m.x.abs() > e.x + abx {
             return false;
         }
-        t <= 1.0
+        let aby = d.y.abs();
+        m.y.abs() <= e.y + aby
     }
 
     pub fn touches(&self, other: &Self) -> bool {
