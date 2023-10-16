@@ -99,13 +99,14 @@ impl EntityChances {
     }
 }
 
+/// return number of monsters placed
 fn place_entities(
     rng: &mut impl Rng,
     grid: &mut Grid<Option<StuffTag>>,
     room: &RectRoom,
     max_monsters: u32,
     weights: &EntityChances,
-) {
+) -> u32 {
     let n_monsters_a = rng.gen_range(0..=max_monsters);
     let n_monsters_b = rng.gen_range(0..=max_monsters);
     let n_monsters = n_monsters_a.max(n_monsters_b); // bias towards more monsters
@@ -123,6 +124,7 @@ fn place_entities(
             debug!("Placing {:?} at {}", tag, pos);
         }
     }
+    n_monsters
 }
 
 fn place_stairs(rng: &mut impl Rng, grid: &mut Grid<Option<StuffTag>>, room: &RectRoom) {
@@ -384,18 +386,20 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
 
     // place stuff
     for room in rooms.iter().skip(1) {
-        place_entities(
+        let n = place_entities(
             &mut rng,
             grid,
             room,
             props.max_monsters_per_floor,
             &entity_weights,
         );
+        // ensure no room is empty by placing at least 1 item in rooms with no monsters
+        let min_items = (n == 0) as u32;
         place_items(
             &mut rng,
             grid,
             room,
-            0,
+            min_items,
             props.max_items_per_floor,
             &entity_weights,
         );
