@@ -233,6 +233,7 @@ pub fn generate_map(
 
 struct Mst<'a> {
     pub edges: Vec<[u32; 2]>,
+    #[allow(unused)]
     pub parents: Vec<i32>,
     _m: PhantomData<&'a ()>,
 }
