@@ -214,14 +214,17 @@ pub fn generate_map(
                 for y in -1..=1 {
                     for x in -1..=1 {
                         let Some(stuff) = working_grid.at(pos.x + x, pos.y + y) else {
+                            // walls at the outer edge are removed
                             continue;
                         };
                         match stuff.as_ref() {
-                            None | Some(StuffTag::Door) => {
+                            Some(StuffTag::Wall) => {
+                                // if all neighbours are walls then this wall is removed
+                            }
+                            _ => {
                                 init_entity(pos, tag, &mut cmd, &mut grid);
                                 continue 'insert_loop;
                             }
-                            _ => {}
                         }
                     }
                 }
