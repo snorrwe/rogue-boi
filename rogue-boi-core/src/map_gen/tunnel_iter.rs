@@ -1,6 +1,7 @@
 use crate::math::Vec2;
 
 /// Produces an L shaped tunnel between start and end, bending at corner
+#[derive(Debug, Clone)]
 pub struct TunnelIter {
     pub current: Vec2,
     pub end: Vec2,

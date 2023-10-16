@@ -1,7 +1,7 @@
 mod rect_room;
 mod tunnel_iter;
 
-use std::collections::{HashMap, HashSet};
+use std::{collections::HashMap, marker::PhantomData};
 
 use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
@@ -232,10 +232,16 @@ pub fn generate_map(
     }
 }
 
+struct Mst<'a> {
+    pub edges: Vec<[u32; 2]>,
+    pub parents: Vec<i32>,
+    _m: PhantomData<&'a ()>,
+}
+
 /// return edges, which are indices into `points`
 ///
 /// the edges in the fully connected graph are sorted by the rooms' manhatten distance
-fn minimum_spanning_tree(points: &[RectRoom]) -> Vec<[u32; 2]> {
+fn minimum_spanning_tree(points: &[RectRoom]) -> Mst {
     let mut f = Vec::with_capacity(points.len());
     let mut edges = points
         .iter()
@@ -277,7 +283,11 @@ fn minimum_spanning_tree(points: &[RectRoom]) -> Vec<[u32; 2]> {
         "there must be exactly 1 node with no parent in the minimum spanning tree"
     );
 
-    f
+    Mst {
+        edges: f,
+        parents,
+        _m: PhantomData,
+    }
 }
 
 fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u32) {
@@ -307,11 +317,13 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
 
     let tree = minimum_spanning_tree(&rooms);
     // TODO put some edges back into the tree to get a more interesting dungeon
-    for [i, j] in tree {
+    for [i, j] in tree.edges {
         let r1 = &rooms[i as usize];
         let r2 = &rooms[j as usize];
-        // carve the tunnel
-        for p in tunnel_between(&mut rng, r1.center(), r2.center()) {
+        let c1 = r1.center();
+        let c2 = r2.center();
+
+        for p in tunnel_between(&mut rng, c1, c2) {
             grid[p] = None;
         }
     }
