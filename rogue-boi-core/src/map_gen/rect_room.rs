@@ -35,44 +35,6 @@ impl RectRoom {
             && self.max.y >= other.min.y
     }
 
-    /// p : start of ray
-    /// d : direction
-    ///
-    /// Ray = R(t) = p + td
-    ///
-    /// param t is the intersection point on the ray
-    pub fn intersects_ray(&self, p: Vec2, d: Vec2, t: &mut f32) -> bool {
-        let tmin = t;
-        *tmin = 0.0;
-        let mut tmax = f32::MAX;
-
-        let min = self.min;
-        let max = self.max;
-
-        for i in 0..2 {
-            if d[i] == 0 {
-                // parallel to slab, no hit if origin not within slab
-                if p[i] < min[i] || max[i] < p[i] {
-                    return false;
-                }
-            }
-            let ood = 1.0 / d[i] as f32;
-            let mut t1 = (min[i] - p[i]) as f32 * ood;
-            let mut t2 = (max[i] - p[i]) as f32 * ood;
-
-            if t1 > t2 {
-                std::mem::swap(&mut t1, &mut t2);
-            }
-            *tmin = tmin.max(t1);
-            tmax = tmax.min(t2);
-
-            if tmax < *tmin {
-                return false;
-            }
-        }
-        true
-    }
-
     pub fn intersects_segment(&self, p: Vec2, q: Vec2) -> bool {
         let c = self.center();
         let e = self.max - c; // halfwidth extents
@@ -95,16 +57,5 @@ impl RectRoom {
         let h = (self.max.y - self.min.y) + (other.max.y - other.min.y);
 
         d.x.abs() < w + 3 && d.y.abs() < h + 3
-    }
-
-    pub fn contains_point(&self, p: Vec2) -> bool {
-        self.min.x <= p.x && p.x <= self.max.x && self.min.y <= p.y && p.y <= self.max.y
-    }
-
-    pub fn touches_point(&self, p: Vec2) -> bool {
-        self.min.x - 1 <= p.x
-            && p.x <= self.max.x + 1
-            && self.min.y - 1 <= p.y
-            && p.y <= self.max.y + 1
     }
 }
