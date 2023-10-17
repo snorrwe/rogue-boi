@@ -393,6 +393,32 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
                 grid[p] = Some(StuffTag::Door);
             }
         }
+        for p in iter_corners(room) {
+            if grid[p].map(|x| x == StuffTag::Door).unwrap_or(false) {
+                debug!(?p, "Door in corner");
+                // if there's a door in the corner we're going to have a door-chain
+
+                // clear consecutive doors, leaving the corner door
+                let center = room.center();
+                let d = (center - p).as_direction();
+                for y in 1..room.max.y - room.min.y {
+                    let p = Vec2::new(p.x, p.y + y * d.y);
+                    if grid[p] == Some(StuffTag::Door) {
+                        grid[p].take();
+                    } else {
+                        break;
+                    }
+                }
+                for x in 1..room.max.x - room.min.x {
+                    let p = Vec2::new(p.x + x * d.x, p.y);
+                    if grid[p] == Some(StuffTag::Door) {
+                        grid[p].take();
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     let entity_weights = EntityChances::from_level(floor);
@@ -455,4 +481,10 @@ fn iter_edge<'a>(room: &'a RectRoom) -> impl Iterator<Item = Vec2> + 'a {
             (room.min.y..=room.max.y)
                 .flat_map(|y| [Vec2::new(room.min.x - 1, y), Vec2::new(room.max.x + 1, y)]),
         )
+}
+
+fn iter_corners<'a>(room: &'a RectRoom) -> impl Iterator<Item = Vec2> + 'a {
+    [room.min.x - 1, room.max.x + 1]
+        .into_iter()
+        .flat_map(|x| [Vec2::new(x, room.min.y - 1), Vec2::new(x, room.max.y + 1)].into_iter())
 }
