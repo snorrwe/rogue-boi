@@ -79,7 +79,7 @@
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(var(--cols), 1em);
-    grid-auto-rows: 1em;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    grid-auto-rows: 1fr;
   }
 </style>
