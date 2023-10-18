@@ -35,7 +35,14 @@
 
 <div>Debug tool to visualize the map generator's behaviour</div>
 <div>
-  <div class="input">
+  <form
+    class="input"
+    on:submit={(e) => {
+      dims = desiredDims;
+      regenerate({ dims, level });
+      e.preventDefault();
+    }}
+  >
     <div>
       <label for="level">Level</label>
       <input type="number" name="level" placeholder="level" min="1" bind:value={level} />
@@ -47,14 +54,9 @@
       <input type="number" name="y" placeholder="y" min="50" bind:value={desiredDims[1]} />
     </div>
     <div>
-      <button
-        on:click={() => {
-          dims = desiredDims;
-          regenerate({ dims, level });
-        }}>Regen</button
-      >
+      <button type="submit">Regen</button>
     </div>
-  </div>
+  </form>
   <div class="grid" style="--cols:{dims[0]}">
     {#each tiles as tile}
       {#if tile.icon}
