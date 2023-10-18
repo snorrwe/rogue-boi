@@ -33,14 +33,6 @@
     }
     coreStore.set(core);
     routeChange();
-
-    let autoSaveHandle = setInterval(() => {
-      if ($coreStore) {
-        let pl = $coreStore.save();
-        localStorage.setItem("save", pl);
-      }
-    }, 30000);
-    return () => clearInterval(autoSaveHandle);
   });
 
   document.addEventListener("keydown", (event) => {

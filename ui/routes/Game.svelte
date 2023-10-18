@@ -1,4 +1,5 @@
 <script>
+  import { onMount } from "svelte";
   import {
     canvasStore,
     coreStore,
@@ -43,6 +44,16 @@
     requestAnimationFrame(gameLoop);
   }
   requestAnimationFrame(gameLoop);
+
+  onMount(() => {
+    let autoSaveHandle = setInterval(() => {
+      if ($coreStore) {
+        let pl = $coreStore.save();
+        localStorage.setItem("save", pl);
+      }
+    }, 30000);
+    return () => clearInterval(autoSaveHandle);
+  });
 </script>
 
 <svelte:window on:keydown={onKey} />
