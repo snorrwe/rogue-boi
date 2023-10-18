@@ -42,9 +42,9 @@
     </div>
     <div>
       <label for="x">Width</label>
-      <input type="number" name="x" placeholder="x" min="1" bind:value={desiredDims[0]} />
+      <input type="number" name="x" placeholder="x" min="50" bind:value={desiredDims[0]} />
       <label for="y">Height</label>
-      <input type="number" name="y" placeholder="y" min="1" bind:value={desiredDims[1]} />
+      <input type="number" name="y" placeholder="y" min="50" bind:value={desiredDims[1]} />
     </div>
     <div>
       <button
