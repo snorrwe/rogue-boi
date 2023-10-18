@@ -33,46 +33,53 @@
   }
 </script>
 
-<div>Debug tool to visualize the map generator's behaviour</div>
-<div>
-  <form
-    class="input"
-    on:submit={(e) => {
-      dims = desiredDims;
-      regenerate({ dims, level });
-      e.preventDefault();
-    }}
-  >
-    <div>
-      <label for="level">Level</label>
-      <input type="number" name="level" placeholder="level" min="1" bind:value={level} />
+<div class="content">
+  <div>Debug tool to visualize the map generator's behaviour</div>
+  <div>
+    <form
+      class="input"
+      on:submit={(e) => {
+        dims = desiredDims;
+        regenerate({ dims, level });
+        e.preventDefault();
+      }}
+    >
+      <div>
+        <label for="level">Level</label>
+        <input type="number" name="level" placeholder="level" min="1" bind:value={level} />
+      </div>
+      <div>
+        <label for="x">Width</label>
+        <input type="number" name="x" placeholder="x" min="50" bind:value={desiredDims[0]} />
+        <label for="y">Height</label>
+        <input type="number" name="y" placeholder="y" min="50" bind:value={desiredDims[1]} />
+      </div>
+      <div>
+        <button type="submit">Regen</button>
+      </div>
+    </form>
+    <div class="grid" style="--cols:{dims[0]}">
+      {#each tiles as tile}
+        {#if tile.icon}
+          <img
+            src={icons[tile.icon]}
+            alt={tile.icon}
+            title={`(${tile.x}, ${tile.y}): ${tile.icon}`}
+          />
+        {:else}
+          <div />
+        {/if}
+      {/each}
     </div>
-    <div>
-      <label for="x">Width</label>
-      <input type="number" name="x" placeholder="x" min="50" bind:value={desiredDims[0]} />
-      <label for="y">Height</label>
-      <input type="number" name="y" placeholder="y" min="50" bind:value={desiredDims[1]} />
-    </div>
-    <div>
-      <button type="submit">Regen</button>
-    </div>
-  </form>
-  <div class="grid" style="--cols:{dims[0]}">
-    {#each tiles as tile}
-      {#if tile.icon}
-        <img
-          src={icons[tile.icon]}
-          alt={tile.icon}
-          title={`(${tile.x}, ${tile.y}): ${tile.icon}`}
-        />
-      {:else}
-        <div />
-      {/if}
-    {/each}
   </div>
 </div>
 
 <style>
+  .content {
+    max-width: 960px;
+    margin: auto;
+  }
+
   .input {
     max-height: 20%;
   }
@@ -80,9 +87,6 @@
   .grid {
     display: grid;
     grid-template-columns: repeat(var(--cols), 1fr);
-    height: 60%;
-    overflow: auto;
-    max-width: 100%;
-    max-height: 100%;
+    max-height: 80%;
   }
 </style>
