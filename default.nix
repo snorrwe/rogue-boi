@@ -13,6 +13,7 @@ pkgs.mkShell {
     nodePackages.npm
     rust_channel # Full rust from overlay, includes cargo
     wasm-pack
+    just
   ];
   installPhase = ''
     ${nixpkgs.bzip2.postInstall}
