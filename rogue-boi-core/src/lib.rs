@@ -555,16 +555,16 @@ impl Core {
     pub fn load(&mut self, pl: String) {
         debug!("• loading");
         let p = get_world_persister();
-        let pl = BASE64_ENGINE.decode(pl).unwrap();
+        let pl = BASE64_ENGINE.decode(pl).expect("failed to b64 decode");
 
         let mut world = p
             .load(&mut bincode::de::Deserializer::from_slice(
                 pl.as_slice(),
                 bincode::config::DefaultOptions::new(),
             ))
-            .unwrap();
+            .expect("failed to load world");
 
-        let dims = *world.get_resource::<WorldDims>().unwrap();
+        let dims = *world.get_resource::<WorldDims>().expect("world has no dims");
         init_world_transient_resources(dims.0, &mut world);
 
         world
