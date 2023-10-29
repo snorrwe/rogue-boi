@@ -537,15 +537,13 @@ impl Core {
     }
 
     pub fn save(&self) -> String {
-        let p = get_world_persister();
         let world = self.world.borrow();
+        let ser = WorldSer { world: &world };
 
         let mut result = Vec::<u8>::with_capacity(36000);
-        let mut s = bincode::Serializer::new(&mut result, bincode::config::DefaultOptions::new());
+        ciborium::into_writer(&ser, &mut result).expect("failed to serialize");
 
-        p.save(&mut s, &world).unwrap();
-
-        debug!("bincode size {}", result.len());
+        debug!("cbor size {}", result.len());
         let encoded = BASE64_ENGINE.encode(result);
         debug!("encoded size {}", encoded.len());
 
@@ -554,17 +552,14 @@ impl Core {
 
     pub fn load(&mut self, pl: String) {
         debug!("• loading");
-        let p = get_world_persister();
         let pl = BASE64_ENGINE.decode(pl).expect("failed to b64 decode");
 
-        let mut world = p
-            .load(&mut bincode::de::Deserializer::from_slice(
-                pl.as_slice(),
-                bincode::config::DefaultOptions::new(),
-            ))
-            .expect("failed to load world");
+        let deser: WorldDe = ciborium::from_reader(pl.as_slice()).expect("failed to load world");
+        let mut world = deser.world;
 
-        let dims = *world.get_resource::<WorldDims>().expect("world has no dims");
+        let dims = *world
+            .get_resource::<WorldDims>()
+            .expect("world has no dims");
         init_world_transient_resources(dims.0, &mut world);
 
         world
@@ -598,4 +593,33 @@ struct ItemDesc {
     pub color: Option<String>,
     pub usable: bool,
     pub range: i32,
+}
+
+pub struct WorldSer<'a> {
+    pub world: &'a World,
+}
+
+pub struct WorldDe {
+    pub world: World,
+}
+
+impl serde::Serialize for WorldSer<'_> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let p = get_world_persister();
+        p.save(serializer, &self.world)
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for WorldDe {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let p = get_world_persister();
+        let result: World = p.load(deserializer)?;
+        Ok(Self { world: result })
+    }
 }
