@@ -553,6 +553,7 @@ impl Core {
     }
 
     pub fn load(&mut self, pl: String) {
+        debug!("• loading");
         let p = get_world_persister();
         let pl = BASE64_ENGINE.decode(pl).unwrap();
 
@@ -576,6 +577,7 @@ impl Core {
 
         *self.world.borrow_mut() = world;
         self.tick(0);
+        debug!("✓ loading");
     }
 
     #[wasm_bindgen(js_name = "setLevelupStat")]
