@@ -965,7 +965,9 @@ fn update_ai_hp(
             log.push(ENEMY_DIE, format!("{} died", name));
         }
 
-        if let Some(level) = player.as_mut() && let Some(xp) = xp {
+        if let Some(level) = player.as_mut()
+            && let Some(xp) = xp
+        {
             level.add_xp(xp.amount);
             debug!("Gain {} xp. Now: {:?}", xp.amount, level);
         }
