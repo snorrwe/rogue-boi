@@ -14,7 +14,7 @@
     "core:build-dev": "cd rogue-boi-core && wasm-pack build --target web --dev",
     "build": "npm run core:build && npm run ui:build",
     "build:dev": "npm run core:build-dev && npm run ui:build",
-    "dev": "concurrently --kill-others-on-fail 'npm run ui:dev' 'npm run core:dev'",
+    "dev": "cargo xtask copy-icons && concurrently --kill-others-on-fail 'npm run ui:dev' 'npm run core:dev'",
     "lint": "prettier --ignore-path .gitignore --check --plugin-search-dir=. . && eslint --ignore-path .gitignore ui",
     "format": "prettier --ignore-path .gitignore --write --plugin-search-dir=. .",
     "bundle": "cargo xtask copy-icons && npm run build && cargo xtask bundle"
