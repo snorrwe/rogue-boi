@@ -13,14 +13,14 @@
   <h2>Equipment</h2>
   <ul>
     {#if armor != null}
-      <li class="item" on:click={() => selectItem(armor)}>
+      <li class="item" on:click={() => selectItem(armor)} on:keypress={() => selectItem(armor)}>
         <div title={armor.get("description")} style="--fill-color: {armor.get('color') || 'white'}">
           {@html $icons[armor.get("icon")]}
         </div>
       </li>
     {/if}
     {#if weapon != null}
-      <li class="item" on:click={() => selectItem(weapon)}>
+      <li class="item" on:click={() => selectItem(weapon)} on:keypress={() => selectItem(armor)}>
         <div
           title={weapon.get("description")}
           style="--fill-color: {weapon.get('color') || 'white'}"
