@@ -609,7 +609,7 @@ impl serde::Serialize for WorldSer<'_> {
         S: serde::Serializer,
     {
         let p = get_world_persister();
-        p.save(serializer, &self.world)
+        p.save(serializer, self.world)
     }
 }
 

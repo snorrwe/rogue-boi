@@ -26,7 +26,7 @@ impl Node {
 
 impl PartialOrd for Node {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.fcost().partial_cmp(&other.fcost())
+        Some(self.cmp(other))
     }
 }
 

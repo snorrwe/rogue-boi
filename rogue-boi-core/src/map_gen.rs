@@ -473,7 +473,7 @@ fn tunnel_between(mut rng: impl Rng, start: Vec2, end: Vec2) -> TunnelIter {
     TunnelIter::new(start, end, Vec2::new(cornerx, cornery))
 }
 
-fn iter_edge<'a>(room: &'a RectRoom) -> impl Iterator<Item = Vec2> + 'a {
+fn iter_edge(room: &RectRoom) -> impl Iterator<Item = Vec2> + '_ {
     // +-1 in x to touch the corners
     (room.min.x - 1..=room.max.x + 1)
         .flat_map(|x| [Vec2::new(x, room.min.y - 1), Vec2::new(x, room.max.y + 1)])
@@ -483,7 +483,7 @@ fn iter_edge<'a>(room: &'a RectRoom) -> impl Iterator<Item = Vec2> + 'a {
         )
 }
 
-fn iter_corners<'a>(room: &'a RectRoom) -> impl Iterator<Item = Vec2> + 'a {
+fn iter_corners(room: &RectRoom) -> impl Iterator<Item = Vec2> + '_ {
     [room.min.x - 1, room.max.x + 1]
         .into_iter()
         .flat_map(|x| [Vec2::new(x, room.min.y - 1), Vec2::new(x, room.max.y + 1)].into_iter())
