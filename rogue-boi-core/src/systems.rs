@@ -970,6 +970,7 @@ fn update_ai_hp(
         {
             level.add_xp(xp.amount);
             debug!("Gain {} xp. Now: {:?}", xp.amount, level);
+            log.push(ENEMY_DIE, format!("Gain {} experience", xp.amount));
         }
 
         cmd.delete(id);
