@@ -18,7 +18,6 @@ struct Args {
 enum Commands {
     Icons,
     CopyIcons,
-    Clean,
     Bundle,
 }
 
@@ -49,10 +48,6 @@ fn main() {
                     dst_root.join(format!("{}.svg", name)),
                 );
             });
-        }
-        Commands::Clean => {
-            std::fs::remove_dir_all(root.join("public/build")).unwrap_or_default();
-            std::fs::remove_dir_all(root.join("public/icons")).unwrap_or_default();
         }
         Commands::Bundle => {
             let src_dir = root.join("ui/dist");
