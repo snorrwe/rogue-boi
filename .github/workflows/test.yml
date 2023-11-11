@@ -22,6 +22,7 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
       - run: nix-build
       - run: nix-shell --run "npm i"
+      - run: nix-shell --run "cargo build --bin xtask"
       - run: nix-shell --run "npm run build:dev"
       - run: nix-shell --run "npm run dev & npx cypress run"
   lint:
