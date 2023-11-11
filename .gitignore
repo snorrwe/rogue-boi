@@ -12,3 +12,6 @@ bundle.zip
 target
 libbz2.so.1.0
 result
+ui/public/build
+ui/public/icons
+ui/dist
