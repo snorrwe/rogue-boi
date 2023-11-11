@@ -35,7 +35,7 @@ fn main() {
         }
         Commands::CopyIcons => {
             let src = root.join("icons/icons/game-icons.net.svg.zip");
-            let dst_root = root.join("public/icons");
+            let dst_root = root.join("ui/public/icons");
             std::fs::remove_dir_all(&dst_root).unwrap_or_default();
             std::fs::create_dir_all(&dst_root).unwrap();
             let mut archive =
@@ -55,7 +55,7 @@ fn main() {
             std::fs::remove_dir_all(root.join("public/icons")).unwrap_or_default();
         }
         Commands::Bundle => {
-            let src_dir = root.join("public");
+            let src_dir = root.join("ui/dist");
             let dst_file = root.join("bundle.zip");
 
             let file = File::create(dst_file).unwrap();
