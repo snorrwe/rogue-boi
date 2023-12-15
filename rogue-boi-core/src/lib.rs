@@ -235,7 +235,7 @@ type ItemPropsTuple<'a> = (
     Option<&'a Ranged>,
     Option<&'a Color>,
 );
-type ItemPropsQ<'a> = Query<ItemPropsTuple<'a>>;
+type ItemPropsQ<'a> = Query<'a, ItemPropsTuple<'a>>;
 
 fn to_item_desc(id: EntityId, i: ItemPropsTuple) -> ItemDesc {
     let (icon, desc, name, tag, ranged, color) = i;

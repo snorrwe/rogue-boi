@@ -165,8 +165,9 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
 }
 
 pub type StuffToJsQuery<'a> = QuerySet<(
-    Query<(&'a Icon, Option<&'a Color>)>,
+    Query<'a, (&'a Icon, Option<&'a Color>)>,
     Query<
+        'a,
         (
             &'a Icon,
             &'a Name,
@@ -182,6 +183,7 @@ pub type StuffToJsQuery<'a> = QuerySet<(
         With<Item>,
     >,
     Query<
+        'a,
         (
             &'a Icon,
             &'a Name,
@@ -194,9 +196,9 @@ pub type StuffToJsQuery<'a> = QuerySet<(
         ),
         With<Ai>,
     >,
-    Query<(&'a Icon, &'a Melee, &'a Hp, &'a Defense), With<PlayerTag>>,
-    Query<(&'a Icon, Option<&'a Name>, Option<&'a Description>)>,
-    Query<&'a Equipment, With<PlayerTag>>,
+    Query<'a, (&'a Icon, &'a Melee, &'a Hp, &'a Defense), With<PlayerTag>>,
+    Query<'a, (&'a Icon, Option<&'a Name>, Option<&'a Description>)>,
+    Query<'a, &'a Equipment, With<PlayerTag>>,
 )>;
 
 pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsValue {
