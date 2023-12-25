@@ -431,7 +431,7 @@ fn update_equipment_use<'a>(
     mut cmd: Commands,
     mut player_query: Query<(EntityId, &mut Inventory, &mut Equipment), With<PlayerTag>>,
     q: Query<(EntityId, &EquipmentType), With<UseItem>>,
-    mut item_query: QuerySet<(Query<'a, &mut Melee>, Query<'a, &mut Defense>)>,
+    mut item_query: QuerySet<(Query<'a, &'a mut Melee>, Query<'a, &'a mut Defense>)>,
 ) {
     let Some((player_id, inventory, equipment)) = player_query.iter_mut().next() else {
         return;
