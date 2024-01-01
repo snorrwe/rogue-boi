@@ -26,15 +26,15 @@ jobs:
 
       - name: Install deps
         run: |
-          nix-shell --run "npm i"
+          nix develop --command npm i
 
       - name: Build xtask
         run: |
-          nix-shell --run "cargo build --bin xtask"
+          nix develop --command cargo build --bin xtask
 
       - name: Bundle
         run: |
-          nix-shell --run "npm run bundle"
+          nix develop --command npm run bundle
 
       - uses: KikimoraGames/itch-publish@v0.0.3
         with:
