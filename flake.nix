@@ -30,6 +30,7 @@
             bzip2
             nodePackages.npm
             nodePackages.prettier
+            nodePackages.eslint
           ];
         };
       }
