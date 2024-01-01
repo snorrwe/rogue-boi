@@ -29,6 +29,7 @@
             git-cliff
             bzip2
             nodePackages.npm
+            nodePackages.prettier
           ];
         };
       }
