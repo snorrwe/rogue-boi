@@ -15,3 +15,4 @@ result
 ui/public/build
 ui/public/icons
 ui/dist
+.direnv

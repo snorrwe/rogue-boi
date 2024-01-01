@@ -18,18 +18,21 @@ Manual installation:
 - [rust](https://www.rust-lang.org/tools/install)
 - [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)
 - [nodejs](https://nodejs.org/en/)
+- [just](https://github.com/casey/just)
 - Run `npm i`
 
-Via nix:
+Via Nix:
 
-```sh
-nix-shell
-```
+- Install [nix](https://nixos.org/download)
+- Install [direnv](https://direnv.net/)
+- Run `direnv allow`
+
+Alternatively: install nix, then run `nix develop` to get a shell with the required tools installed.
 
 ### Run
 
 ```sh
-npm run dev
+just dev
 ```
 
 ### Icons
