@@ -9,6 +9,7 @@ clean:
     rm -rf rogue-boi-core/pkg
     rm -rf ui/public/icons
     rm -rf ui/dist
+    cargo clean
 
 format:
     npm run format
