@@ -10,7 +10,7 @@ use crate::{
 };
 use cecs::prelude::*;
 use rand::{prelude::SliceRandom, Rng};
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 
 pub fn init_world_systems(world: &mut World) {
     world.add_stage(
@@ -565,7 +565,7 @@ fn handle_player_move(
                     cmd.delete(stuff_id);
                 }
                 StuffTag::Wall => {
-                    log.push(INVALID, "Can't move into wall");
+                    warn!("Can't move into wall");
                     should_run.0 = false;
                 }
                 StuffTag::Gargoyle
