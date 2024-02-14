@@ -1080,12 +1080,9 @@ pub fn render_onto_canvas(
 ) {
     let width = res.width as f64;
     let height = res.height as f64;
-    let ctx = match res.ctx.as_mut() {
-        Some(x) => x,
-        None => {
-            debug!("No rendering context, skipping render");
-            return;
-        }
+    let Some(ctx) = res.ctx.as_mut() else {
+        debug!("No rendering context, skipping render");
+        return;
     };
 
     let min = camera_pos.0 - viewport.0;
