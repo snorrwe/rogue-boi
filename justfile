@@ -4,6 +4,7 @@ dev:
 update:
     cargo update
     npm update
+    nix flake update
 
 clean:
     rm -rf rogue-boi-core/pkg
