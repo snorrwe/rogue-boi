@@ -1,5 +1,4 @@
 <script>
-  import { onMount } from "svelte";
   import {
     canvasStore,
     coreStore,
@@ -13,7 +12,7 @@
   import Log from "@rogueBoi/game/Log.svelte";
   import Player from "@rogueBoi/game/Player.svelte";
 
-  let core;
+  let core = $state(null);
   coreStore.subscribe((c) => (core = c));
 
   let last = performance.now();
@@ -45,7 +44,7 @@
   }
   requestAnimationFrame(gameLoop);
 
-  onMount(() => {
+  $effect(() => {
     let autoSaveHandle = setInterval(() => {
       if ($coreStore) {
         let pl = $coreStore.save();

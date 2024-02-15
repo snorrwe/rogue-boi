@@ -1,13 +1,13 @@
 <script>
-  import { onDestroy, onMount } from "svelte";
   import { canvasStore } from "@rogueBoi/store.js";
 
-  let canvas;
-  onMount(() => {
+  let canvas = $state(null);
+
+  $effect(() => {
     canvasStore.set(canvas);
-  });
-  onDestroy(() => {
-    canvasStore.set(null);
+    return () => {
+      canvasStore.set(null);
+    };
   });
 </script>
 
