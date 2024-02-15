@@ -2,13 +2,9 @@
   import { icons } from "@rogueBoi/store.js";
   import Hp from "./Hp.svelte";
 
-  export let selected;
-  export let core;
-  export let targetingMode;
+  let { selected, core, targetingMode } = $props();
 
-  $: icon = $icons[selected.icon];
-
-  console.assert(icon != null, "Highlight icon not found", icon);
+  let icon = $derived(icons[selected.icon]);
 
   const useItem = (item) => () => {
     core.useItem(item.id);

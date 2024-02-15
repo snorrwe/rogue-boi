@@ -1,15 +1,10 @@
 <script>
-  export let currentHp;
-  export let maxHp;
+  let { currentHp, maxHp } = $props();
 
-  let t;
-  $: {
-    t = currentHp / maxHp;
-    // clamp to 0,1
-    // for some reason the css animation is messed up at t=1
-    // bad lerp implementation?
-    t = Math.max(Math.min(t, 0.999999), 0.0);
-  }
+  // clamp to 0,1
+  // for some reason the css animation is messed up at t=1
+  // bad lerp implementation?
+  let t = Math.max(Math.min(currentHp / maxHp, 0.999999), 0.0);
 </script>
 
 <div class="hp-bar" style="--t:{t * 100};"><p>{currentHp} / {maxHp}</p></div>

@@ -1,31 +1,25 @@
 <script>
-  import { onDestroy, onMount } from "svelte";
   import { canvasStore } from "@rogueBoi/store.js";
-  import { writable } from "svelte/store";
 
-  let box;
-  let canvas;
-  let sizeStore = writable(720);
+  let canvas = $state(null);
+  let box = $state(null);
+  let size = $state(720);
   /** @type {ResizeObserver} */ let observer;
-  onMount(() => {
+
+  $effect(() => {
     canvasStore.set(canvas);
     observer = new ResizeObserver(() => {
       const w = box.offsetWidth;
       const h = box.offsetHeight;
 
-      sizeStore.set(Math.min(w, h));
+      size = Math.min(w, h);
     });
     observer.observe(box);
+    return () => {
+      canvasStore.set(null);
+      observer.disconnect();
+    };
   });
-  onDestroy(() => {
-    canvasStore.set(null);
-    if (observer) observer.disconnect();
-  });
-
-  let size;
-  $: {
-    size = $sizeStore;
-  }
 </script>
 
 <div class="parent" bind:this={box}>

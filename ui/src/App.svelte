@@ -1,13 +1,12 @@
 <script>
-  import { onMount } from "svelte";
   import { fetchIcon, coreStore, coreOutput, selected } from "@rogueBoi/store.js";
   import Menu from "./routes/Menu.svelte";
   import Game from "./routes/Game.svelte";
   import Options from "./routes/Options.svelte";
   import DungeonGenerator from "./routes/DungeonGenerator.svelte";
 
-  export let core;
-  let page = Menu;
+  let { core } = $props();
+  let page = $state(Menu);
 
   function saveGame() {
     if ($coreStore) {
@@ -16,7 +15,7 @@
     }
   }
 
-  onMount(() => {
+  $effect(() => {
     core.icons().forEach((icon) => {
       fetchIcon({ src: `icons/${icon}.svg`, name: icon });
     });
