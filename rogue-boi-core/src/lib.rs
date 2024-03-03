@@ -26,7 +26,7 @@ use grid::Grid;
 use icons::ICONS;
 use math::Vec2;
 use tracing::{debug, error};
-use wasm_bindgen::{prelude::*, JsCast};
+use wasm_bindgen::prelude::*;
 
 /// State object
 #[wasm_bindgen]

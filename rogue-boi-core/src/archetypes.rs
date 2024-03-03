@@ -204,7 +204,8 @@ pub type StuffToJsQuery<'a> = QuerySet<(
 pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsValue {
     let payload = match tag {
         StuffTag::Door | StuffTag::Stairs | StuffTag::Tombstone => {
-            let (icon, name, desc) = query.q4().fetch(id).unwrap();
+            let q = query.q4();
+            let (icon, name, desc) = q.fetch(id).unwrap();
             json! {{
                 "id": id,
                 "tag": tag,
@@ -214,7 +215,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
             }}
         }
         StuffTag::Player => {
-            let (icon, melee, hp, defense) = query.q3().fetch(id).unwrap();
+            let q = query.q3();
+            let (icon, melee, hp, defense) = q.fetch(id).unwrap();
             json! {{
                 "id": id,
                 "tag": tag,
@@ -227,7 +229,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
             }}
         }
         StuffTag::Wall => {
-            let (icon, color) = query.q0().fetch(id).unwrap();
+            let q = query.q0();
+            let (icon, color) = q.fetch(id).unwrap();
             json! {{
                 "id": id,
                 "tag": tag,
@@ -243,8 +246,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
         | StuffTag::Warlord
         | StuffTag::Zombie
         | StuffTag::Minotaur => {
-            let (icon, name, ranged, melee, hp, description, color, defense) =
-                query.q2().fetch(id).unwrap();
+            let q = query.q2();
+            let (icon, name, ranged, melee, hp, description, color, defense) = q.fetch(id).unwrap();
             json! {{
                 "id": id,
                 "name": name.0,
@@ -272,8 +275,9 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
         | StuffTag::PoisonScroll
         | StuffTag::WardScroll
         | StuffTag::FireBallScroll => {
+            let q = query.q1();
             let (icon, name, desc, ranged, heal, melee, pos, color, defense, eq_ty) =
-                query.q1().fetch(id).unwrap();
+                q.fetch(id).unwrap();
 
             let equipped = query
                 .q5()

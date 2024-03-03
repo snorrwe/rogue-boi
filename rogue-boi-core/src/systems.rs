@@ -427,11 +427,11 @@ fn update_consumable_use(
     }
 }
 
-fn update_equipment_use<'a>(
+fn update_equipment_use(
     mut cmd: Commands,
     mut player_query: Query<(EntityId, &mut Inventory, &mut Equipment), With<PlayerTag>>,
     q: Query<(EntityId, &EquipmentType), With<UseItem>>,
-    mut item_query: QuerySet<(Query<'a, &'a mut Melee>, Query<'a, &'a mut Defense>)>,
+    mut item_query: Query<(&mut Melee, &mut Defense)>,
 ) {
     let Some((player_id, inventory, equipment)) = player_query.iter_mut().next() else {
         return;
@@ -446,9 +446,10 @@ fn update_equipment_use<'a>(
                 let old_id = &mut equipment.weapon;
 
                 // update power
-                let new_power = *item_query.q0().fetch(id).unwrap();
-                let old_power = old_id.and_then(|id| item_query.q0().fetch(id).copied());
-                let player_power = item_query.q0_mut().fetch_mut(player_id).unwrap();
+                let mut q: Query<&mut Melee> = item_query.subset();
+                let new_power = *q.fetch(id).unwrap();
+                let old_power = old_id.and_then(|id| q.fetch(id).copied());
+                let player_power = q.fetch_mut(player_id).unwrap();
                 *player_power += new_power;
                 if let Some(old_power) = old_power {
                     *player_power -= old_power;
@@ -460,9 +461,10 @@ fn update_equipment_use<'a>(
                 let old_id = &mut equipment.armor;
 
                 // update defense
-                let new_defense = *item_query.q1().fetch(id).unwrap();
-                let old_defense = old_id.and_then(|id| item_query.q1().fetch(id).copied());
-                let player_defense = item_query.q1_mut().fetch_mut(player_id).unwrap();
+                let mut q: Query<&mut Defense> = item_query.subset();
+                let new_defense = *q.fetch(id).unwrap();
+                let old_defense = old_id.and_then(|id| q.fetch(id).copied());
+                let player_defense = q.fetch_mut(player_id).unwrap();
                 *player_defense += new_defense;
                 if let Some(old_defense) = old_defense {
                     *player_defense -= old_defense;
