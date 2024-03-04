@@ -37,7 +37,7 @@ pub fn init_world_systems(world: &mut World) {
     );
     world.add_stage(
         SystemStage::new("update_item_use")
-            .with_should_run(should_update_player)
+            .with_should_run(should_update_item_use)
             .with_system(use_poison_scroll)
             .with_system(use_confusion_scroll)
             .with_system(use_lightning_scroll)
@@ -1039,6 +1039,10 @@ pub fn update_output(
 
 fn should_update_player(should_tick: Res<ShouldTick>, s: Res<ShouldUpdatePlayer>) -> bool {
     s.0 && should_tick.0
+}
+
+fn should_update_item_use(should_tick: Res<ShouldTick>, s: Query<&(), With<MarkConsume>>) -> bool {
+    should_tick.0 && s.any()
 }
 
 fn player_prepare(
