@@ -545,76 +545,74 @@ fn handle_player_move(
     mut log: ResMut<LogHistory>,
     mut cmd: Commands,
 ) {
-    let delta = match actions.move_action() {
-        Some(x) => x,
-        None => {
-            return;
-        }
+    let Some(delta) = actions.move_action() else {
+        return;
     };
-    for (power, pos) in player_q.iter_mut() {
-        let pos = &mut pos.0;
-        let new_pos: Vec2 = *pos + delta;
-        match grid
-            .at(new_pos.x, new_pos.y)
-            .unwrap()
-            .and_then(|id| stuff_tags.fetch(id).map(|tag| (id, tag)))
-        {
-            Some((stuff_id, tag)) => match tag {
-                StuffTag::Player => unreachable!(),
-                StuffTag::Door => {
-                    // TODO: ability to close the door?
-                    // would need some persistent state then, instead of deleting
-                    cmd.delete(stuff_id);
-                }
-                StuffTag::Wall => {
-                    warn!("Can't move into wall");
-                    should_run.0 = false;
-                }
-                StuffTag::Gargoyle
-                | StuffTag::Goblin
-                | StuffTag::Troll
-                | StuffTag::Orc
-                | StuffTag::Warlord
-                | StuffTag::Zombie
-                | StuffTag::Minotaur => {
-                    if skill_check(power.skill) {
-                        let (hp, defense) = enemy_q.fetch_mut(stuff_id).expect("Enemy has no hp");
-                        let damage = compute_melee_damage(power.power, defense);
-                        hp.current -= damage;
-                        debug!("kick enemy {}: {:?}", stuff_id, hp);
-                        if let Some(Name(name)) = names.fetch(stuff_id) {
-                            log.push(
-                                PLAYER_ATTACK,
-                                format!("Bonk {} for {} damage", name, damage),
-                            );
-                        }
-                    } else {
-                        debug!("miss enemy {}", stuff_id);
-                        log.push(PLAYER_ATTACK, "Your attack misses");
+    let Some((power, pos)) = player_q.single_mut() else {
+        return;
+    };
+    let pos = &mut pos.0;
+    let new_pos: Vec2 = *pos + delta;
+    match grid
+        .at(new_pos.x, new_pos.y)
+        .unwrap()
+        .and_then(|id| stuff_tags.fetch(id).map(|tag| (id, tag)))
+    {
+        Some((stuff_id, tag)) => match tag {
+            StuffTag::Player => unreachable!(),
+            StuffTag::Door => {
+                // TODO: ability to close the door?
+                // would need some persistent state then, instead of deleting
+                cmd.delete(stuff_id);
+            }
+            StuffTag::Wall => {
+                warn!("Can't move into wall");
+                should_run.0 = false;
+            }
+            StuffTag::Gargoyle
+            | StuffTag::Goblin
+            | StuffTag::Troll
+            | StuffTag::Orc
+            | StuffTag::Warlord
+            | StuffTag::Zombie
+            | StuffTag::Minotaur => {
+                if skill_check(power.skill) {
+                    let (hp, defense) = enemy_q.fetch_mut(stuff_id).expect("Enemy has no hp");
+                    let damage = compute_melee_damage(power.power, defense);
+                    hp.current -= damage;
+                    debug!("kick enemy {}: {:?}", stuff_id, hp);
+                    if let Some(Name(name)) = names.fetch(stuff_id) {
+                        log.push(
+                            PLAYER_ATTACK,
+                            format!("Bonk {} for {} damage", name, damage),
+                        );
                     }
+                } else {
+                    debug!("miss enemy {}", stuff_id);
+                    log.push(PLAYER_ATTACK, "Your attack misses");
                 }
-                StuffTag::LightningScroll
-                | StuffTag::PoisonScroll
-                | StuffTag::WardScroll
-                | StuffTag::HpPotion
-                | StuffTag::LeatherArmor
-                | StuffTag::ChainMailArmor
-                | StuffTag::Sword
-                | StuffTag::RareSword
-                | StuffTag::Dagger
-                | StuffTag::RareDagger
-                | StuffTag::ConfusionScroll
-                | StuffTag::FireBallScroll
-                | StuffTag::Tombstone
-                | StuffTag::Stairs => {
-                    grid_step(pos, new_pos, &mut grid);
-                }
-            },
-            None => {
-                // empty position
-                // update the grid asap so the monsters will see the updated player position
+            }
+            StuffTag::LightningScroll
+            | StuffTag::PoisonScroll
+            | StuffTag::WardScroll
+            | StuffTag::HpPotion
+            | StuffTag::LeatherArmor
+            | StuffTag::ChainMailArmor
+            | StuffTag::Sword
+            | StuffTag::RareSword
+            | StuffTag::Dagger
+            | StuffTag::RareDagger
+            | StuffTag::ConfusionScroll
+            | StuffTag::FireBallScroll
+            | StuffTag::Tombstone
+            | StuffTag::Stairs => {
                 grid_step(pos, new_pos, &mut grid);
             }
+        },
+        None => {
+            // empty position
+            // update the grid asap so the monsters will see the updated player position
+            grid_step(pos, new_pos, &mut grid);
         }
     }
 }
