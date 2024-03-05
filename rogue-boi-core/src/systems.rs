@@ -309,7 +309,6 @@ fn use_fireball(
             should_run.0 = false;
             return;
         }
-        // TODO: put the log line as component
         log.push(
             PLAYER_ATTACK,
             format!("Hurl a fire ball at {}", target_pos.dst),
@@ -324,8 +323,6 @@ fn use_fireball(
                         // TODO skill check?
                         hp.current -= power;
                         if let Some(Name(ref name)) = name {
-                            // TODO: put the log line as component
-                            // or maybe polymorphic system?
                             log.push(
                                 PLAYER_ATTACK,
                                 format!(

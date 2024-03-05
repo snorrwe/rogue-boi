@@ -24,7 +24,6 @@ const ICONS: &[(&str, &str)] = &[
 
 #[derive(Deserialize)]
 struct Svg {
-    // TODO: support multiple paths?
     path: SvgPath,
 }
 
@@ -53,7 +52,6 @@ fn main() {
     for (key, path) in ICONS {
         let src_path = src_root.join(path);
         let src_path = src_path.to_string_lossy();
-        // TODO: rerun if zip changed, not icons...
         println!("loading icon {}", src_path);
         let f = icons_archive
             .by_name(src_path.as_ref())
