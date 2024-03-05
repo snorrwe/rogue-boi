@@ -417,7 +417,7 @@ impl Core {
                  mut log: ResMut<LogHistory>| {
                     // remove item from inventory and add a position
                     // TODO: random empty nearby position intead of the player's?
-                    if let Some((pos, inv)) = q.iter_mut().next() {
+                    if let Some((pos, inv)) = q.single_mut() {
                         if let Some(item) = inv.remove(id) {
                             if let Some(Name(name)) = q_item.fetch(item) {
                                 log.push(WHITE, format!("Drop {}", name));
