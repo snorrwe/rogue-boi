@@ -1256,11 +1256,9 @@ fn update_should_tick(
     actions: Res<PlayerActions>,
     tick_time: Res<TickInMs>,
     q_item_use: Query<&(), With<UseItem>>,
-    player_id: Res<PlayerId>,
 ) {
     time.0 += dt.0;
-    should_tick.0 = !player_id.0.is_none()
-        && (!q_item_use.is_empty() || !actions.is_empty())
+    should_tick.0 = (!q_item_use.is_empty() || !actions.is_empty())
         && (time.0 >= tick_time.0 || tick_time.0.abs_diff(time.0) <= 5); // lag compensation
     if should_tick.0 {
         debug!("Running update after {} ms", time.0);
