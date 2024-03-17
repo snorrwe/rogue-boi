@@ -568,7 +568,7 @@ fn handle_player_move(
     let new_pos: Vec2 = *pos + delta;
     match grid
         .at(new_pos.x, new_pos.y)
-        .unwrap()
+        .expect("new pos is out of bounds")
         .and_then(|id| stuff_tags.fetch(id).map(|tag| (id, tag)))
     {
         Some((stuff_id, tag)) => match tag {
