@@ -293,7 +293,11 @@ impl Core {
         log.push(WHITE, "Hello wanderer!");
 
         world.run_system(regenerate_dungeon).unwrap();
-        world.run_system(update_output).unwrap();
+        world
+            .get_resource_or_default::<PlayerActions>()
+            .insert_move(Vec2::ZERO);
+        drop(world);
+        self.tick(0);
     }
 
     /// Generate a dungoen without altering the world state
