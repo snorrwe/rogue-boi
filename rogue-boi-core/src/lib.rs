@@ -86,6 +86,7 @@ fn init_world_transient_resources(world_dims: Vec2, world: &mut World) {
     world.insert_resource(AppMode::Game);
     world.insert_resource(TargetPos::default());
     world.insert_resource(None::<DesiredStat>);
+    world.insert_resource(PlayerId::default());
 }
 
 fn init_world_resources(world_dims: Vec2, world: &mut World) {

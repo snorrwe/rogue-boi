@@ -15,6 +15,7 @@ use tracing::{debug, info, warn};
 pub fn init_world_systems(world: &mut World) {
     world.add_stage(
         SystemStage::new("inputs")
+            .with_system(set_player_id)
             .with_system(update_input_events)
             .with_system(update_should_tick)
             .with_system(handle_targeting)
@@ -82,6 +83,10 @@ pub fn init_world_systems(world: &mut World) {
     );
 }
 
+fn set_player_id(mut id: ResMut<PlayerId>, q: Query<EntityId, With<PlayerTag>>) {
+    id.0 = q.single();
+}
+
 fn update_input_events(inputs: Res<Vec<InputEvent>>, mut actions: ResMut<PlayerActions>) {
     let mut delta = Vec2::new(0, 0);
     for event in &inputs[..] {
@@ -125,10 +130,11 @@ fn equip_item(id: EntityId, equipment: &mut Option<EntityId>, inventory: &mut In
 
 fn clear_consumable(
     mut player_query: Query<&mut Inventory, With<PlayerTag>>,
+    player_id: Res<PlayerId>,
     mut cmd: Commands,
     q: Query<EntityId, With<ClearInventoryItem>>,
 ) {
-    let Some(inventory) = player_query.iter_mut().next() else {
+    let Some(inventory) = player_id.get_mut(&mut player_query) else {
         return;
     };
     for id in q.iter() {
@@ -179,10 +185,11 @@ fn use_poison_scroll(
 fn use_hp_potion(
     mut cmd: Commands,
     mut player_query: Query<&mut Hp, With<PlayerTag>>,
+    player_id: Res<PlayerId>,
     item_query: Query<(EntityId, &Heal), With<MarkConsume>>,
     mut log: ResMut<LogHistory>,
 ) {
-    let Some(hp) = player_query.iter_mut().next() else {
+    let Some(hp) = player_id.get_mut(&mut player_query) else {
         return;
     };
 
@@ -240,10 +247,14 @@ fn use_ward_scroll(
     mut cmd: Commands,
     item_query: Query<(EntityId, &Ranged), (With<MarkConsume>, With<WardScroll>)>,
     mut player_query: Query<&mut Defense, With<PlayerTag>>,
+    player_id: Res<PlayerId>,
     mut log: ResMut<LogHistory>,
 ) {
     // assumes there's only 1 player and 1 ward being used per tick
-    for ((item_id, range), player_def) in item_query.iter().zip(player_query.iter_mut()) {
+    let Some(player_def) = player_id.get_mut(&mut player_query) else {
+        return;
+    };
+    for (item_id, range) in item_query.iter() {
         cmd.entity(item_id).insert(ClearInventoryItem);
 
         log.push(
@@ -343,6 +354,7 @@ fn update_consumable_use(
     actions: Res<PlayerActions>,
     mut cmd: Commands,
     mut player_query: Query<&Pos, With<PlayerTag>>,
+    player_id: Res<PlayerId>,
     q: QuerySet<(
         Query<(EntityId, Option<&Ranged>), (With<UseItem>, With<NeedsTargetEntity>)>,
         Query<(EntityId, &Ranged), (With<UseItem>, With<NeedsTargetPosition>)>,
@@ -362,7 +374,7 @@ fn update_consumable_use(
     target_pos: Res<TargetPos>,
     mut log: ResMut<LogHistory>,
 ) {
-    let Some(player_pos) = player_query.iter_mut().next() else {
+    let Some(player_pos) = player_id.get_mut(&mut player_query) else {
         return;
     };
 
@@ -427,10 +439,11 @@ fn update_consumable_use(
 fn update_equipment_use(
     mut cmd: Commands,
     mut player_query: Query<(EntityId, &mut Inventory, &mut Equipment), With<PlayerTag>>,
+    player_id: Res<PlayerId>,
     q: Query<(EntityId, &EquipmentType), With<UseItem>>,
     mut item_query: Query<(&mut Melee, &mut Defense)>,
 ) {
-    let Some((player_id, inventory, equipment)) = player_query.iter_mut().next() else {
+    let Some((player_id, inventory, equipment)) = player_id.get_mut(&mut player_query) else {
         return;
     };
     for (id, ty) in q.iter() {
@@ -475,6 +488,7 @@ fn update_equipment_use(
 
 fn update_player_world_interact(
     mut q_player: Query<(EntityId, &mut Inventory, &Pos), With<PlayerTag>>,
+    player_id: Res<PlayerId>,
     mut cmd: Commands,
     q_item: Query<(Option<&Item>, Option<&NextLevel>, Option<&Name>)>,
     grid: Res<Grid<Stuff>>,
@@ -486,38 +500,39 @@ fn update_player_world_interact(
     if !actions.interact() {
         return;
     }
-    for (id, inventory, pos) in q_player.iter_mut() {
-        if grid[pos.0] != Some(id) {
-            let stuff_id = grid[pos.0].unwrap();
-            let (item_tag, next_level_tag, name) = q_item.fetch(stuff_id).unwrap();
-            debug!(
-                id = tracing::field::display(stuff_id),
-                "Interacting with entity"
-            );
-            if item_tag.is_some() {
-                match inventory.add(stuff_id) {
-                    Ok(_) => {
-                        cmd.entity(stuff_id).remove::<Pos>();
-                        let Name(ref name) = name.unwrap();
-                        log.push(WHITE, format!("Picked up a {}", name));
-                    }
-                    Err(err) => match err {
-                        crate::components::InventoryError::Full => {
-                            log.push(INVALID, "Inventory is full");
-                            should_run.0 = false;
-                        }
-                    },
+    let Some((id, inventory, pos)) = player_id.get_mut(&mut q_player) else {
+        return;
+    };
+    if grid[pos.0] != Some(id) {
+        let stuff_id = grid[pos.0].unwrap();
+        let (item_tag, next_level_tag, name) = q_item.fetch(stuff_id).unwrap();
+        debug!(
+            id = tracing::field::display(stuff_id),
+            "Interacting with entity"
+        );
+        if item_tag.is_some() {
+            match inventory.add(stuff_id) {
+                Ok(_) => {
+                    cmd.entity(stuff_id).remove::<Pos>();
+                    let Name(ref name) = name.unwrap();
+                    log.push(WHITE, format!("Picked up a {}", name));
                 }
-            } else if next_level_tag.is_some() {
-                log.push(WHITE, "You descend the staircase");
-                level.desired += 1;
-            } else {
-                debug!("Cant interact with {}", id);
+                Err(err) => match err {
+                    crate::components::InventoryError::Full => {
+                        log.push(INVALID, "Inventory is full");
+                        should_run.0 = false;
+                    }
+                },
             }
+        } else if next_level_tag.is_some() {
+            log.push(WHITE, "You descend the staircase");
+            level.desired += 1;
         } else {
-            log.push(IMPOSSIBLE, "Nothing to do...");
-            should_run.0 = false;
+            debug!("Cant interact with {}", id);
         }
+    } else {
+        log.push(IMPOSSIBLE, "Nothing to do...");
+        should_run.0 = false;
     }
 }
 
@@ -534,6 +549,7 @@ fn compute_melee_damage(power: i32, defense: &mut Defense) -> i32 {
 fn handle_player_move(
     actions: Res<PlayerActions>,
     mut player_q: Query<(&Melee, &mut Pos), With<PlayerTag>>,
+    player_id: Res<PlayerId>,
     stuff_tags: Query<&StuffTag>,
     mut enemy_q: Query<(&mut Hp, &mut Defense)>,
     mut grid: ResMut<Grid<Stuff>>,
@@ -545,7 +561,7 @@ fn handle_player_move(
     let Some(delta) = actions.move_action() else {
         return;
     };
-    let Some((power, pos)) = player_q.single_mut() else {
+    let Some((power, pos)) = player_id.get_mut(&mut player_q) else {
         return;
     };
     let pos = &mut pos.0;
@@ -723,9 +739,10 @@ pub fn update_fov(
     mut visible: ResMut<Visible>,
     viewport: Res<Visibility>,
     opaque: Query<&(), With<Opaque>>,
+    player_id: Res<PlayerId>,
 ) {
     let radius = viewport.0.x.max(viewport.0.y);
-    if let Some(player_pos) = q.iter().next() {
+    if let Some(player_pos) = player_id.get(&q) {
         set_visible(&grid, &mut visible.0, &opaque, player_pos.0, radius);
         visible.0[player_pos.0] = true;
         flood_vizibility(&grid, &mut visible.0, player_pos.0, radius);
@@ -789,6 +806,7 @@ fn update_confusion(
 
 fn update_ai_move(
     q_player: Query<(&Pos, &LastPos), (With<Pos>, With<PlayerTag>)>,
+    player_id: Res<PlayerId>,
     grid: Res<Grid<Stuff>>,
     mut melee: Query<
         (EntityId, &mut PathCache, &Pos, Option<&Leash>),
@@ -799,12 +817,9 @@ fn update_ai_move(
     q_walk: Query<&Walkable>,
     opaque: Query<&(), With<Opaque>>,
 ) {
-    let (Pos(player_pos), LastPos(last_player_pos)) = match q_player.iter().next() {
-        Some(x) => x,
-        None => {
-            debug!("No player on the map! Skipping melee update");
-            return;
-        }
+    let Some((Pos(player_pos), LastPos(last_player_pos))) = player_id.get(&q_player) else {
+        debug!("No player on the map! Skipping melee update");
+        return;
     };
     for (id, cache, Pos(pos), leash) in melee.iter_mut() {
         let vel = q_vel.fetch_mut(id).unwrap();
@@ -862,6 +877,7 @@ fn update_ai_move(
 
 fn update_melee_ai(
     mut q_player: Query<(EntityId, &Pos, &mut Defense), (With<Hp>, With<PlayerTag>)>,
+    player_id: Res<PlayerId>,
     mut q_target: Query<(&mut Hp, Option<&Name>)>,
     mut q_enemy: Query<
         (
@@ -877,12 +893,10 @@ fn update_melee_ai(
     grid: Res<Grid<Stuff>>,
     mut log: ResMut<LogHistory>,
 ) {
-    let (player_id, Pos(player_pos), player_defense) = match q_player.iter_mut().next() {
-        Some(x) => x,
-        None => {
-            debug!("No player on the map! Skipping melee update");
-            return;
-        }
+    let Some((player_id, Pos(player_pos), player_defense)) = player_id.get_mut(&mut q_player)
+    else {
+        debug!("No player on the map! Skipping melee update");
+        return;
     };
 
     for (id, name, Melee { power, skill }, Pos(pos), confused, vel) in q_enemy.iter_mut() {
@@ -929,23 +943,25 @@ fn update_melee_ai(
 fn update_player_hp(
     mut cmd: Commands,
     query_player: Query<(EntityId, &Hp), With<PlayerTag>>,
+    player_id: Res<PlayerId>,
     mut log: ResMut<LogHistory>,
 ) {
-    for (player_id, hp) in query_player.iter() {
-        if hp.current <= 0 {
-            info!("Player died");
-            log.push(PLAYER_DIE, "Player died");
-            cmd.entity(player_id)
-                .remove::<Inventory>()
-                .remove::<Hp>()
-                .remove::<PlayerTag>()
-                .insert_bundle((
-                    icon("tombstone"),
-                    StuffTag::Tombstone,
-                    Name("RIP".to_string()),
-                    Description("Your resting place".to_string()),
-                ));
-        }
+    let Some((player_id, hp)) = player_id.get(&query_player) else {
+        return;
+    };
+    if hp.current <= 0 {
+        info!("Player died");
+        log.push(PLAYER_DIE, "Player died");
+        cmd.entity(player_id)
+            .remove::<Inventory>()
+            .remove::<Hp>()
+            .remove::<PlayerTag>()
+            .insert_bundle((
+                icon("tombstone"),
+                StuffTag::Tombstone,
+                Name("RIP".to_string()),
+                Description("Your resting place".to_string()),
+            ));
     }
 }
 
@@ -953,9 +969,10 @@ fn update_ai_hp(
     mut cmd: Commands,
     query_hp: Query<(EntityId, &Hp, Option<&Name>, Option<&Exp>), (With<Ai>, WithOut<PlayerTag>)>,
     mut query_player: Query<&mut Level, With<PlayerTag>>,
+    player_id: Res<PlayerId>,
     mut log: ResMut<LogHistory>,
 ) {
-    let mut player = query_player.iter_mut().next();
+    let mut player = player_id.get_mut(&mut query_player);
     for (id, _hp, name, xp) in query_hp.iter().filter(|(_, hp, _, _)| (hp.current <= 0)) {
         debug!("Entity {} died", id);
         if let Some(Name(name)) = name {
@@ -988,14 +1005,19 @@ fn should_update_world(should_tick: Res<ShouldTick>, r: Res<ShouldUpdateWorld>) 
     r.0 && should_tick.0
 }
 
-pub fn update_camera_pos(mut camera: ResMut<CameraPos>, q: Query<&Pos, With<PlayerTag>>) {
-    for pos in q.iter() {
+pub fn update_camera_pos(
+    mut camera: ResMut<CameraPos>,
+    q: Query<&Pos, With<PlayerTag>>,
+    player_id: Res<PlayerId>,
+) {
+    if let Some(pos) = player_id.get(&q) {
         camera.0 = pos.0;
     }
 }
 
 pub fn update_output(
     q_player: Query<(&Pos, &Hp, &Melee, &Level, &Defense), With<PlayerTag>>,
+    player_id: Res<PlayerId>,
     mut output_cache: ResMut<Output>,
     selected: Res<Selected>,
     history: Res<LogHistory>,
@@ -1004,9 +1026,8 @@ pub fn update_output(
 ) {
     let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
 
-    let player = q_player
-        .iter()
-        .next()
+    let player = player_id
+        .get(&q_player)
         .map(|(pos, hp, attack, level, defense)| PlayerOutput {
             level: level.current_level,
             current_xp: level.current_xp,
@@ -1042,11 +1063,11 @@ fn should_update_item_use(should_tick: Res<ShouldTick>, s: Query<&(), With<MarkC
 
 fn player_prepare(
     mut should_update: ResMut<ShouldUpdateWorld>,
-    q: Query<&(), With<PlayerTag>>,
     mut should_update_player: ResMut<ShouldUpdatePlayer>,
     actions: Res<PlayerActions>,
     should_tick: Res<ShouldTick>,
     mut log: ResMut<LogHistory>,
+    player_id: Res<PlayerId>,
 ) {
     if !should_tick.0 {
         should_update_player.0 = false;
@@ -1054,11 +1075,8 @@ fn player_prepare(
         return;
     }
     // if no player is found then don't update player logic
-    should_update_player.0 = false;
     should_update.0 = true;
-    if q.iter().next().is_some() {
-        should_update_player.0 = true;
-    }
+    should_update_player.0 = player_id.0.is_some();
     if should_update_player.0 && actions.wait() {
         log.push(WHITE, "Waiting...");
         should_update_player.0 = false;
@@ -1237,11 +1255,11 @@ fn update_should_tick(
     mut should_tick: ResMut<ShouldTick>,
     actions: Res<PlayerActions>,
     tick_time: Res<TickInMs>,
-    q_player: Query<&(), With<PlayerTag>>,
     q_item_use: Query<&(), With<UseItem>>,
+    player_id: Res<PlayerId>,
 ) {
     time.0 += dt.0;
-    should_tick.0 = !q_player.is_empty()
+    should_tick.0 = !player_id.0.is_none()
         && (!q_item_use.is_empty() || !actions.is_empty())
         && (time.0 >= tick_time.0 || tick_time.0.abs_diff(time.0) <= 5); // lag compensation
     if should_tick.0 {
@@ -1336,9 +1354,10 @@ fn handle_levelup(
     mut app_mode: ResMut<AppMode>,
     mut stat: ResMut<Option<DesiredStat>>,
     mut player_q: Query<(&mut Hp, &mut Melee, &mut Level, &mut Defense), With<PlayerTag>>,
+    player_id: Res<PlayerId>,
     mut log: ResMut<LogHistory>,
 ) {
-    if let Some((hp, melee, level, defense)) = player_q.iter_mut().next() {
+    if let Some((hp, melee, level, defense)) = player_id.get_mut(&mut player_q) {
         if !level.needs_levelup() {
             return;
         }
