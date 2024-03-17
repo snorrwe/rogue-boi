@@ -312,15 +312,13 @@ impl Core {
         world.insert_resource(map_gen::MapGenProps::from_level(params.level));
         world.run_system(map_gen::generate_map).unwrap();
 
-        world
-            .run_system(move |tags: Query<(EntityId, &Icon, &Pos)>| {
-                let map = tags
-                    .iter()
-                    .map(|(_id, icon, pos)| (format!("{};{}", pos.0.x, pos.0.y), &icon.0))
-                    .collect::<std::collections::HashMap<_, _>>();
-                serde_wasm_bindgen::to_value(&map).unwrap()
-            })
-            .unwrap()
+        world.run_view_system(move |tags: Query<(EntityId, &Icon, &Pos)>| {
+            let map = tags
+                .iter()
+                .map(|(_id, icon, pos)| (format!("{};{}", pos.0.x, pos.0.y), &icon.0))
+                .collect::<std::collections::HashMap<_, _>>();
+            serde_wasm_bindgen::to_value(&map).unwrap()
+        })
     }
 
     /// return the name of the icons (without the extension!)
