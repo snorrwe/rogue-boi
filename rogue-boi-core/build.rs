@@ -26,7 +26,7 @@ fn chances_const(name: &str, groups: &mut [ChanceRow]) -> String {
     payload
 }
 
-fn read_weights(name: &str, sheet: calamine::Range<calamine::DataType>) -> String {
+fn read_weights(name: &str, sheet: calamine::Range<calamine::Data>) -> String {
     let iter = RangeDeserializerBuilder::new().from_range(&sheet).unwrap();
 
     let mut weights = Vec::with_capacity(1024);
@@ -80,7 +80,7 @@ fn optional_stuff<T>(
     }
 }
 
-fn stuff_descriptors(sheet: calamine::Range<calamine::DataType>) -> String {
+fn stuff_descriptors(sheet: calamine::Range<calamine::Data>) -> String {
     let iter = RangeDeserializerBuilder::new()
         .from_range(&sheet)
         .unwrap()
@@ -190,16 +190,13 @@ fn main() {
 
     let enemy_chances = xls
         .worksheet_range("enemy-chances")
-        .expect("Failed to open enemy chances worksheet")
-        .expect("Failed to create range for enemy-chances");
+        .expect("Failed to open enemy chances worksheet");
     let item_chances = xls
         .worksheet_range("item-chances")
-        .expect("Failed to open item chances worksheet")
-        .expect("Failed to create range for item-chances");
+        .expect("Failed to open item chances worksheet");
     let stuff = xls
         .worksheet_range("stuff-descriptor")
-        .expect("Failed to open stuff worksheet")
-        .expect("Failed to create range for stuff");
+        .expect("Failed to open stuff worksheet");
 
     let enemy_weights = read_weights("ENEMY_CHANCES", enemy_chances);
     let item_weights = read_weights("ITEM_CHANCES", item_chances);

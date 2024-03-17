@@ -16,37 +16,37 @@ cecs = { git = "https://github.com/caolo-game/cecs", default-features = false, f
     "serde",
 ] }
 rand = { version = "0.8.5", features = [] }
-wasm-bindgen = { version = "0.2.87", features = ["serde-serialize"] }
-serde = { version = "1.0.188", features = ["derive"] }
+wasm-bindgen = { version = "0.2.92", features = ["serde-serialize"] }
+serde = { version = "1.0.197", features = ["derive"] }
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
 # code size when deploying.
 console_error_panic_hook = { version = "0.1.7", optional = true }
-tracing = { version = "0.1.37", features = ["release_max_level_info"] }
+tracing = { version = "0.1.40", features = ["release_max_level_info"] }
 tracing-wasm = "0.2.1"
-smallvec = "1.11.1"
+smallvec = "1.13.1"
 arrayvec = "0.7.4"
 lazy_static = "1.4.0"
-getrandom = { version = "0.2.10", features = ["js"] }
-thiserror = "1.0.49"
-serde_json = "1.0.107"
+getrandom = { version = "0.2.12", features = ["js"] }
+thiserror = "1.0.58"
+serde_json = "1.0.114"
 icons = { version = "0.1.0", path = "../icons" }
-web-sys = { version = "0.3.64", features = [
+web-sys = { version = "0.3.69", features = [
     "CanvasRenderingContext2d",
     "HtmlCanvasElement",
     "Path2d",
     "DomMatrix",
     "MouseEvent",
 ] }
-base64 = "0.21.4"
-serde-wasm-bindgen = "0.6.0"
-ciborium = "0.2.1"
+base64 = "0.22.0"
+serde-wasm-bindgen = "0.6.5"
+ciborium = "0.2.2"
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.37"
+wasm-bindgen-test = "0.3.42"
 
 [build-dependencies]
-calamine = "0.22.0"
-itertools = "0.11.0"
-serde = { version = "1.0.188", features = ["derive"] }
+calamine = "0.24.0"
+itertools = "0.12.1"
+serde = { version = "1.0.197", features = ["derive"] }

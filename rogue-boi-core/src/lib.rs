@@ -554,8 +554,8 @@ impl Core {
         debug!("• loading");
         let pl = BASE64_ENGINE.decode(pl).expect("failed to b64 decode");
 
-        let deser: WorldDe = ciborium::from_reader(pl.as_slice()).expect("failed to load world");
-        let mut world = deser.world;
+        let WorldDe { mut world } =
+            ciborium::from_reader(pl.as_slice()).expect("failed to load world");
 
         let dims = *world
             .get_resource::<WorldDims>()
