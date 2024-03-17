@@ -286,7 +286,6 @@ impl Core {
         world.insert_resource(GameTick::default());
         world.insert_resource(DungeonFloor::default());
         world.insert_resource(Selected::default());
-
         world.insert_resource(AppMode::Game);
 
         let log = world.get_resource_mut::<LogHistory>().unwrap();
