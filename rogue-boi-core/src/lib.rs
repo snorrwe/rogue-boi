@@ -297,7 +297,7 @@ impl Core {
             .get_resource_or_default::<PlayerActions>()
             .insert_move(Vec2::ZERO);
         drop(world);
-        self.tick(0);
+        self.tick(10000);
     }
 
     /// Generate a dungoen without altering the world state
@@ -575,7 +575,7 @@ impl Core {
             .insert_move(Vec2::ZERO);
 
         self.world.replace(world);
-        self.tick(0);
+        self.tick(10000);
         debug!("✓ loading");
     }
 
