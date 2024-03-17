@@ -567,7 +567,7 @@ impl Core {
         world.run_system(systems::update_fov).unwrap();
         init_world_systems(&mut world);
 
-        *self.world.borrow_mut() = world;
+        self.world.replace(world);
         self.tick(0);
         debug!("✓ loading");
     }
