@@ -572,7 +572,9 @@ fn handle_player_move(
         .and_then(|id| stuff_tags.fetch(id).map(|tag| (id, tag)))
     {
         Some((stuff_id, tag)) => match tag {
-            StuffTag::Player => unreachable!(),
+            StuffTag::Player => {
+                // delta=ZERO
+            }
             StuffTag::Door => {
                 // TODO: ability to close the door?
                 // would need some persistent state then, instead of deleting
