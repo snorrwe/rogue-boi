@@ -567,6 +567,10 @@ impl Core {
         world.run_system(systems::update_fov).unwrap();
         init_world_systems(&mut world);
 
+        world
+            .get_resource_or_default::<PlayerActions>()
+            .insert_move(Vec2::ZERO);
+
         self.world.replace(world);
         self.tick(0);
         debug!("✓ loading");
