@@ -1332,7 +1332,9 @@ pub fn regenerate_dungeon(mut access: WorldAccess) {
     });
     world.insert_resource(level);
     world.insert_resource(map_gen::MapGenProps::from_level(level));
-    world.insert_resource(PlayerActions::new());
+    let mut actions = PlayerActions::new();
+    actions.insert_move(Vec2::ZERO); // force an update after the dungeon has been generated
+    world.insert_resource(actions);
 
     world.run_system(map_gen::generate_map).unwrap();
     world.run_system(init_grids).unwrap();

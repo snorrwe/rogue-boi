@@ -293,9 +293,6 @@ impl Core {
         log.push(WHITE, "Hello wanderer!");
 
         world.run_system(regenerate_dungeon).unwrap();
-        world
-            .get_resource_or_default::<PlayerActions>()
-            .insert_move(Vec2::ZERO);
         drop(world);
         self.tick(10000);
     }
@@ -569,10 +566,6 @@ impl Core {
         world.run_system(systems::update_camera_pos).unwrap();
         world.run_system(systems::update_fov).unwrap();
         init_world_systems(&mut world);
-
-        world
-            .get_resource_or_default::<PlayerActions>()
-            .insert_move(Vec2::ZERO);
 
         self.world.replace(world);
         self.tick(10000);
