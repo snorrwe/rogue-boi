@@ -30,11 +30,12 @@ pub fn init_world_systems(world: &mut World) {
     world.add_stage(
         SystemStage::new("player-update")
             .with_should_run(should_update_player)
-            .with_system(update_equipment_use)
             .with_system(update_consumable_use)
             .with_system(handle_player_move)
             .with_system(update_player_world_interact)
-            .with_system(update_camera_pos),
+            .with_system(update_camera_pos)
+            .with_system(cmd_flush_system) // interact may insert a new equipment use
+            .with_system(update_equipment_use),
     );
     world.add_stage(
         SystemStage::new("update_item_use")
@@ -81,6 +82,10 @@ pub fn init_world_systems(world: &mut World) {
             .with_should_run(|level: Res<DungeonFloor>| level.current != level.desired)
             .with_system(regenerate_dungeon),
     );
+}
+
+fn cmd_flush_system(mut w: WorldAccess) {
+    w.world_mut().apply_commands().unwrap();
 }
 
 fn set_player_id(mut id: ResMut<PlayerId>, q: Query<EntityId, With<PlayerTag>>) {
