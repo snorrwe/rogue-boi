@@ -8,7 +8,7 @@ use crate::{
     pathfinder::find_path,
     InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff,
 };
-use cecs::prelude::*;
+use cecs::{commands::EntityCommands, prelude::*};
 use rand::{prelude::SliceRandom, Rng};
 use tracing::{debug, info, warn};
 
@@ -34,6 +34,7 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(handle_player_move)
             .with_system(update_player_world_interact)
             .with_system(update_camera_pos)
+            .with_system(update_unequip)
             .with_system(cmd_flush_system) // interact may insert a new equipment use
             .with_system(update_equipment_use),
     );
@@ -350,6 +351,48 @@ fn use_fireball(
         );
         cmd.entity(item_id).insert(ClearInventoryItem);
     }
+}
+
+// FIXME:
+// remove stats of the unequipped item
+fn update_unequip(
+    mut cmd: Commands,
+    mut player_query: Query<(&mut Equipment, &mut Inventory, &Pos), With<PlayerTag>>,
+    player_id: Res<PlayerId>,
+    item: Query<(EntityId, &EquipmentType, &Name), With<Unequip>>,
+    mut log: ResMut<LogHistory>,
+) {
+    let Some((equipment, inventory, pos)) = player_id.get_mut(&mut player_query) else {
+        return;
+    };
+
+    for (id, ty, name) in item.iter() {
+        let cmd = cmd.entity(id);
+        cmd.remove::<Unequip>();
+        log.push(WHITE, format!("Unequip {}", name.0));
+
+        match ty {
+            EquipmentType::Weapon => {
+                assert_eq!(Some(id), equipment.weapon);
+                equipment.weapon.take();
+            }
+            EquipmentType::Armor => {
+                assert_eq!(Some(id), equipment.armor);
+                equipment.armor.take();
+            }
+        }
+
+        if inventory.add(id).is_err() {
+            drop_item(cmd, pos, name, &mut log);
+        }
+    }
+}
+
+pub fn drop_item(cmd: &mut EntityCommands, pos: &Pos, Name(name): &Name, log: &mut LogHistory) {
+    // remove item from inventory and add a position
+    // TODO: random empty nearby position intead of the player's?
+    log.push(WHITE, format!("Drop {name}"));
+    cmd.insert(*pos);
 }
 
 fn update_consumable_use(
@@ -1282,7 +1325,7 @@ fn update_should_tick(
     mut should_tick: ResMut<ShouldTick>,
     actions: Res<PlayerActions>,
     tick_time: Res<TickInMs>,
-    q_item_use: Query<&(), With<UseItem>>,
+    q_item_use: Query<&(), Or<With<UseItem>, With<Unequip>>>,
 ) {
     time.0 += dt.0;
     should_tick.0 = (!q_item_use.is_empty() || !actions.is_empty())

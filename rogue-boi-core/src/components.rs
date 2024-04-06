@@ -468,3 +468,7 @@ pub struct ConfusionBolt;
 
 #[derive(Debug, Clone, Copy)]
 pub struct WardScroll;
+
+/// Mark this item for unequip in this tick
+#[derive(Debug, Clone, Copy)]
+pub struct Unequip;

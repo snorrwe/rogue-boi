@@ -16,7 +16,8 @@ mod utils;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::systems::{
-    handle_click, init_world_systems, regenerate_dungeon, render_onto_canvas, update_output,
+    drop_item, handle_click, init_world_systems, regenerate_dungeon, render_onto_canvas,
+    update_output,
 };
 use base64::{engine::GeneralPurpose, Engine};
 use cecs::{persister::WorldSerializer, prelude::*};
@@ -399,6 +400,17 @@ impl Core {
         w.set_bundle(id, (UseItem,)).unwrap();
     }
 
+    #[wasm_bindgen(js_name = "unequipItem")]
+    pub fn unequip_item(&mut self, id: JsValue) {
+        let id: EntityId = serde_wasm_bindgen::from_value(id).unwrap();
+        if !self.world.borrow().is_id_valid(id) {
+            error!("unequip_item id is not valid");
+            return;
+        }
+        let mut w = self.world.borrow_mut();
+        w.set_bundle(id, (Unequip,)).unwrap();
+    }
+
     #[wasm_bindgen(js_name = "dropItem")]
     pub fn drop_item(&mut self, id: JsValue) {
         let id: EntityId = serde_wasm_bindgen::from_value(id).unwrap();
@@ -418,9 +430,8 @@ impl Core {
                     // TODO: random empty nearby position intead of the player's?
                     if let Some((pos, inv)) = q.single_mut() {
                         if let Some(item) = inv.remove(id) {
-                            if let Some(Name(name)) = q_item.fetch(item) {
-                                log.push(WHITE, format!("Drop {}", name));
-                                cmd.entity(item).insert(*pos);
+                            if let Some(name) = q_item.fetch(item) {
+                                drop_item(cmd.entity(id), pos, name, &mut log);
                             }
                         }
                     }
