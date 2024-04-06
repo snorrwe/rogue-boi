@@ -48,14 +48,11 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(use_fireball),
     );
     world.add_stage(
-        SystemStage::new("update-ai-hp")
-            .with_should_run(should_update_world)
-            .with_system(update_poison)
-            .with_system(update_ai_hp),
-    );
-    world.add_stage(
         SystemStage::new("ai-update")
             .with_should_run(should_update_world)
+            .with_system(update_poison)
+            .with_system(update_ai_hp)
+            .with_system(cmd_flush_system)
             .with_system(update_ai_move)
             .with_system(update_melee_ai)
             .with_system(update_confusion)
