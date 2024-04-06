@@ -487,10 +487,15 @@ fn update_equipment_use(
 }
 
 fn update_player_world_interact(
-    mut q_player: Query<(EntityId, &mut Inventory, &Pos), With<PlayerTag>>,
+    mut q_player: Query<(EntityId, &mut Inventory, &mut Equipment, &Pos), With<PlayerTag>>,
     player_id: Res<PlayerId>,
     mut cmd: Commands,
-    q_item: Query<(Option<&Item>, Option<&NextLevel>, Option<&Name>)>,
+    q_item: Query<(
+        Has<Item>,
+        Option<&EquipmentType>,
+        Has<NextLevel>,
+        Option<&Name>,
+    )>,
     grid: Res<Grid<Stuff>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     actions: Res<PlayerActions>,
@@ -500,22 +505,40 @@ fn update_player_world_interact(
     if !actions.interact() {
         return;
     }
-    let Some((id, inventory, pos)) = player_id.get_mut(&mut q_player) else {
+    let Some((id, inventory, equipment, pos)) = player_id.get_mut(&mut q_player) else {
         return;
     };
     if grid[pos.0] != Some(id) {
         let stuff_id = grid[pos.0].unwrap();
-        let (item_tag, next_level_tag, name) = q_item.fetch(stuff_id).unwrap();
+        let (item_tag, equipment_ty, next_level_tag, name) = q_item.fetch(stuff_id).unwrap();
         debug!(
             id = tracing::field::display(stuff_id),
             "Interacting with entity"
         );
-        if item_tag.is_some() {
+        if item_tag {
+            let mut equip = false;
+            match equipment_ty {
+                Some(EquipmentType::Weapon) => {
+                    if equipment.weapon.is_none() {
+                        equip = true;
+                    }
+                }
+                Some(EquipmentType::Armor) => {
+                    if equipment.armor.is_none() {
+                        equip = true;
+                    }
+                }
+                None => {}
+            }
             match inventory.add(stuff_id) {
                 Ok(_) => {
-                    cmd.entity(stuff_id).remove::<Pos>();
+                    let cmd = cmd.entity(stuff_id);
+                    cmd.remove::<Pos>();
                     let Name(ref name) = name.unwrap();
                     log.push(WHITE, format!("Picked up a {}", name));
+                    if equip {
+                        cmd.insert(UseItem);
+                    }
                 }
                 Err(err) => match err {
                     crate::components::InventoryError::Full => {
@@ -524,7 +547,7 @@ fn update_player_world_interact(
                     }
                 },
             }
-        } else if next_level_tag.is_some() {
+        } else if next_level_tag {
             log.push(WHITE, "You descend the staircase");
             level.desired += 1;
         } else {
