@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde_derive::Deserialize;
 use std::{env, fs, path::Path};
 
 const ICONS: &[(&str, &str)] = &[

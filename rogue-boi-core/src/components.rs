@@ -5,7 +5,7 @@ use std::collections::{HashMap, VecDeque};
 
 use crate::{grid::Grid, math::Vec2, Stuff};
 use cecs::entity_id::EntityId;
-use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use wasm_bindgen::JsValue;
 

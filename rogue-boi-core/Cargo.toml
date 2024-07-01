@@ -17,7 +17,8 @@ cecs = { git = "https://github.com/caolo-game/cecs", default-features = false, f
 ] }
 rand = { version = "0.8.5", features = [] }
 wasm-bindgen = { version = "0.2.92", features = ["serde-serialize"] }
-serde = { version = "1.0.197", features = ["derive"] }
+serde = { version = "1.0.197" }
+serde_derive = { version = "1.0.197" }
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
@@ -49,4 +50,5 @@ wasm-bindgen-test = "0.3.42"
 [build-dependencies]
 calamine = "0.24.0"
 itertools = "0.12.1"
-serde = { version = "1.0.197", features = ["derive"] }
+serde = { version = "1.0.197" }
+serde_derive = { version = "1.0.197" }

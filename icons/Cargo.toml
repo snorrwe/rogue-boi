@@ -2,10 +2,10 @@
 name = "icons"
 version = "0.1.0"
 edition = "2021"
-build="build.rs"
+build = "build.rs"
 
 [lib]
-path="icons.rs"
+path = "icons.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,6 +13,7 @@ path="icons.rs"
 lazy_static = "1.4.0"
 
 [build-dependencies]
-serde={ version = "1.0.197", features = ["derive"] }
-serde-xml-rs= "0.6.0"
+serde = { version = "1.0.197" }
+serde_derive = { version = "1.0.197" }
+serde-xml-rs = "0.6.0"
 zip = "0.6.6"

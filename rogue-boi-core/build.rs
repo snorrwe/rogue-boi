@@ -5,7 +5,7 @@ use std::fmt::Write;
 use std::fs;
 use std::{env, path::Path};
 
-use serde::Deserialize;
+use serde_derive::Deserialize;
 
 fn chances_const(name: &str, groups: &mut [ChanceRow]) -> String {
     let mut payload = format!(
@@ -164,7 +164,7 @@ fn stuff_descriptors(sheet: calamine::Range<calamine::Data>) -> String {
 ]
 }}
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, serde::Serialize, serde::Deserialize, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, serde_derive::Serialize, serde_derive::Deserialize, Hash)]
 #[repr(u8)]
 pub enum StuffTag {{
     {}
