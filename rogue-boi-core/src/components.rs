@@ -203,6 +203,18 @@ pub struct RenderResources {
     pub height: u32,
 }
 
+impl RenderResources {
+    pub fn update_dims(&mut self) {
+        let dims = self
+            .canvas
+            .as_ref()
+            .map(|canvas| (canvas.width(), canvas.height()));
+        let (width, height) = dims.unwrap_or_default();
+        self.width = width;
+        self.height = height;
+    }
+}
+
 #[derive(Default)]
 pub struct Selected(pub Option<EntityId>);
 

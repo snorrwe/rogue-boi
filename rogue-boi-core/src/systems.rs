@@ -1167,6 +1167,7 @@ pub fn render_onto_canvas(
     stuff: Query<(Option<&StaticVisibility>, &Icon, Option<&Color>)>,
     icons: Res<IconCollection>,
 ) {
+    res.update_dims();
     let width = res.width as f64;
     let height = res.height as f64;
     let Some(ctx) = res.ctx.as_mut() else {
