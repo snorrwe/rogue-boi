@@ -16,8 +16,7 @@ mod utils;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::systems::{
-    drop_item, handle_click, init_world_systems, regenerate_dungeon, render_onto_canvas,
-    update_output,
+    drop_item, handle_click, init_world_systems, regenerate_dungeon, update_output,
 };
 use base64::{engine::GeneralPurpose, Engine};
 use cecs::{persister::WorldSerializer, prelude::*};
@@ -520,10 +519,6 @@ impl Core {
         }
 
         self.world.borrow_mut().insert_resource(resources);
-        self.world
-            .borrow_mut()
-            .run_system(render_onto_canvas)
-            .unwrap();
     }
 
     #[wasm_bindgen(js_name = "cancelItemUse")]
