@@ -1332,7 +1332,12 @@ fn update_should_tick(
     should_tick.0 = (!q_item_use.is_empty() || !actions.is_empty())
         && (time.0 >= tick_time.0 || tick_time.0.abs_diff(time.0) <= 5); // lag compensation
     if should_tick.0 {
-        debug!("Running update after {} ms", time.0);
+        debug!(
+            "Running update after {} ms. Actions: {:?}. Has item use: {}",
+            time.0,
+            &*actions,
+            !q_item_use.is_empty()
+        );
         time.0 = 0;
     }
     dt.0 = 0;

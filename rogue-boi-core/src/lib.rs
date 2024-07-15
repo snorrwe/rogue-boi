@@ -156,7 +156,7 @@ pub struct PlayerOutput {
     pub defense: Defense,
 }
 
-#[derive(Default, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct PlayerActions {
     len: usize,
     move_action: Option<Vec2>,
