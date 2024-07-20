@@ -87,12 +87,17 @@
     margin: 0 auto;
     color: white;
     min-width: 0px;
+    box-sizing: border-box;
+    height: 90vh;
   }
 
   .content {
     display: grid;
     grid-template-columns: 1fr 2fr 1fr;
     column-gap: 2rem;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
   .log {

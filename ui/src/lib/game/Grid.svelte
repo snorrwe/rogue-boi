@@ -6,20 +6,25 @@
   let box;
   let canvas;
   let sizeStore = writable(720);
+  /** @type {ResizeObserver} */ let observer;
   onMount(() => {
     canvasStore.set(canvas);
-    const w = box.offsetWidth;
-    const h = box.offsetHeight;
+    observer = new ResizeObserver(() => {
+      const w = box.offsetWidth;
+      const h = box.offsetHeight;
 
-    sizeStore.set(Math.min(w, h));
+      sizeStore.set(Math.min(w, h));
+    });
+    observer.observe(box);
   });
   onDestroy(() => {
     canvasStore.set(null);
+    if (observer) observer.disconnect();
   });
 
   let size;
   $: {
-      size = $sizeStore;
+    size = $sizeStore;
   }
 </script>
 
