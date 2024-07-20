@@ -396,7 +396,10 @@ impl Core {
             return;
         }
         let mut w = self.world.borrow_mut();
-        w.set_bundle(id, (UseItem,)).unwrap();
+        w.run_system(|mut cmd: Commands| {
+            cmd.entity(id).insert_bundle((UseItem,));
+        })
+        .unwrap();
     }
 
     #[wasm_bindgen(js_name = "unequipItem")]
@@ -407,7 +410,10 @@ impl Core {
             return;
         }
         let mut w = self.world.borrow_mut();
-        w.set_bundle(id, (Unequip,)).unwrap();
+        w.run_system(|mut cmd: Commands| {
+            cmd.entity(id).insert_bundle((Unequip,));
+        })
+        .unwrap();
     }
 
     #[wasm_bindgen(js_name = "dropItem")]
