@@ -74,7 +74,7 @@ fn init_world_transient_resources(world_dims: Vec2, world: &mut World) {
     world.insert_resource(Vec::<InputEvent>::with_capacity(16));
     world.insert_resource(PlayerActions::new());
     world.insert_resource(Visible(Grid::new(world_dims)));
-    world.insert_resource(Viewport(Vec2::new(20, 20)));
+    world.insert_resource(Viewport(Vec2::new(16, 16)));
     world.insert_resource(Visibility(Vec2::new(10, 10)));
     world.insert_resource(CameraPos(Vec2::ZERO));
     world.insert_resource(Output(JsValue::null()));
