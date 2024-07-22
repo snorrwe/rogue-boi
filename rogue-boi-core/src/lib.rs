@@ -524,7 +524,16 @@ impl Core {
             closure.forget();
         }
 
-        self.world.borrow_mut().insert_resource(resources);
+        let mut w = self.world.borrow_mut();
+        w.insert_resource(resources);
+
+        w.run_stage(
+            SystemStage::new("adhoc-render")
+                .with_system(systems::update_camera_pos)
+                .with_system(systems::update_fov)
+                .with_system(systems::render_onto_canvas),
+        )
+        .unwrap();
     }
 
     #[wasm_bindgen(js_name = "cancelItemUse")]

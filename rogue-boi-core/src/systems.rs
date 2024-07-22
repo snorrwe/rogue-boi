@@ -1211,11 +1211,10 @@ pub fn render_onto_canvas(
             // either the icon background or the empty space
             ctx.fill_rect(render_x, render_y, cell_size, cell_size);
 
-            if let Some((_id, (static_vis_tag, icon, color))) =
-                grid[pos].and_then(|id| stuff.fetch(id).map(|x| (id, x)))
-            {
-                // render icon
-                if visible || static_vis_tag.is_some() {
+            match grid[pos].and_then(|id| stuff.fetch(id).map(|x| (id, x))) {
+                Some((_id, (static_vis_tag, icon, color)))
+                    if visible || static_vis_tag.is_some() =>
+                {
                     ctx.fill_rect(render_x, render_y, cell_size, cell_size);
                     match icons.0.get(icon.0) {
                         Some(icon) => {
@@ -1234,6 +1233,7 @@ pub fn render_onto_canvas(
                             ctx.restore();
                         }
                         None => {
+                            debug!("Failed to fetch icon");
                             // if icon can not be fetched
                             if let Some(Color(ref color)) = color {
                                 ctx.set_fill_style(color);
@@ -1242,6 +1242,7 @@ pub fn render_onto_canvas(
                         }
                     }
                 }
+                _ => {}
             }
         }
     }
