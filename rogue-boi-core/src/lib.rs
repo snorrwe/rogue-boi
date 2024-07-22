@@ -492,7 +492,7 @@ impl Core {
 
     #[wasm_bindgen(js_name = "setCanvas")]
     pub fn set_canvas(&mut self, canvas: Option<web_sys::HtmlCanvasElement>) {
-        debug!("Setting canvas to: {:?}", canvas);
+        debug!("Setting canvas");
 
         let dims = canvas
             .as_ref()
