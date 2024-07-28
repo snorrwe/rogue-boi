@@ -15,3 +15,9 @@ clean:
 format:
     npm run format
     cargo fmt
+
+
+# initialize the project
+init:
+    git lfs pull
+    npm i
