@@ -4,7 +4,8 @@ use std::{
     path::Path,
 };
 
-use clap::{Parser, Subcommand};
+use clap::Parser;
+use clap_derive::{Parser, Subcommand};
 use walkdir::{DirEntry, WalkDir};
 use zip::write::FileOptions;
 

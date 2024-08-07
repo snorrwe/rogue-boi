@@ -216,7 +216,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fbb260a053428790f3de475e304ff84cdbc4face759ea7a3e64c1edd938a7fc"
 dependencies = [
  "clap_builder",
- "clap_derive",
 ]
 
 [[package]]
@@ -1142,6 +1141,7 @@ name = "xtask"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "clap_derive",
  "icons",
  "walkdir",
  "zip",
