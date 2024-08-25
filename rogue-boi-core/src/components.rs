@@ -172,9 +172,9 @@ impl PlayerId {
     pub fn get<'a, T, F>(
         self,
         q: &'a cecs::query::Query<T, F>,
-    ) -> Option<<cecs::query::ArchQuery<T> as cecs::query::QueryFragment>::Item<'a>>
+    ) -> Option<<T as cecs::query::QueryFragment>::Item<'a>>
     where
-        cecs::query::ArchQuery<T>: cecs::query::QueryFragment,
+        T: cecs::query::QueryFragment,
         F: cecs::prelude::Filter,
     {
         self.0.and_then(|id| q.fetch(id))
@@ -183,9 +183,9 @@ impl PlayerId {
     pub fn get_mut<'a, T, F>(
         self,
         q: &'a mut cecs::query::Query<T, F>,
-    ) -> Option<<cecs::query::ArchQuery<T> as cecs::query::QueryFragment>::ItemMut<'a>>
+    ) -> Option<<T as cecs::query::QueryFragment>::ItemMut<'a>>
     where
-        cecs::query::ArchQuery<T>: cecs::query::QueryFragment,
+        T: cecs::query::QueryFragment,
         F: cecs::prelude::Filter,
     {
         self.0.and_then(|id| q.fetch_mut(id))
