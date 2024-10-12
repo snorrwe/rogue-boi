@@ -63,7 +63,6 @@ pub fn init_world_systems(world: &mut World) {
     );
     world.add_stage(
         SystemStage::new("render")
-            .with_should_run(|t: Res<ShouldTick>| t.0)
             .with_system(perform_move)
             .with_system(update_output.after(perform_move))
             .with_system(render_onto_canvas.after(perform_move))
