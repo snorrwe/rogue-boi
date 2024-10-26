@@ -2,12 +2,9 @@
   import { icons } from "@rogueBoi/store.js";
   import Hp from "./Hp.svelte";
 
-  export let selected;
-  export let core;
-  export let targetingMode;
+  let { selected, core, targetingMode } = $props();
 
-  $: icon = $icons[selected.icon];
-
+  let icon = $icons[selected.icon];
   console.assert(icon != null, "Highlight icon not found", icon);
 
   const useItem = (item) => () => {
@@ -51,16 +48,16 @@
   <div>Ranged Skill: {selected.ranged.skill}</div>
 {/if}
 {#if selected.usable}
-  <button on:click={useItem(selected)}>Use</button>
+  <button onclick={useItem(selected)}>Use</button>
 {/if}
 {#if selected.equipable}
-  <button on:click={useItem(selected)}>Equip</button>
+  <button onclick={useItem(selected)}>Equip</button>
 {/if}
 {#if selected.item && !selected.equipped}
-  <button on:click={dropItem(selected)}>Drop</button>
+  <button onclick={dropItem(selected)}>Drop</button>
 {/if}
 {#if selected.targetable && targetingMode}
-  <button on:click={target(selected)}>Target</button>
+  <button onclick={target(selected)}>Target</button>
 {/if}
 
 <style>

@@ -1,7 +1,7 @@
 <script>
   import { coreOutput } from "@rogueBoi/store.js";
 
-  let alive = false;
+  let alive = $state(false);
   coreOutput.subscribe((c) => (alive = c && c.player != null));
 </script>
 

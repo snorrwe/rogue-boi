@@ -6,8 +6,8 @@
   import Options from "./routes/Options.svelte";
   import DungeonGenerator from "./routes/DungeonGenerator.svelte";
 
-  export let core;
-  let page = Menu;
+  let { core } = $props();
+  let page = $state(Menu);
 
   function saveGame() {
     if ($coreStore) {
@@ -61,15 +61,17 @@
       }[location.hash] || (() => Menu);
     page = factory();
   };
+
+  const SvelteComponent = $derived(page);
 </script>
 
-<svelte:window on:unload={saveGame} on:hashchange={routeChange} />
+<svelte:window onunload={saveGame} onhashchange={routeChange} />
 
 <main>
   <header>
     <a href="#menu">Back to menu</a>
   </header>
-  <svelte:component this={page} />
+  <SvelteComponent />
 </main>
 
 <style>

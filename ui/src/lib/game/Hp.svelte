@@ -1,15 +1,16 @@
 <script>
-  export let currentHp;
-  export let maxHp;
+  import { run } from "svelte/legacy";
 
-  let t;
-  $: {
-    t = currentHp / maxHp;
+  let { currentHp, maxHp } = $props();
+
+  let t = $state();
+  run(() => {
+    let thp = currentHp / maxHp;
     // clamp to 0,1
     // for some reason the css animation is messed up at t=1
     // bad lerp implementation?
-    t = Math.max(Math.min(t, 0.999999), 0.0);
-  }
+    t = Math.max(Math.min(thp, 0.999999), 0.0);
+  });
 </script>
 
 <div class="hp-bar" style="--t:{t * 100};"><p>{currentHp} / {maxHp}</p></div>

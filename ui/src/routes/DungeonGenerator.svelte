@@ -3,9 +3,9 @@
 
   let core;
   let dungeon;
-  let tiles = [];
-  let icons;
-  let level = 1;
+  let tiles = $state([]);
+  let icons = $state();
+  let level = $state(1);
 
   iconsSvg.subscribe((i) => {
     icons = {};
@@ -14,8 +14,8 @@
     }
   });
 
-  let dims = [64, 64]; // FIXME: query from core, or set on dungeon generation
-  let desiredDims = dims;
+  let dims = $state([64, 64]); // FIXME: query from core, or set on dungeon generation
+  let desiredDims = $state([64, 64]);
 
   coreStore.subscribe((c) => {
     core = c;
@@ -38,7 +38,7 @@
   <div>
     <form
       class="input"
-      on:submit={(e) => {
+      onsubmit={(e) => {
         dims = desiredDims;
         regenerate({ dims, level });
         e.preventDefault();
@@ -67,7 +67,7 @@
             title={`(${tile.x}, ${tile.y}): ${tile.icon}`}
           />
         {:else}
-          <div />
+          <div></div>
         {/if}
       {/each}
     </div>

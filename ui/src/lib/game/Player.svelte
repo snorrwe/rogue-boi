@@ -5,10 +5,10 @@
   import Equipment from "./Equipment.svelte";
   import Hp from "./Hp.svelte";
 
-  $: ({ player, targeting, appMode } = $coreOutput);
+  let { player, targeting, appMode } = $derived($coreOutput);
 
-  $: alive = player != null;
-  $: ({
+  let alive = $derived(player != null);
+  let {
     playerHp: hp,
     playerPos: pos,
     playerAttack: attack,
@@ -16,8 +16,8 @@
     neededXp,
     level,
     defense
-  } = player ? player : {});
-  $: levelup = appMode && appMode.ty == "Levelup";
+  } = $derived(player ? player : {});
+  let levelup = $derived(appMode && appMode.ty == "Levelup");
 
   function restartGame() {
     selected.set(null);
@@ -31,14 +31,14 @@
     <Inventory />
 
     {#if targeting}
-      <button on:click={() => $coreStore.cancelItemUse()}>Cancel item use</button>
+      <button onclick={() => $coreStore.cancelItemUse()}>Cancel item use</button>
     {/if}
 
     <h2>Player stats</h2>
     {#if hp != null}
       <div>
         {#if levelup}
-          <button on:click={() => $coreStore.setLevelupStat({ ty: "Hp" })}>+</button>
+          <button onclick={() => $coreStore.setLevelupStat({ ty: "Hp" })}>+</button>
         {/if}
         <Hp currentHp={hp.current} maxHp={hp.max} />
       </div>
@@ -46,7 +46,7 @@
     {#if attack != null}
       <p>
         {#if levelup}
-          <button on:click={() => $coreStore.setLevelupStat({ ty: "Attack" })}>+</button>
+          <button onclick={() => $coreStore.setLevelupStat({ ty: "Attack" })}>+</button>
         {/if}
         Attack Power: {attack}
       </p>
@@ -54,7 +54,7 @@
     {#if defense != null}
       <p>
         {#if levelup}
-          <button on:click={() => $coreStore.setLevelupStat({ ty: "MeleeDefense" })}>+</button>
+          <button onclick={() => $coreStore.setLevelupStat({ ty: "MeleeDefense" })}>+</button>
         {/if}
         Melee Defense: {defense.meleeDefense}
       </p>
@@ -75,10 +75,10 @@
     {#if currentXp != null}
       <p>Experience: {currentXp} / {neededXp}</p>
     {/if}
-    <button on:click={() => $coreStore.wait()}>Wait</button>
+    <button onclick={() => $coreStore.wait()}>Wait</button>
   {:else}
     <p>You died!</p>
-    <button on:click={() => restartGame()}>Restart</button>
+    <button onclick={() => restartGame()}>Restart</button>
   {/if}
 </div>
 

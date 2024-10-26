@@ -8,4 +8,4 @@
   }
 </script>
 
-<button on:click={clearSave}>Clear save game</button>
+<button onclick={clearSave}>Clear save game</button>

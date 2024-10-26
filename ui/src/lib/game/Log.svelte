@@ -1,5 +1,5 @@
 <script>
-  export let log;
+  let { log } = $props();
 </script>
 
 {#if log}

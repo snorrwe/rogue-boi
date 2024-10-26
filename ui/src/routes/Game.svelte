@@ -13,7 +13,7 @@
   import Log from "@rogueBoi/game/Log.svelte";
   import Player from "@rogueBoi/game/Player.svelte";
 
-  let core;
+  let core = $state();
   coreStore.subscribe((c) => (core = c));
 
   let last = performance.now();
@@ -56,7 +56,7 @@
   });
 </script>
 
-<svelte:window on:keydown={onKey} />
+<svelte:window onkeydown={onKey} />
 
 <main>
   {#if core != null}

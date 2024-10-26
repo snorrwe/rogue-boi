@@ -1,7 +1,7 @@
 <script>
   import { icons, coreStore, inventory as invs } from "@rogueBoi/store.js";
 
-  $: inventory = $invs;
+  let inventory = $derived($invs);
 
   const useItem = (item) => {
     $coreStore.setSelection(item.id);
@@ -12,7 +12,7 @@
   <h2>Inventory</h2>
   <ul>
     {#each inventory as item}
-      <li class="item" on:keyup={() => useItem(item)} on:click={() => useItem(item)}>
+      <li class="item" onkeyup={() => useItem(item)} onclick={() => useItem(item)}>
         <div title={item.description} style="--fill-color: {item.color || 'white'}">
           {@html $icons[item.icon]}
         </div>

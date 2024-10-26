@@ -1,8 +1,8 @@
 <script>
   import { icons, coreStore, equipment } from "@rogueBoi/store.js";
 
-  $: armor = $equipment && $equipment.get("armor");
-  $: weapon = $equipment && $equipment.get("weapon");
+  let armor = $derived($equipment && $equipment.get("armor"));
+  let weapon = $derived($equipment && $equipment.get("weapon"));
 
   const selectItem = (item) => {
     $coreStore.setSelection(item.get("id"));
@@ -13,14 +13,14 @@
   <h2>Equipment</h2>
   <ul>
     {#if armor != null}
-      <li class="item" on:click={() => selectItem(armor)} on:keypress={() => selectItem(armor)}>
+      <li class="item" onclick={() => selectItem(armor)} onkeypress={() => selectItem(armor)}>
         <div title={armor.get("description")} style="--fill-color: {armor.get('color') || 'white'}">
           {@html $icons[armor.get("icon")]}
         </div>
       </li>
     {/if}
     {#if weapon != null}
-      <li class="item" on:click={() => selectItem(weapon)} on:keypress={() => selectItem(armor)}>
+      <li class="item" onclick={() => selectItem(weapon)} onkeypress={() => selectItem(armor)}>
         <div
           title={weapon.get("description")}
           style="--fill-color: {weapon.get('color') || 'white'}"
