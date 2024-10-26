@@ -236,7 +236,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
                 "tag": tag,
                 "description": "Wall",
                 "icon": icon.0,
-                "color": color.and_then(|c|c.0.as_string())
+                "color": color.map(|c|c.0.as_str())
             }}
         }
         StuffTag::Gargoyle
@@ -258,7 +258,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
                 "icon": icon.0,
                 "hp": hp,
                 "targetable": true,
-                "color": color.and_then(|c|c.0.as_string()),
+                "color": color.map(|c|c.0.as_str()),
                 "creature": true,
                 "defense": defense
             }}
@@ -301,7 +301,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
                 "usable": usable,
                 "equipable": equipable,
                 "equipped": equipped,
-                "color": color.and_then(|c|c.0.as_string()),
+                "color": color.map(|c|c.0.as_str()),
                 "item": true,
                 "defense": defense
             }}

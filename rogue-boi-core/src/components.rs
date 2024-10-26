@@ -137,7 +137,7 @@ pub struct Leash {
 }
 
 #[derive(Debug, Clone)]
-pub struct Color(pub JsValue);
+pub struct Color(pub String);
 
 unsafe impl Send for Color {}
 unsafe impl Sync for Color {}

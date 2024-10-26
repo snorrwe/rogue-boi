@@ -242,7 +242,7 @@ fn to_item_desc(id: EntityId, i: ItemPropsTuple) -> ItemDesc {
     let (icon, desc, name, tag, ranged, color) = i;
     ItemDesc {
         id,
-        color: color.and_then(|c| c.0.as_string()),
+        color: color.map(|c| c.0.clone()),
         name: name.map(|n| n.0.clone()),
         description: desc.map(|desc| desc.0.clone()),
         icon: icon.map(|icon| icon.0.to_string()),

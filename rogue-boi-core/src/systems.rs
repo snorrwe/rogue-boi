@@ -1180,11 +1180,11 @@ pub fn render_onto_canvas(
     let cell_size = canvas_cell_size(width, height, viewport.0);
     let icon_scale = cell_size / 512.0;
 
-    let black = "black".into();
-    let darkgrey = "darkgrey".into();
-    let white = "white".into();
+    let black = "black";
+    let darkgrey = "darkgrey";
+    let white = "white";
 
-    ctx.set_fill_style(&"gray".into());
+    ctx.set_fill_style_str("gray");
     ctx.fill_rect(0.0, 0.0, width, height);
 
     for y in min.y.max(0)..(max.y + 1).min(grid.height()) {
@@ -1203,9 +1203,9 @@ pub fn render_onto_canvas(
             let render_y = render_pos.y as f64 * cell_size;
 
             if visible {
-                ctx.set_fill_style(&black);
+                ctx.set_fill_style_str(&black);
             } else {
-                ctx.set_fill_style(&darkgrey);
+                ctx.set_fill_style_str(&darkgrey);
             }
             // either the icon background or the empty space
             ctx.fill_rect(render_x, render_y, cell_size, cell_size);
@@ -1219,10 +1219,10 @@ pub fn render_onto_canvas(
                         Some(icon) => {
                             match color {
                                 Some(Color(ref color)) => {
-                                    ctx.set_fill_style(color);
+                                    ctx.set_fill_style_str(color);
                                 }
                                 None => {
-                                    ctx.set_fill_style(&white);
+                                    ctx.set_fill_style_str(white);
                                 }
                             }
                             ctx.save();
@@ -1235,7 +1235,7 @@ pub fn render_onto_canvas(
                             debug!("Failed to fetch icon");
                             // if icon can not be fetched
                             if let Some(Color(ref color)) = color {
-                                ctx.set_fill_style(color);
+                                ctx.set_fill_style_str(color);
                             }
                             ctx.fill_rect(render_x, render_y, cell_size, cell_size);
                         }
