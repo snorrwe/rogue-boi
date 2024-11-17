@@ -28,6 +28,9 @@ use math::Vec2;
 use tracing::{debug, error};
 use wasm_bindgen::prelude::*;
 
+pub type HashMap<K, V> = rustc_hash::FxHashMap<K, V>;
+pub type HashSet<K> = rustc_hash::FxHashSet<K>;
+
 /// State object
 #[wasm_bindgen]
 pub struct Core {
@@ -316,7 +319,7 @@ impl Core {
             let map = tags
                 .iter()
                 .map(|(_id, icon, pos)| (format!("{};{}", pos.0.x, pos.0.y), &icon.0))
-                .collect::<std::collections::HashMap<_, _>>();
+                .collect::<HashMap<_, _>>();
             serde_wasm_bindgen::to_value(&map).unwrap()
         })
     }

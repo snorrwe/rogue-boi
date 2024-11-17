@@ -1,11 +1,12 @@
 mod rect_room;
 mod tunnel_iter;
 
-use std::collections::HashMap;
-
 use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
-use crate::game_config::{ENEMY_CHANCES, ITEM_CHANCES};
+use crate::{
+    game_config::{ENEMY_CHANCES, ITEM_CHANCES},
+    HashMap,
+};
 use cecs::prelude::*;
 use rand::{
     prelude::{Distribution, SliceRandom},
@@ -69,7 +70,7 @@ struct EntityChances {
 pub type EntityChanceList<'a> = &'a [(u32, &'a [(StuffTag, i32)])];
 fn entity_weighted_chances(floor: u32, chances: EntityChanceList) -> (Vec<StuffTag>, Vec<i32>) {
     // allow overriding chances on higher floors
-    let mut weighted_chances = HashMap::new();
+    let mut weighted_chances = HashMap::default();
     for (key, weights) in chances {
         if key > &floor {
             break;

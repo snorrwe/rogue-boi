@@ -1,12 +1,9 @@
-use std::collections::{BinaryHeap, HashMap};
-
+use crate::{components::Walkable, grid::Grid, math::Vec2, HashMap, Stuff};
 use arrayvec::ArrayVec;
 use cecs::query::Query;
 use smallvec::SmallVec;
+use std::collections::BinaryHeap;
 use tracing::debug;
-
-use crate::components::Walkable;
-use crate::{grid::Grid, math::Vec2, Stuff};
 
 pub type Path = SmallVec<[Vec2; 16]>;
 
@@ -59,8 +56,8 @@ pub fn find_path(
     path: &mut Path,
 ) -> bool {
     let mut open_set = BinaryHeap::with_capacity(from.manhatten(to) as usize);
-    let mut came_from = HashMap::new();
-    let mut gcost = HashMap::new();
+    let mut came_from = HashMap::default();
+    let mut gcost = HashMap::default();
 
     open_set.push(Node {
         hcost: from.manhatten(to),

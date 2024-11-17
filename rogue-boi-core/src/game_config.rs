@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use crate::components::*;
+use crate::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct StuffPrototype {

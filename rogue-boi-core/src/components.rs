@@ -1,9 +1,9 @@
 //! Implementation note: if a component is persisted, and stores an ID to another entity, make sure
 //! it's remapped when loading! See [[Core::load]]
 //!
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 
-use crate::{grid::Grid, math::Vec2, Stuff};
+use crate::{grid::Grid, math::Vec2, HashMap, Stuff};
 use cecs::entity_id::EntityId;
 use serde_derive::{Deserialize, Serialize};
 use smallvec::SmallVec;
