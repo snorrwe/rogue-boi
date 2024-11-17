@@ -4,8 +4,10 @@
 
   let { selected, core, targetingMode } = $props();
 
-  let icon = $icons[selected.icon];
-  console.assert(icon != null, "Highlight icon not found", icon);
+  let icon = $derived($icons[selected.icon]);
+  $effect(() => {
+    console.assert(icon != null, "Highlight icon not found", icon);
+  });
 
   const useItem = (item) => () => {
     core.useItem(item.id);
