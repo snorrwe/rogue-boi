@@ -1,7 +1,7 @@
 mod rect_room;
 mod tunnel_iter;
 
-use std::{collections::HashMap, marker::PhantomData};
+use std::collections::HashMap;
 
 use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
@@ -236,11 +236,10 @@ pub fn generate_map(
     }
 }
 
-struct Mst<'a> {
+struct Mst {
     pub edges: Vec<[u32; 2]>,
     #[allow(unused)]
     pub parents: Vec<i32>,
-    _m: PhantomData<&'a ()>,
 }
 
 /// return edges, which are indices into `points`
@@ -282,17 +281,13 @@ fn minimum_spanning_tree(points: &[RectRoom]) -> Mst {
         }
     }
 
-    assert_eq!(
+    debug_assert_eq!(
         1,
         parents.iter().filter(|i| i == &&-1).count(),
         "there must be exactly 1 node with no parent in the minimum spanning tree"
     );
 
-    Mst {
-        edges: f,
-        parents,
-        _m: PhantomData,
-    }
+    Mst { edges: f, parents }
 }
 
 fn adjacency_set(matrix: &mut Grid<i8>, i: i32, j: i32, val: i8) {
