@@ -15,7 +15,7 @@ fn chances_const(name: &str, groups: &mut [ChanceRow]) -> String {
     );
     let pl = &mut payload;
     groups.sort_unstable_by_key(|row| row.level);
-    for (level, group) in &groups.iter_mut().group_by(|row| row.level) {
+    for (level, group) in &groups.iter_mut().chunk_by(|row| row.level) {
         writeln!(pl, "({}, &[", level).unwrap();
         for row in group {
             writeln!(pl, "(StuffTag::{}, {}),", row.tag, row.weight).unwrap();

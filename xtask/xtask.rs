@@ -7,7 +7,7 @@ use std::{
 use clap::Parser;
 use clap_derive::{Parser, Subcommand};
 use walkdir::{DirEntry, WalkDir};
-use zip::write::FileOptions;
+use zip::write::SimpleFileOptions;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -71,7 +71,7 @@ fn zip_dir(
 ) {
     let mut zip = zip::ZipWriter::new(writer);
 
-    let options = FileOptions::default().unix_permissions(0o755);
+    let options = SimpleFileOptions::default().unix_permissions(0o755);
 
     let mut buffer = Vec::new();
     for entry in it {

@@ -16,4 +16,4 @@ lazy_static = "1.4.0"
 serde = { version = "1.0.197" }
 serde_derive = { version = "1.0.197" }
 serde-xml-rs = "0.6.0"
-zip = "0.6.6"
+zip = "2.2.2"

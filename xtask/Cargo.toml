@@ -13,5 +13,5 @@ path = "xtask.rs"
 clap = { version = "4.5.3", features = [] }
 clap_derive = { version = "4.5.3" }
 icons = { version = "0.1.0", path = "../icons" }
-zip = "0.6.6"
+zip = "2.2.2"
 walkdir = "2.5.0"
