@@ -2,9 +2,9 @@ dev:
     npm run dev
 
 update:
+    nix flake update
     cargo update
     npm update --force
-    nix flake update
 
 clean:
     rm -rf rogue-boi-core/pkg
