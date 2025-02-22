@@ -534,7 +534,8 @@ impl Core {
             SystemStage::new("adhoc-render")
                 .with_system(systems::update_camera_pos)
                 .with_system(systems::update_fov)
-                .with_system(systems::render_onto_canvas),
+                .with_system(systems::render_onto_canvas)
+                .build(),
         )
         .unwrap();
     }
