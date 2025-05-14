@@ -29,6 +29,7 @@ struct Svg {
 
 #[derive(Deserialize)]
 struct SvgPath {
+    #[serde(rename = "@d")]
     d: String,
 }
 

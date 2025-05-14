@@ -9,7 +9,7 @@ use crate::{
     InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff,
 };
 use cecs::{commands::EntityCommands, prelude::*};
-use rand::{prelude::SliceRandom, Rng};
+use rand::{prelude::IndexedRandom, Rng};
 use tracing::{debug, info, warn};
 
 pub fn init_world_systems(world: &mut World) {
@@ -945,7 +945,7 @@ fn update_ai_move(
     }
 
     let delta = [Vec2::X, -Vec2::X, Vec2::Y, -Vec2::Y];
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     for id in confused.iter_mut() {
         let vel = q_vel.fetch_mut(id).unwrap();
         vel.0 = *delta.choose(&mut rng).unwrap();
@@ -1070,8 +1070,8 @@ fn update_ai_hp(
 
 /// Throw a 1D6, if result is <= skill then the check passes
 fn skill_check(skill: i32) -> bool {
-    let mut rng = rand::thread_rng();
-    rng.gen_range(1..=6) <= skill
+    let mut rng = rand::rng();
+    rng.random_range(1..=6) <= skill
 }
 
 fn update_tick(mut t: ResMut<GameTick>) {

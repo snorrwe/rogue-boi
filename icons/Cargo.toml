@@ -10,10 +10,10 @@ path = "icons.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lazy_static = "1.4.0"
+lazy_static = "1.5.0"
 
 [build-dependencies]
-serde = { version = "1.0.197" }
-serde_derive = { version = "1.0.197" }
-serde-xml-rs = "0.6.0"
-zip = "2.2.2"
+serde = { version = "1.0.219" }
+serde_derive = { version = "1.0.219" }
+serde-xml-rs = "0.8.0"
+zip = "~2.5.0"

@@ -15,41 +15,41 @@ default = ["console_error_panic_hook"]
 cecs = { git = "https://github.com/caolo-game/cecs", default-features = false, features = [
     "serde",
 ] }
-rand = { version = "0.8.5", features = [] }
-wasm-bindgen = { version = "0.2.92", features = ["serde-serialize"] }
-serde = { version = "1.0.197" }
-serde_derive = { version = "1.0.197" }
+rand = { version = "0.9.1", features = [] }
+wasm-bindgen = { version = "0.2.100", features = ["serde-serialize"] }
+serde = { version = "1.0.219" }
+serde_derive = { version = "1.0.219" }
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
 # code size when deploying.
 console_error_panic_hook = { version = "0.1.7", optional = true }
-tracing = { version = "0.1.40", features = ["release_max_level_info"] }
+tracing = { version = "0.1.41", features = ["release_max_level_info"] }
 tracing-wasm = "0.2.1"
-smallvec = "1.13.1"
-arrayvec = "0.7.4"
-lazy_static = "1.4.0"
-getrandom = { version = "0.2.12", features = ["js"] }
-thiserror = "2.0.9"
-serde_json = "1.0.114"
+smallvec = "1.15.0"
+arrayvec = "0.7.6"
+lazy_static = "1.5.0"
+getrandom = { version = "0.3.3", features = ["wasm_js"] }
+thiserror = "2.0.12"
+serde_json = "1.0.140"
 icons = { version = "0.1.0", path = "../icons" }
-web-sys = { version = "0.3.69", features = [
+web-sys = { version = "0.3.77", features = [
     "CanvasRenderingContext2d",
     "HtmlCanvasElement",
     "Path2d",
     "DomMatrix",
     "MouseEvent",
 ] }
-base64 = "0.22.0"
+base64 = "0.22.1"
 serde-wasm-bindgen = "0.6.5"
 ciborium = "0.2.2"
-rustc-hash = "2.0.0"
+rustc-hash = "2.1.1"
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.42"
+wasm-bindgen-test = "0.3.50"
 
 [build-dependencies]
-calamine = "0.26.1"
-itertools = "0.13.0"
-serde = { version = "1.0.197" }
-serde_derive = { version = "1.0.197" }
+calamine = "0.27.0"
+itertools = "0.14.0"
+serde = { version = "1.0.219" }
+serde_derive = { version = "1.0.219" }

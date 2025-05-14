@@ -8,10 +8,7 @@ use crate::{
     HashMap,
 };
 use cecs::prelude::*;
-use rand::{
-    prelude::{Distribution, SliceRandom},
-    Rng,
-};
+use rand::{distr::weighted::WeightedIndex, prelude::Distribution, seq::IndexedRandom as _, Rng};
 use tracing::debug;
 
 use crate::{
@@ -108,15 +105,15 @@ fn place_entities(
     max_monsters: u32,
     weights: &EntityChances,
 ) -> u32 {
-    let n_monsters_a = rng.gen_range(0..=max_monsters);
-    let n_monsters_b = rng.gen_range(0..=max_monsters);
+    let n_monsters_a = rng.random_range(0..=max_monsters);
+    let n_monsters_b = rng.random_range(0..=max_monsters);
     let n_monsters = n_monsters_a.max(n_monsters_b); // bias towards more monsters
 
-    let dist = rand::distributions::WeightedIndex::new(&weights.enemy_weights[..]).unwrap();
+    let dist = WeightedIndex::new(&weights.enemy_weights[..]).unwrap();
 
     for _ in 0..n_monsters {
-        let x = rng.gen_range(room.min.x + 1..room.max.x + 1);
-        let y = rng.gen_range(room.min.y + 1..room.max.y + 1);
+        let x = rng.random_range(room.min.x + 1..room.max.x + 1);
+        let y = rng.random_range(room.min.y + 1..room.max.y + 1);
 
         let pos = Vec2::new(x, y);
         if grid[pos].is_none() {
@@ -130,8 +127,8 @@ fn place_entities(
 
 fn place_stairs(rng: &mut impl Rng, grid: &mut Grid<Option<StuffTag>>, room: &RectRoom) {
     loop {
-        let x = rng.gen_range(room.min.x + 1..room.max.x + 1);
-        let y = rng.gen_range(room.min.y + 1..room.max.y + 1);
+        let x = rng.random_range(room.min.x + 1..room.max.x + 1);
+        let y = rng.random_range(room.min.y + 1..room.max.y + 1);
 
         let pos = Vec2::new(x, y);
         if grid[pos].is_none() {
@@ -150,13 +147,13 @@ fn place_items(
     max_items: u32,
     weights: &EntityChances,
 ) {
-    let n_items = rng.gen_range(min_items..=max_items);
+    let n_items = rng.random_range(min_items..=max_items);
 
-    let dist = rand::distributions::WeightedIndex::new(&weights.item_weights[..]).unwrap();
+    let dist = WeightedIndex::new(&weights.item_weights[..]).unwrap();
 
     for _ in 0..n_items {
-        let x = rng.gen_range(room.min.x + 1..room.max.x + 1);
-        let y = rng.gen_range(room.min.y + 1..room.max.y + 1);
+        let x = rng.random_range(room.min.x + 1..room.max.x + 1);
+        let y = rng.random_range(room.min.y + 1..room.max.y + 1);
 
         let pos = Vec2::new(x, y);
         if grid[pos].is_none() {
@@ -297,17 +294,17 @@ fn adjacency_set(matrix: &mut Grid<i8>, i: i32, j: i32, val: i8) {
 }
 
 fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u32) {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let mut rooms = Vec::<RectRoom>::with_capacity(props.max_rooms as usize);
 
     'outer: for _ in 0..props.max_rooms {
-        let width = rng.gen_range(props.room_min_size..props.room_max_size) as i32;
-        let height = rng.gen_range(props.room_min_size..props.room_max_size) as i32;
+        let width = rng.random_range(props.room_min_size..props.room_max_size) as i32;
+        let height = rng.random_range(props.room_min_size..props.room_max_size) as i32;
 
         // -3 so all rooms have walls, even those that touch the end of the map
         const PADDING: i32 = 3;
-        let x = rng.gen_range(PADDING..grid.width() - 1 - PADDING - width);
-        let y = rng.gen_range(PADDING..grid.height() - 1 - PADDING - height);
+        let x = rng.random_range(PADDING..grid.width() - 1 - PADDING - width);
+        let y = rng.random_range(PADDING..grid.height() - 1 - PADDING - height);
 
         let room = RectRoom::new(x, y, width, height);
         for r in rooms.iter() {
@@ -333,8 +330,8 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
     for _ in 0..(rooms.len() / 4).max(1) {
         let [i, j] = loop {
             let [i, j] = [
-                rng.gen_range(0..rooms.len()) as i32,
-                rng.gen_range(0..rooms.len()) as i32,
+                rng.random_range(0..rooms.len()) as i32,
+                rng.random_range(0..rooms.len()) as i32,
             ];
             if i != j && adjacency[Vec2::new(i, j)] == 0 {
                 break [i, j];
@@ -458,7 +455,7 @@ fn tunnel_between(mut rng: impl Rng, start: Vec2, end: Vec2) -> TunnelIter {
 
     let cornerx;
     let cornery;
-    if rng.gen_bool(0.5) {
+    if rng.random_bool(0.5) {
         cornerx = x2;
         cornery = y1;
     } else {
