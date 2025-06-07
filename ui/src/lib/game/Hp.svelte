@@ -1,10 +1,8 @@
 <script>
-  import { run } from "svelte/legacy";
-
   let { currentHp, maxHp } = $props();
 
   let t = $state();
-  run(() => {
+  $effect(() => {
     let thp = currentHp / maxHp;
     // clamp to 0,1
     // for some reason the css animation is messed up at t=1
