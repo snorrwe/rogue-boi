@@ -3,7 +3,7 @@
 
   import Inventory from "./Inventory.svelte";
   import Equipment from "./Equipment.svelte";
-  import Hp from "./Hp.svelte";
+  import ProgressBar from "./ProgressBar.svelte";
 
   let { player, targeting, appMode } = $derived($coreOutput);
 
@@ -40,7 +40,16 @@
         {#if levelup}
           <button onclick={() => $coreStore.setLevelupStat({ ty: "Hp" })}>+</button>
         {/if}
-        <Hp currentHp={hp.current} maxHp={hp.max} />
+        <ProgressBar
+          current={hp.current}
+          max={hp.max}
+          minColorBg="red"
+          minColorFg="white"
+          maxColorBg="lime"
+          maxColorFg="black"
+          midColorBg="orange"
+          midColorFg="black"
+        />
       </div>
     {/if}
     {#if attack != null}
