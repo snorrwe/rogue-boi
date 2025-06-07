@@ -1,6 +1,6 @@
 <script>
   import { icons } from "@rogueBoi/store.js";
-  import Hp from "./Hp.svelte";
+  import ProgressBar from "./ProgressBar.svelte";
 
   let { selected, core, targetingMode } = $props();
 
@@ -36,7 +36,16 @@
   </div>
 {/if}
 {#if selected.hp}
-  <Hp currentHp={selected.hp.current} maxHp={selected.hp.max} />
+  <ProgressBar
+    current={selected.hp.current}
+    max={selected.hp.max}
+    minColorBg="red"
+    minColorFg="white"
+    maxColorBg="lime"
+    maxColorFg="black"
+    midColorBg="orange"
+    midColorFg="black"
+  />
 {/if}
 {#if selected.melee}
   <div>Melee Power: {selected.melee.power}</div>
