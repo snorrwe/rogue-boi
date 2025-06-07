@@ -1463,7 +1463,7 @@ fn handle_levelup(
                         melee.power += 1;
                     }
                     DesiredStat::Hp => {
-                        let amount = 10;
+                        let amount = 3;
                         hp.current += amount;
                         hp.max += amount;
                     }
