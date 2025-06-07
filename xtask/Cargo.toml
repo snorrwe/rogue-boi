@@ -10,8 +10,8 @@ path = "xtask.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.5.38", features = [] }
+clap = { version = "4.5.39", features = [] }
 clap_derive = { version = "4.5.32" }
 icons = { version = "0.1.0", path = "../icons" }
-zip = "2.5.0"
+zip = "4.0.0"
 walkdir = "2.5.0"

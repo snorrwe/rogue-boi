@@ -3,7 +3,7 @@ dev:
 
 update:
     nix flake update
-    cargo update
+    cargo upgrade -i --pinned=allow
     npm update --force
 
 clean:
