@@ -82,7 +82,16 @@
       <p>Level: {level}</p>
     {/if}
     {#if currentXp != null}
-      <p>Experience: {currentXp} / {neededXp}</p>
+      <ProgressBar
+        current={currentXp}
+        max={neededXp}
+        minColorBg="#d727d7"
+        minColorFg="white"
+        maxColorBg="#00b7ff"
+        maxColorFg="black"
+        midColorBg="#2811ca"
+        midColorFg="white"
+      />
     {/if}
     <button onclick={() => $coreStore.wait()}>Wait</button>
   {:else}
