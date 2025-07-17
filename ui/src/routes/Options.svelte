@@ -8,4 +8,4 @@
   }
 </script>
 
-<button onclick={clearSave}>Clear save game</button>
+<button class="bg-red-800 my-2" onclick={clearSave}>Clear save game</button>

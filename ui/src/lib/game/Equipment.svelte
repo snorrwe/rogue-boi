@@ -10,7 +10,7 @@
 </script>
 
 <div>
-  <h2>Equipment</h2>
+  <h2 class="text-xl">Equipment</h2>
   <ul>
     {#if armor != null}
       <li class="item" onclick={() => selectItem(armor)} onkeypress={() => selectItem(armor)}>

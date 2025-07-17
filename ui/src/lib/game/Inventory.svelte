@@ -8,11 +8,15 @@
   };
 </script>
 
-<div>
-  <h2>Inventory</h2>
-  <ul>
+<div class="text-white max-w-60">
+  <h2 class="text-xl">Inventory</h2>
+  <ul class="grid grid-cols-5 auto-rows-[2.2em] list-none">
     {#each inventory as item}
-      <li class="item" onkeyup={() => useItem(item)} onclick={() => useItem(item)}>
+      <li
+        class="h-[2.2rem] w-[2.2rem] cursor-pointer"
+        onkeyup={() => useItem(item)}
+        onclick={() => useItem(item)}
+      >
         <div title={item.description} style="--fill-color: {item.color || 'white'}">
           {@html $icons[item.icon]}
         </div>
@@ -20,22 +24,3 @@
     {/each}
   </ul>
 </div>
-
-<style>
-  div {
-    color: white;
-  }
-
-  .item {
-    height: 2.2rem;
-    width: 2.2rem;
-    cursor: pointer;
-  }
-
-  ul {
-    display: grid;
-    grid-template-columns: repeat(6, 2.2em);
-    grid-auto-rows: 2.2em;
-    list-style: none;
-  }
-</style>

@@ -59,18 +59,20 @@
 
 <svelte:window onkeydown={onKey} />
 
-<main>
+<main class="text-white min-w-0 box-border md:h-[90vh] mx-auto my-0 p-[2em] overflow-auto">
   {#if core != null}
-    <div class="content">
-      <div class="log">
+    <div
+      class="grid md:grid-cols-[1fr_2fr_1fr] sm:grid-cols-[1fr_2fr] gap-x-8 w-full h-full object-contain"
+    >
+      <div class="max-h-full overflow-auto">
         <h2>Log</h2>
         <Log log={$coreOutput.log} />
       </div>
-      <div>
+      <div class="min-w-2/3 min-h-2/3">
         <div>Dungeon floor: {$coreOutput.dungeonLevel}</div>
         <Grid />
       </div>
-      <div class="game-ui">
+      <div class="text-white text-left">
         {#if $selected != null}
           <Highlight targetingMode={$coreOutput.targeting} selected={$selected} {core} />
         {/if}
@@ -84,33 +86,3 @@
     </div>
   {/if}
 </main>
-
-<style>
-  main {
-    padding: 2em;
-    margin: 0 auto;
-    color: white;
-    min-width: 0px;
-    box-sizing: border-box;
-    height: 90vh;
-  }
-
-  .content {
-    display: grid;
-    grid-template-columns: 1fr 2fr 1fr;
-    column-gap: 2rem;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-
-  .log {
-    max-height: 100%;
-    overflow: auto;
-  }
-
-  .game-ui {
-    color: white;
-    text-align: left;
-  }
-</style>

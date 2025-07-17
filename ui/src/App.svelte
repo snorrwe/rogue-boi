@@ -1,4 +1,5 @@
 <script>
+  import "./app.css";
   import { onMount } from "svelte";
   import { fetchIcon, coreStore, coreOutput, selected } from "@rogueBoi/store.js";
   import Menu from "./routes/Menu.svelte";
@@ -12,6 +13,7 @@
   function saveGame() {
     if ($coreStore) {
       let pl = $coreStore.save();
+
       localStorage.setItem("save", pl);
     }
   }
@@ -20,7 +22,9 @@
     core.icons().forEach((icon) => {
       fetchIcon({ src: `icons/${icon}.svg`, name: icon });
     });
+
     const saveGame = localStorage.getItem("save");
+
     if (saveGame != null) {
       try {
         console.log("Loading previous save");
@@ -31,15 +35,13 @@
         localStorage.removeItem("save");
       }
     }
+
     coreStore.set(core);
     routeChange();
   });
 
   document.addEventListener("keydown", (event) => {
-    core.pushEvent({
-      ty: "KeyDown",
-      key: event.key
-    });
+    core.pushEvent({ ty: "KeyDown", key: event.key });
   });
 
   const routeChange = () => {
@@ -48,17 +50,20 @@
         "#game": () => Game,
         "#newgame": () => {
           selected.set(null);
+
           if (core) {
             core.restart();
             window.location.hash = "game";
             return Game;
           }
+
           return Menu;
         },
         "#menu": () => Menu,
         "#options": () => Options,
         "#dungeon-gen": () => DungeonGenerator
       }[location.hash] || (() => Menu);
+
     page = factory();
   };
 
@@ -67,18 +72,9 @@
 
 <svelte:window onunload={saveGame} onhashchange={routeChange} />
 
-<main>
+<main class="p-2 my-0 mx-auto text-white min-w-0">
   <header>
     <a href="#menu">Back to menu</a>
   </header>
   <SvelteComponent />
 </main>
-
-<style>
-  main {
-    padding: 2em;
-    margin: 0 auto;
-    color: white;
-    min-width: 0px;
-  }
-</style>

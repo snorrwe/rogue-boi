@@ -33,11 +33,11 @@
   }
 </script>
 
-<div class="content">
+<div class=" m-auto max-w-[960px]">
   <div>Debug tool to visualize the map generator's behaviour</div>
   <div>
     <form
-      class="input"
+      class="max-h-[20%]"
       onsubmit={(e) => {
         dims = desiredDims;
         regenerate({ dims, level });
@@ -58,7 +58,7 @@
         <button type="submit">Regen</button>
       </div>
     </form>
-    <div class="grid" style="--cols:{dims[0]}">
+    <div class="grid max-h-[80%] grid-cols-[repeat(var(--cols),1fr)]" style="--cols:{dims[0]}">
       {#each tiles as tile}
         {#if tile.icon}
           <img
@@ -73,20 +73,3 @@
     </div>
   </div>
 </div>
-
-<style>
-  .content {
-    max-width: 960px;
-    margin: auto;
-  }
-
-  .input {
-    max-height: 20%;
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(var(--cols), 1fr);
-    max-height: 80%;
-  }
-</style>
