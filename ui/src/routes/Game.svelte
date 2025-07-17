@@ -12,6 +12,7 @@
   import Highlight from "@rogueBoi/game/Highlight.svelte";
   import Log from "@rogueBoi/game/Log.svelte";
   import Player from "@rogueBoi/game/Player.svelte";
+  import Help from "@rogueBoi/game/Help.svelte";
 
   let core = $state();
   coreStore.subscribe((c) => (core = c));
@@ -75,6 +76,9 @@
         {/if}
         <div>
           <Player />
+        </div>
+        <div>
+          <Help />
         </div>
       </div>
     </div>
