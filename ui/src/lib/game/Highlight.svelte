@@ -1,6 +1,7 @@
 <script>
   import { icons, inventory } from "@rogueBoi/store.js";
   import ProgressBar from "./ProgressBar.svelte";
+  import Button from "../Button.svelte";
 
   let { selected, core, targetingMode } = $props();
 
@@ -62,16 +63,16 @@
   <div>Ranged Skill: {selected.ranged.skill}</div>
 {/if}
 {#if selected.usable}
-  <button onclick={useItem(selected)}>Use</button>
+  <Button onclick={useItem(selected)}>Use</Button>
 {/if}
 {#if selected.equipable}
-  <button onclick={useItem(selected)}>Equip</button>
+  <Button onclick={useItem(selected)}>Equip</Button>
 {/if}
 {#if droppable}
-  <button onclick={dropItem(selected)}>Drop</button>
+  <Button onclick={dropItem(selected)}>Drop</Button>
 {/if}
 {#if selected.targetable && targetingMode}
-  <button onclick={target(selected)}>Target</button>
+  <Button onclick={target(selected)}>Target</Button>
 {/if}
 
 <style>
