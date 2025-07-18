@@ -3,7 +3,7 @@ dev:
 
 update:
     nix flake update
-    cargo upgrade -i --pinned=allow
+    cargo update --breaking --recursive -Z unstable-options
     npm update --force
 
 clean:
@@ -15,7 +15,6 @@ clean:
 format:
     npm run format
     cargo fmt
-
 
 # initialize the project
 init:
