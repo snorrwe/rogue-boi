@@ -1,5 +1,5 @@
 <script>
-  import { icons } from "@rogueBoi/store.js";
+  import { icons, inventory } from "@rogueBoi/store.js";
   import ProgressBar from "./ProgressBar.svelte";
 
   let { selected, core, targetingMode } = $props();
@@ -8,6 +8,9 @@
   $effect(() => {
     console.assert(icon != null, "Highlight icon not found", icon);
   });
+  let droppable = $derived(
+    selected.item && !selected.equipped && $inventory.some((i) => i.id == selected.id)
+  );
 
   const useItem = (item) => () => {
     core.useItem(item.id);
@@ -64,7 +67,7 @@
 {#if selected.equipable}
   <button onclick={useItem(selected)}>Equip</button>
 {/if}
-{#if selected.item && !selected.equipped}
+{#if droppable}
   <button onclick={dropItem(selected)}>Drop</button>
 {/if}
 {#if selected.targetable && targetingMode}
