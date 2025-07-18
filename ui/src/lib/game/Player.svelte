@@ -74,11 +74,6 @@
         </p>
       {/if}
     {/if}
-    {#if pos != null}
-      <p id="player-pos">
-        Position: {pos.x}, {pos.y}
-      </p>
-    {/if}
     {#if level != null}
       <p>Level: {level}</p>
     {/if}
