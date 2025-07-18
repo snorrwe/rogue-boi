@@ -1,4 +1,3 @@
-#![feature(let_chains)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::type_complexity)]
 
@@ -18,7 +17,7 @@ use std::{cell::RefCell, rc::Rc};
 use crate::systems::{
     drop_item, handle_click, init_world_systems, regenerate_dungeon, update_output,
 };
-use base64::{engine::GeneralPurpose, Engine};
+use base64::{Engine, engine::GeneralPurpose};
 use cecs::{persister::WorldSerializer, prelude::*};
 use colors::WHITE;
 use components::*;

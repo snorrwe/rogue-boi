@@ -1,15 +1,15 @@
 use crate::{
+    InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff,
     archetypes::icon,
     colors::*,
     components::*,
     grid::Grid,
     map_gen,
-    math::{remap_f64, walk_square, Vec2},
+    math::{Vec2, remap_f64, walk_square},
     pathfinder::find_path,
-    InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff,
 };
 use cecs::{commands::EntityCommands, prelude::*};
-use rand::{prelude::IndexedRandom, Rng};
+use rand::{Rng, prelude::IndexedRandom};
 use tracing::{debug, info, warn};
 
 pub fn init_world_systems(world: &mut World) {
@@ -343,7 +343,7 @@ fn use_fireball(
                     if let Some((hp, name)) = target_query.fetch_mut(*id) {
                         // TODO skill check?
                         hp.current -= power;
-                        if let Some(Name(ref name)) = name {
+                        if let Some(Name(name)) = name {
                             log.push(
                                 PLAYER_ATTACK,
                                 format!(
@@ -586,7 +586,7 @@ fn update_player_world_interact(
                 Ok(_) => {
                     let cmd = cmd.entity(stuff_id);
                     cmd.remove::<Pos>();
-                    let Name(ref name) = name.unwrap();
+                    let Name(name) = name.unwrap();
                     log.push(WHITE, format!("Picked up a {}", name));
                     if equip {
                         cmd.insert(UseItem);
@@ -905,7 +905,7 @@ fn update_ai_move(
                 debug!("Player is visible, finding path");
                 cache.path.clear();
                 cache.path.push(*player_pos); // push the last pos, so entities can follow players
-                                              // across corridors
+                // across corridors
                 cache.path.push(*last_player_pos);
                 if !find_path(*pos, *last_player_pos, &grid, &q_walk, &mut cache.path) {
                     // finding path failed, pop the player pos
@@ -1050,7 +1050,7 @@ fn update_ai_hp(
     mut log: ResMut<LogHistory>,
 ) {
     let mut player = player_id.get_mut(&mut query_player);
-    for (id, _hp, name, xp) in query_hp.iter().filter(|(_, hp, _, _)| (hp.current <= 0)) {
+    for (id, _hp, name, xp) in query_hp.iter().filter(|(_, hp, _, _)| hp.current <= 0) {
         debug!("Entity {} died", id);
         if let Some(Name(name)) = name {
             log.push(ENEMY_DIE, format!("{} died", name));
@@ -1226,7 +1226,7 @@ pub fn render_onto_canvas(
                     match icons.0.get(icon.0) {
                         Some(icon) => {
                             match color {
-                                Some(Color(ref color)) => {
+                                Some(Color(color)) => {
                                     ctx.set_fill_style_str(color);
                                 }
                                 None => {
@@ -1242,7 +1242,7 @@ pub fn render_onto_canvas(
                         None => {
                             debug!("Failed to fetch icon");
                             // if icon can not be fetched
-                            if let Some(Color(ref color)) = color {
+                            if let Some(Color(color)) = color {
                                 ctx.set_fill_style_str(color);
                             }
                             ctx.fill_rect(render_x, render_y, cell_size, cell_size);
