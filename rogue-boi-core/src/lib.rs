@@ -229,6 +229,10 @@ impl PlayerActions {
         }
         self.interact = true;
     }
+
+    pub fn insert_empty(&mut self) {
+        self.len += 1;
+    }
 }
 
 type ItemPropsTuple<'a> = (
@@ -433,7 +437,8 @@ impl Core {
                 |mut cmd: Commands,
                  mut q: Query<(&Pos, &mut Inventory), With<PlayerTag>>,
                  q_item: Query<&Name>,
-                 mut log: ResMut<LogHistory>| {
+                 mut log: ResMut<LogHistory>,
+                 mut actions: ResMut<PlayerActions>| {
                     // remove item from inventory and add a position
                     // TODO: random empty nearby position intead of the player's?
                     if let Some((pos, inv)) = q.single_mut() {
@@ -443,6 +448,8 @@ impl Core {
                             }
                         }
                     }
+
+                    actions.insert_empty();
                 },
             )
             .unwrap();
