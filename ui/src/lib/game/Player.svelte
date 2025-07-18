@@ -4,6 +4,7 @@
   import Inventory from "./Inventory.svelte";
   import Equipment from "./Equipment.svelte";
   import ProgressBar from "./ProgressBar.svelte";
+  import Button from "@rogueBoi/Button.svelte";
 
   let { player, targeting, appMode } = $derived($coreOutput);
 
@@ -31,7 +32,7 @@
     <Inventory />
 
     {#if targeting}
-      <button onclick={() => $coreStore.cancelItemUse()}>Cancel item use</button>
+      <Button onclick={() => $coreStore.cancelItemUse()}>Cancel item use</Button>
     {/if}
 
     <h2>Player stats</h2>
@@ -93,10 +94,14 @@
         midColorFg="white"
       />
     {/if}
-    <button onclick={() => $coreStore.wait()}>Wait</button>
+    <div class="my-2">
+      <Button onclick={() => $coreStore.wait()}>Wait</Button>
+    </div>
   {:else}
     <p>You died!</p>
-    <button onclick={() => restartGame()}>Restart</button>
+    <div class="my-2">
+      <Button onclick={() => restartGame()}>Restart</Button>
+    </div>
   {/if}
 </div>
 
