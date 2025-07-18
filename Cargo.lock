@@ -144,9 +144,9 @@ dependencies = [
 
 [[package]]
 name = "calamine"
-version = "0.27.0"
+version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d80f81ba5c68206b9027e62346d49dc26fb32ffc4fe6ef7022a8ae21d348ccb"
+checksum = "c779dabf85f0e5764a88dc28df403aa09e43fb869344f24cf1813a86854fa3ef"
 dependencies = [
  "atoi_simd",
  "byteorder",
@@ -156,7 +156,7 @@ dependencies = [
  "log",
  "quick-xml",
  "serde",
- "zip 2.5.0",
+ "zip",
 ]
 
 [[package]]
@@ -315,12 +315,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "crossbeam-utils"
-version = "0.8.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
-
-[[package]]
 name = "crunchy"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -474,7 +468,7 @@ dependencies = [
  "serde",
  "serde-xml-rs",
  "serde_derive",
- "zip 4.0.0",
+ "zip",
 ]
 
 [[package]]
@@ -1270,7 +1264,7 @@ dependencies = [
  "clap_derive",
  "icons",
  "walkdir",
- "zip 4.0.0",
+ "zip",
 ]
 
 [[package]]
@@ -1315,24 +1309,9 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "2.5.0"
+version = "4.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27c03817464f64e23f6f37574b4fdc8cf65925b5bfd2b0f2aedf959791941f88"
-dependencies = [
- "arbitrary",
- "crc32fast",
- "crossbeam-utils",
- "flate2",
- "indexmap",
- "memchr",
- "zopfli",
-]
-
-[[package]]
-name = "zip"
-version = "4.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "153a6fff49d264c4babdcfa6b4d534747f520e56e8f0f384f3b808c4b64cc1fd"
+checksum = "95ab361742de920c5535880f89bbd611ee62002bf11341d16a5f057bb8ba6899"
 dependencies = [
  "aes",
  "arbitrary",
