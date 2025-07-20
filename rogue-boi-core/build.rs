@@ -1,4 +1,4 @@
-use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
+use calamine::{RangeDeserializerBuilder, Reader, Xlsx, open_workbook};
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -43,6 +43,54 @@ struct ChanceRow {
     level: u32,
     tag: String,
     weight: i32,
+}
+
+#[derive(Deserialize, Debug)]
+struct RoomRow {
+    kind: String,
+    weight: i32,
+    max: Option<i32>,
+}
+
+fn rooms_const(name: &str, rooms: &[RoomRow]) -> String {
+    let mut payload = format!(
+        r"pub const {}: &[(RoomKind, i32, Option<i32>)] = &[
+",
+        name
+    );
+    let pl = &mut payload;
+    for row in rooms {
+        writeln!(
+            pl,
+            "(RoomKind::{}, {}, {:?}),",
+            row.kind, row.weight, row.max
+        )
+        .unwrap();
+    }
+    writeln!(pl, "];").unwrap();
+    writeln!(
+        pl,
+        r#"
+#[derive(Debug, PartialEq, Eq, Clone, Copy, serde_derive::Serialize, serde_derive::Deserialize, Hash)]
+#[repr(u8)]
+pub enum RoomKind {{
+    {}
+}}
+"#,
+        rooms.iter().map(|r| r.kind.as_str()).join(",")
+    ).unwrap();
+    payload
+}
+
+fn read_rooms(sheet: calamine::Range<calamine::Data>) -> String {
+    let iter = RangeDeserializerBuilder::new().from_range(&sheet).unwrap();
+
+    let mut weights = Vec::with_capacity(1024);
+    for result in iter {
+        let row: RoomRow = result.expect("Failed to deserialize row");
+        weights.push(row);
+    }
+    rooms_const("ROON_CHANCES", &mut weights)
 }
 
 #[derive(Deserialize, Debug)]
@@ -197,13 +245,17 @@ fn main() {
     let stuff = xls
         .worksheet_range("stuff-descriptor")
         .expect("Failed to open stuff worksheet");
+    let room_chances = xls
+        .worksheet_range("room-chances")
+        .expect("Failed to open item chances worksheet");
 
     let enemy_weights = read_weights("ENEMY_CHANCES", enemy_chances);
     let item_weights = read_weights("ITEM_CHANCES", item_chances);
+    let room_weights = read_rooms(room_chances);
 
     let stuff = stuff_descriptors(stuff);
 
-    let payload = format!("{}\n{}\n{}", enemy_weights, item_weights, stuff);
+    let payload = format!("{enemy_weights}\n{item_weights}\n{stuff}\n{room_weights}");
 
     fs::write(out_root.join("game_config_gen.rs"), payload).unwrap();
 }

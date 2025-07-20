@@ -4,19 +4,19 @@ mod tunnel_iter;
 use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
 use crate::{
-    game_config::{ENEMY_CHANCES, ITEM_CHANCES},
     HashMap,
+    game_config::{ENEMY_CHANCES, ITEM_CHANCES},
 };
 use cecs::prelude::*;
-use rand::{distr::weighted::WeightedIndex, prelude::Distribution, seq::IndexedRandom as _, Rng};
+use rand::{Rng, distr::weighted::WeightedIndex, prelude::Distribution, seq::IndexedRandom as _};
 use tracing::debug;
 
 use crate::{
+    Stuff,
     archetypes::init_entity,
     components::{DungeonFloor, PlayerTag, Pos, StuffTag, WorldDims},
     grid::Grid,
     math::Vec2,
-    Stuff,
 };
 
 #[derive(Clone)]
@@ -306,7 +306,7 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
         let x = rng.random_range(PADDING..grid.width() - 1 - PADDING - width);
         let y = rng.random_range(PADDING..grid.height() - 1 - PADDING - height);
 
-        let room = RectRoom::new(x, y, width, height);
+        let room = RectRoom::new(crate::game_config::RoomKind::Normal, x, y, width, height);
         for r in rooms.iter() {
             if room.touches(r) {
                 continue 'outer;

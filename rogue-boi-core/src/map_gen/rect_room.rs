@@ -1,14 +1,16 @@
-use crate::{grid::Grid, math::Vec2};
+use crate::{game_config::RoomKind, grid::Grid, math::Vec2};
 
 #[derive(Debug)]
 pub struct RectRoom {
-    pub(crate) min: Vec2,
-    pub(crate) max: Vec2,
+    pub role: RoomKind,
+    pub min: Vec2,
+    pub max: Vec2,
 }
 
 impl RectRoom {
-    pub fn new(x1: i32, y1: i32, width: i32, height: i32) -> Self {
+    pub fn new(role: RoomKind, x1: i32, y1: i32, width: i32, height: i32) -> Self {
         Self {
+            role,
             min: Vec2::new(x1, y1),
             max: Vec2::new(x1 + width, y1 + height),
         }
