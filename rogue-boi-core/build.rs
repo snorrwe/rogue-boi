@@ -90,7 +90,7 @@ fn read_rooms(sheet: calamine::Range<calamine::Data>) -> String {
         let row: RoomRow = result.expect("Failed to deserialize row");
         weights.push(row);
     }
-    rooms_const("ROON_CHANCES", &mut weights)
+    rooms_const("ROOM_CHANCES", &mut weights)
 }
 
 #[derive(Deserialize, Debug)]
