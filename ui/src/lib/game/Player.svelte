@@ -37,10 +37,7 @@
 
     <h2>Player stats</h2>
     {#if hp != null}
-      <div>
-        {#if levelup}
-          <button onclick={() => $coreStore.setLevelupStat({ ty: "Hp" })}>+</button>
-        {/if}
+      <div class="flex flex-row align-middle gap-2">
         <ProgressBar
           current={hp.current}
           max={hp.max}
@@ -51,22 +48,25 @@
           midColorBg="orange"
           midColorFg="black"
         />
+        {#if levelup}
+          <Button onclick={() => $coreStore.setLevelupStat({ ty: "Hp" })}>+</Button>
+        {/if}
       </div>
     {/if}
     {#if attack != null}
       <p>
-        {#if levelup}
-          <button onclick={() => $coreStore.setLevelupStat({ ty: "Attack" })}>+</button>
-        {/if}
         Attack Power: {attack}
+        {#if levelup}
+          <Button onclick={() => $coreStore.setLevelupStat({ ty: "Attack" })}>+</Button>
+        {/if}
       </p>
     {/if}
     {#if defense != null}
       <p>
-        {#if levelup}
-          <button onclick={() => $coreStore.setLevelupStat({ ty: "MeleeDefense" })}>+</button>
-        {/if}
         Melee Defense: {defense.meleeDefense}
+        {#if levelup}
+          <Button onclick={() => $coreStore.setLevelupStat({ ty: "MeleeDefense" })}>+</Button>
+        {/if}
       </p>
       {#if defense.ward > 0}
         <p>
