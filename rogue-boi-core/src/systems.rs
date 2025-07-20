@@ -20,14 +20,12 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(update_should_tick)
             .with_system(handle_targeting)
             .with_system(player_prepare)
-            .with_system(handle_levelup)
-            .build(),
+            .with_system(handle_levelup),
     );
     world.add_stage(
         SystemStage::new("pre-update")
             .with_should_run(|should_tick: Res<ShouldTick>| should_tick.0)
-            .with_system(record_last_pos)
-            .build(),
+            .with_system(record_last_pos),
     );
     world.add_stage(
         SystemStage::new("player-update")
@@ -38,8 +36,7 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(update_camera_pos)
             .with_system(update_unequip)
             .with_system(cmd_flush_system) // interact may insert a new equipment use
-            .with_system(update_equipment_use)
-            .build(),
+            .with_system(update_equipment_use),
     );
     world.add_stage(
         SystemStage::new("update_item_use")
@@ -49,8 +46,7 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(use_lightning_scroll)
             .with_system(use_ward_scroll)
             .with_system(use_hp_potion)
-            .with_system(use_fireball)
-            .build(),
+            .with_system(use_fireball),
     );
     world.add_stage(
         SystemStage::new("ai-update")
@@ -63,29 +59,25 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(update_confusion)
             .with_system(update_player_hp)
             .with_system(update_grid)
-            .with_system(update_fov)
-            .build(),
+            .with_system(update_fov),
     );
     world.add_stage(
         SystemStage::new("render")
             .with_system(perform_move)
             .with_system(update_output.after(perform_move))
             .with_system(render_onto_canvas.after(perform_move))
-            .with_system(clean_inputs)
-            .build(),
+            .with_system(clean_inputs),
     );
     world.add_stage(
         SystemStage::new("post-render")
             .with_should_run(should_update_world)
             .with_system(clear_consumable)
-            .with_system(update_tick)
-            .build(),
+            .with_system(update_tick),
     );
     world.add_stage(
         SystemStage::new("dungeon-delve")
             .with_should_run(|level: Res<DungeonFloor>| level.current != level.desired)
-            .with_system(regenerate_dungeon)
-            .build(),
+            .with_system(regenerate_dungeon),
     );
 }
 

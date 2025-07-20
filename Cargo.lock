@@ -173,7 +173,7 @@ dependencies = [
 [[package]]
 name = "cecs"
 version = "0.1.7"
-source = "git+https://github.com/caolo-game/cecs#a28c180b3081b5c54bd1de38ed6e591561589f49"
+source = "git+https://github.com/caolo-game/cecs#2bd1ac262a9d23636e9e434e1edc4c233fe6a282"
 dependencies = [
  "cfg-if",
  "rustc-hash",
