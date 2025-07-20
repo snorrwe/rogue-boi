@@ -42,6 +42,7 @@
             nodePackages.nodejs
             nodePackages.npm
             nodejs_24
+            cypress
           ];
         };
       }
