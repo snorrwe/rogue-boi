@@ -5,7 +5,7 @@ use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
 use crate::{
     HashMap,
-    game_config::{ENEMY_CHANCES, ITEM_CHANCES},
+    game_config::{ENEMY_CHANCES, ITEM_CHANCES, ROOM_CHANCES, RoomKind},
 };
 use cecs::prelude::*;
 use rand::{Rng, distr::weighted::WeightedIndex, prelude::Distribution, seq::IndexedRandom as _};
@@ -62,6 +62,10 @@ struct EntityChances {
     enemy_weights: Vec<i32>,
     item_tags: Vec<StuffTag>,
     item_weights: Vec<i32>,
+
+    room_tags: Vec<RoomKind>,
+    room_weights: Vec<i32>,
+    room_max: Vec<Option<i32>>,
 }
 
 pub type EntityChanceList<'a> = &'a [(u32, &'a [(StuffTag, i32)])];
@@ -92,6 +96,15 @@ impl EntityChances {
 
         debug_assert_eq!(result.enemy_weights.len(), result.enemy_tags.len());
         debug_assert_eq!(result.item_weights.len(), result.item_tags.len());
+
+        result.room_tags.reserve(ROOM_CHANCES.len());
+        result.room_weights.reserve(ROOM_CHANCES.len());
+        result.room_max.reserve(ROOM_CHANCES.len());
+        for r in ROOM_CHANCES {
+            result.room_tags.push(r.0);
+            result.room_weights.push(r.1);
+            result.room_max.push(r.2);
+        }
 
         result
     }
@@ -297,6 +310,10 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
     let mut rng = rand::rng();
     let mut rooms = Vec::<RectRoom>::with_capacity(props.max_rooms as usize);
 
+    let entity_weights = EntityChances::from_level(floor);
+    let room_kind_dist = WeightedIndex::new(&entity_weights.room_weights[..]).unwrap();
+    let mut room_max = HashMap::<RoomKind, i32>::default();
+
     'outer: for _ in 0..props.max_rooms {
         let width = rng.random_range(props.room_min_size..props.room_max_size) as i32;
         let height = rng.random_range(props.room_min_size..props.room_max_size) as i32;
@@ -306,12 +323,30 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
         let x = rng.random_range(PADDING..grid.width() - 1 - PADDING - width);
         let y = rng.random_range(PADDING..grid.height() - 1 - PADDING - height);
 
-        let room = RectRoom::new(crate::game_config::RoomKind::Normal, x, y, width, height);
+        const RETRTIES: usize = 10;
+        let mut kind = RoomKind::Normal;
+        for _ in 0..RETRTIES {
+            let k = room_kind_dist.sample(&mut rng);
+            let _kind = entity_weights.room_tags[k];
+            // check if the maximum number of rooms have been reached for this type
+            if let Some(max) = entity_weights.room_max[k] {
+                let c = room_max.get(&_kind).copied().unwrap_or(0);
+                if c < max {
+                    kind = _kind;
+                    break;
+                }
+            }
+        }
+
+        let room = RectRoom::new(kind, x, y, width, height);
         for r in rooms.iter() {
             if room.touches(r) {
                 continue 'outer;
             }
         }
+        debug!(?kind, ?x, ?y, ?width, ?height, "carving room");
+        // increment at the end, so if the previous loop can trigger a retry
+        *room_max.entry(kind).or_default() += 1;
         room.carve(grid);
         rooms.push(room);
     }
@@ -414,7 +449,6 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
         }
     }
 
-    let entity_weights = EntityChances::from_level(floor);
     if floor == 1 {
         // give a starting item on floor 1
         place_items(&mut rng, grid, &rooms[0], 1, 1, &entity_weights);
