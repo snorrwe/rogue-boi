@@ -64,14 +64,6 @@
     <div
       class="grid md:grid-cols-[1fr_2fr_1fr] sm:grid-cols-[1fr_2fr] gap-x-8 w-full h-full object-contain"
     >
-      <div class="max-h-full overflow-auto">
-        <h2>Log</h2>
-        <Log log={$coreOutput.log} />
-      </div>
-      <div class="min-w-2/3 min-h-2/3">
-        <div>Dungeon floor: {$coreOutput.dungeonLevel}</div>
-        <Grid />
-      </div>
       <div class="text-white text-left">
         {#if $selected != null}
           <Highlight targetingMode={$coreOutput.targeting} selected={$selected} {core} />
@@ -82,6 +74,16 @@
         <div>
           <Help />
         </div>
+      </div>
+
+      <div class="min-w-2/3 min-h-2/3">
+        <div>Dungeon floor: {$coreOutput.dungeonLevel}</div>
+        <Grid />
+      </div>
+
+      <div class="max-h-full overflow-auto">
+        <h2>Log</h2>
+        <Log log={$coreOutput.log} />
       </div>
     </div>
   {/if}
