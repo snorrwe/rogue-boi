@@ -64,7 +64,7 @@
     <div
       class="grid md:grid-cols-[1fr_2fr_1fr] sm:grid-cols-[1fr_2fr] gap-x-8 w-full h-full object-contain"
     >
-      <div class="text-white text-left">
+      <div id="game-ui" class="text-white text-left">
         {#if $selected != null}
           <Highlight targetingMode={$coreOutput.targeting} selected={$selected} {core} />
         {/if}
