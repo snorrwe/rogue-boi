@@ -8,11 +8,16 @@
   /** @type {ResizeObserver} */ let observer;
   onMount(() => {
     canvasStore.set(canvas);
-    observer = new ResizeObserver(() => {
-      const w = box.offsetWidth;
-      const h = box.offsetHeight;
+    observer = new ResizeObserver((entries) => {
+      // NOTE: workaround for  ResizeObserver loop completed with undelivered notifications errors
 
-      size = Math.min(w, h);
+      if (!entries?.length) return;
+      requestAnimationFrame(() => {
+        const w = box.offsetWidth;
+        const h = box.offsetHeight;
+
+        size = Math.min(w, h);
+      });
     });
     observer.observe(box);
   });
