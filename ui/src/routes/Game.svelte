@@ -76,7 +76,7 @@
         </div>
       </div>
 
-      <div class="min-w-2/3 min-h-2/3">
+      <div class="min-w-[426px] min-h-[426px]">
         <div>Dungeon floor: {$coreOutput.dungeonLevel}</div>
         <Grid />
       </div>
