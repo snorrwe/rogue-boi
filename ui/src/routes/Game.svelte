@@ -82,7 +82,7 @@
       </div>
 
       <div class="max-h-full overflow-auto">
-        <h2>Log</h2>
+        <h2 class="text-xl">Log</h2>
         <Log log={$coreOutput.log} />
       </div>
     </div>
