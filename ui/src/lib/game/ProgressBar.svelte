@@ -17,7 +17,7 @@
   style="--t:{t *
     100}; --minColorBg:{minColorBg}; --minColorFg:{minColorFg}; --maxColorBg:{maxColorBg}; --maxColorFg:{maxColorFg}; --midColorBg:{midColorBg}; --midColorFg:{midColorFg}; "
 >
-  <p>{current} / {max}</p>
+  <p class="mx-2 my-1 text-start">{current} / {max}</p>
 </div>
 
 <style>
@@ -38,7 +38,7 @@
 
   .bar {
     width: 200px;
-    height: 20px;
+    min-height: 20px;
     animation: 100s linear calc(-1s * var(--t)) paused progress;
     background-color: var(--bg);
     color: var(--txt);
