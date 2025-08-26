@@ -4,6 +4,7 @@ dev:
 update:
     nix flake update
     cargo update --breaking --recursive -Z unstable-options
+    cargo update
     npm update --force
 
 clean:
