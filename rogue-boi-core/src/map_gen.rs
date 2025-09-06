@@ -9,7 +9,7 @@ use crate::{
 };
 use cecs::prelude::*;
 use rand::{Rng, distr::weighted::WeightedIndex, prelude::Distribution, seq::IndexedRandom as _};
-use tracing::debug;
+use tracing::{debug, warn};
 
 use crate::{
     Stuff,
@@ -465,24 +465,32 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
     grid[rooms[0].center()] = Some(StuffTag::Player);
 
     // place stuff
-    for room in rooms.iter().skip(1) {
-        let n = place_entities(
-            &mut rng,
-            grid,
-            room,
-            props.max_monsters_per_floor,
-            &entity_weights,
-        );
-        // ensure no room is empty by placing at least 1 item in rooms with no monsters
-        let min_items = (n == 0) as u32;
-        place_items(
-            &mut rng,
-            grid,
-            room,
-            min_items,
-            props.max_items_per_floor,
-            &entity_weights,
-        );
+    for room in &rooms[1..] {
+        match room.role {
+            RoomKind::Shop => {
+                // TODO:
+                warn!("Shops not yet implemented")
+            }
+            RoomKind::Normal => {
+                let n = place_entities(
+                    &mut rng,
+                    grid,
+                    room,
+                    props.max_monsters_per_floor,
+                    &entity_weights,
+                );
+                // ensure no room is empty by placing at least 1 item in rooms with no monsters
+                let min_items = (n == 0) as u32;
+                place_items(
+                    &mut rng,
+                    grid,
+                    room,
+                    min_items,
+                    props.max_items_per_floor,
+                    &entity_weights,
+                );
+            }
+        }
     }
 
     let end_room = rooms[1..]
