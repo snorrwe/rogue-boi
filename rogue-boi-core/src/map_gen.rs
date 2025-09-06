@@ -306,13 +306,34 @@ fn adjacency_set(matrix: &mut Grid<i8>, i: i32, j: i32, val: i8) {
     matrix[Vec2::new(j, i)] = val;
 }
 
+fn assign_rooms_roles(mut rng: impl Rng, entity_weights: &EntityChances, rooms: &mut [RectRoom]) {
+    let room_kind_dist = WeightedIndex::new(&entity_weights.room_weights[..]).unwrap();
+
+    let mut room_max = HashMap::<RoomKind, usize>::default();
+    for room in rooms {
+        const RETRTIES: usize = 10;
+        for _ in 0..RETRTIES {
+            let k = room_kind_dist.sample(&mut rng);
+            let kind = entity_weights.room_tags[k];
+            // check if the maximum number of rooms have been reached for this type
+            let max = entity_weights.room_max[k]
+                .map(|x| x as usize)
+                .unwrap_or(usize::MAX);
+            let c = room_max.entry(kind).or_default();
+            if *c < max {
+                room.role = kind;
+                *c += 1;
+                break;
+            }
+        }
+    }
+}
+
 fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u32) {
     let mut rng = rand::rng();
     let mut rooms = Vec::<RectRoom>::with_capacity(props.max_rooms as usize);
 
     let entity_weights = EntityChances::from_level(floor);
-    let room_kind_dist = WeightedIndex::new(&entity_weights.room_weights[..]).unwrap();
-    let mut room_max = HashMap::<RoomKind, i32>::default();
 
     'outer: for _ in 0..props.max_rooms {
         let width = rng.random_range(props.room_min_size..props.room_max_size) as i32;
@@ -323,33 +344,20 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
         let x = rng.random_range(PADDING..grid.width() - 1 - PADDING - width);
         let y = rng.random_range(PADDING..grid.height() - 1 - PADDING - height);
 
-        const RETRTIES: usize = 10;
-        let mut kind = RoomKind::Normal;
-        for _ in 0..RETRTIES {
-            let k = room_kind_dist.sample(&mut rng);
-            let _kind = entity_weights.room_tags[k];
-            // check if the maximum number of rooms have been reached for this type
-            if let Some(max) = entity_weights.room_max[k] {
-                let c = room_max.get(&_kind).copied().unwrap_or(0);
-                if c < max {
-                    kind = _kind;
-                    break;
-                }
-            }
-        }
-
-        let room = RectRoom::new(kind, x, y, width, height);
+        let room = RectRoom::new(RoomKind::Normal, x, y, width, height);
         for r in rooms.iter() {
             if room.touches(r) {
                 continue 'outer;
             }
         }
-        debug!(?kind, ?x, ?y, ?width, ?height, "carving room");
+        debug!(?x, ?y, ?width, ?height, "carving room");
         // increment at the end, so if the previous loop can trigger a retry
-        *room_max.entry(kind).or_default() += 1;
         room.carve(grid);
         rooms.push(room);
     }
+
+    // first room is where player spawns, always a basic room
+    assign_rooms_roles(&mut rng, &entity_weights, &mut rooms[1..]);
 
     debug!(?rooms, "Rooms");
 
