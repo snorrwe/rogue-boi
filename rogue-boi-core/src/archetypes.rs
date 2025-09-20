@@ -128,6 +128,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         StuffTag::Tombstone => {}
         StuffTag::Shop => {
             cmd.insert_bundle((Inventory::new(8),));
+            // TODO: init inventory
         }
         StuffTag::Player => {
             cmd.insert_bundle((
