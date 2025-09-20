@@ -223,6 +223,8 @@ pub type StuffToJsQuery<'a> = QuerySet<(
             Option<&'a Color>,
         ),
     >,
+    // q7
+    crate::ItemPropsQ<'a>,
 )>;
 
 pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsValue {
@@ -265,7 +267,12 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
         }
         StuffTag::Shop => {
             let q = query.q6();
+            let item_props = query.q7();
             let (icon, name, description, inventory, color) = q.fetch(id).unwrap();
+            let inventory = inventory
+                .iter()
+                .map(|id| crate::to_item_desc(id, item_props.fetch(id).unwrap()))
+                .collect::<Vec<_>>();
             json! {{
                 "id": id,
                 "tag": tag,
@@ -276,6 +283,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
                 "description": description,
                 "icon": icon.0,
                 "targetable": true,
+                "inventory": inventory,
             }}
         }
         StuffTag::Gargoyle
