@@ -9,7 +9,7 @@ use crate::{
 };
 use cecs::prelude::*;
 use rand::{Rng, distr::weighted::WeightedIndex, prelude::Distribution, seq::IndexedRandom as _};
-use tracing::{debug, warn};
+use tracing::debug;
 
 use crate::{
     Stuff,
@@ -145,8 +145,22 @@ fn place_stairs(rng: &mut impl Rng, grid: &mut Grid<Option<StuffTag>>, room: &Re
 
         let pos = Vec2::new(x, y);
         if grid[pos].is_none() {
-            debug!("Placing end at {}", pos);
+            debug!("Placing Stairs at {}", pos);
             grid[pos] = Some(StuffTag::Stairs);
+            return;
+        }
+    }
+}
+
+fn place_shop(rng: &mut impl Rng, grid: &mut Grid<Option<StuffTag>>, room: &RectRoom) {
+    loop {
+        let x = rng.random_range(room.min.x + 1..room.max.x + 1);
+        let y = rng.random_range(room.min.y + 1..room.max.y + 1);
+
+        let pos = Vec2::new(x, y);
+        if grid[pos].is_none() {
+            debug!("Placing Shop at {}", pos);
+            grid[pos] = Some(StuffTag::Shop);
             return;
         }
     }
@@ -468,8 +482,7 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
     for room in &rooms[1..] {
         match room.role {
             RoomKind::Shop => {
-                // TODO:
-                warn!("Shops not yet implemented")
+                place_shop(&mut rng, grid, room);
             }
             RoomKind::Normal => {
                 let n = place_entities(
