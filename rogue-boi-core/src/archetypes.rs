@@ -68,6 +68,10 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
         StuffTag::Tombstone => {
             cmd.insert_bundle((StaticStuff,));
         }
+        StuffTag::Shop => {
+            // not StaticStuff, because StaticStuff can not be interacted with
+            cmd.insert_bundle((Shop, StaticVisibility));
+        }
         StuffTag::Gargoyle
         | StuffTag::Troll
         | StuffTag::Orc
@@ -122,6 +126,9 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
     match tag {
         StuffTag::Stairs => {}
         StuffTag::Tombstone => {}
+        StuffTag::Shop => {
+            cmd.insert_bundle((Inventory::new(8),));
+        }
         StuffTag::Player => {
             cmd.insert_bundle((
                 LastPos(pos),
@@ -165,7 +172,9 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
 }
 
 pub type StuffToJsQuery<'a> = QuerySet<(
+    // q0
     Query<'a, (&'a Icon, Option<&'a Color>)>,
+    // q1
     Query<
         'a,
         (
@@ -182,6 +191,7 @@ pub type StuffToJsQuery<'a> = QuerySet<(
         ),
         With<Item>,
     >,
+    // q2
     Query<
         'a,
         (
@@ -196,9 +206,23 @@ pub type StuffToJsQuery<'a> = QuerySet<(
         ),
         With<Ai>,
     >,
+    // q3
     Query<'a, (&'a Icon, &'a Melee, &'a Hp, &'a Defense), With<PlayerTag>>,
+    // q4
     Query<'a, (&'a Icon, Option<&'a Name>, Option<&'a Description>)>,
+    // q5
     Query<'a, &'a Equipment, With<PlayerTag>>,
+    // q6
+    Query<
+        'a,
+        (
+            &'a Icon,
+            &'a Name,
+            &'a Description,
+            &'a Inventory,
+            Option<&'a Color>,
+        ),
+    >,
 )>;
 
 pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsValue {
@@ -237,6 +261,21 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
                 "description": "Wall",
                 "icon": icon.0,
                 "color": color.map(|c|c.0.as_str())
+            }}
+        }
+        StuffTag::Shop => {
+            let q = query.q6();
+            let (icon, name, description, inventory, color) = q.fetch(id).unwrap();
+            json! {{
+                "id": id,
+                "tag": tag,
+                "icon": icon.0,
+                "color": color.map(|c|c.0.as_str()),
+                "name": name.0,
+                "color": color.map(|c|c.0.as_str()),
+                "description": description,
+                "icon": icon.0,
+                "targetable": true,
             }}
         }
         StuffTag::Gargoyle

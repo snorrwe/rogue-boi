@@ -579,6 +579,7 @@ fn update_player_world_interact(
         Option<&EquipmentType>,
         Has<NextLevel>,
         Option<&Name>,
+        Has<Shop>,
     )>,
     grid: Res<Grid<Stuff>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
@@ -594,12 +595,17 @@ fn update_player_world_interact(
     };
     if grid[pos.0] != Some(id) {
         let stuff_id = grid[pos.0].unwrap();
-        let (item_tag, equipment_ty, next_level_tag, name) = q_item.fetch(stuff_id).unwrap();
+        let (is_item, equipment_ty, is_next_level, name, is_shop) = q_item.fetch(stuff_id).unwrap();
         debug!(
-            id = tracing::field::display(stuff_id),
+            id = ?stuff_id,
+            is_item,
+            is_next_level,
+            is_shop,
+            ?name,
+            ?equipment_ty,
             "Interacting with entity"
         );
-        if item_tag {
+        if is_item {
             let mut equip = false;
             match equipment_ty {
                 Some(EquipmentType::Weapon) => {
@@ -631,9 +637,11 @@ fn update_player_world_interact(
                     }
                 },
             }
-        } else if next_level_tag {
+        } else if is_next_level {
             log.push(WHITE, "You descend the staircase");
             level.desired += 1;
+        } else if is_shop {
+            log.push(WHITE, "Enter shop");
         } else {
             debug!("Cant interact with {}", id);
         }
@@ -727,6 +735,7 @@ fn handle_player_move(
             | StuffTag::ConfusionScroll
             | StuffTag::FireBallScroll
             | StuffTag::Tombstone
+            | StuffTag::Shop
             | StuffTag::Stairs => {
                 grid_step(pos, new_pos, &mut grid);
             }

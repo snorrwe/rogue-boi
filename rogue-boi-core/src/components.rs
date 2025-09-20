@@ -245,6 +245,9 @@ pub struct LastPos(pub Vec2);
 #[derive(Debug, Clone, Copy)]
 pub struct StaticStuff;
 
+#[derive(Debug, Clone, Copy)]
+pub struct Shop;
+
 /// Holds the static stuff
 pub struct StaticGrid(pub Grid<Stuff>);
 

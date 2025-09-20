@@ -20,6 +20,7 @@ const ICONS: &[(&str, &str)] = &[
     ("minotaur", "lorc/minotaur.svg"),
     ("door", "delapouite/door.svg"),
     ("zombie", "delapouite/shambling-zombie.svg"),
+    ("shop", "delapouite/shop.svg"),
 ];
 
 #[derive(Deserialize)]
