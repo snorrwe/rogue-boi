@@ -641,7 +641,7 @@ fn update_player_world_interact(
             log.push(WHITE, "You descend the staircase");
             level.desired += 1;
         } else if is_shop {
-            log.push(WHITE, "Enter shop");
+            log.push(WHITE, "Enter the shop");
         } else {
             debug!("Cant interact with {}", id);
         }
