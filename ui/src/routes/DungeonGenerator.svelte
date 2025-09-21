@@ -23,7 +23,7 @@
   });
   // Debug ui for dungeon generation
   function regenerate({ dims, level }) {
-    dungeon = core.generate_dungeon({ level, dims: { x: dims[0], y: dims[1] } });
+    dungeon = core.generateDungeon({ level, dims: { x: dims[0], y: dims[1] } });
     tiles.length = 0;
     for (let y = 0; y < dims[1]; ++y) {
       for (let x = 0; x < dims[0]; ++x) {
@@ -33,8 +33,8 @@
   }
 </script>
 
-<div class=" m-auto max-w-[960px]">
-  <div>Debug tool to visualize the map generator's behaviour</div>
+<div class="m-auto max-w-[960px]">
+  <div class="mb-5">Debug tool to visualize the map generator's behaviour</div>
   <div>
     <form
       class="max-h-[20%]"

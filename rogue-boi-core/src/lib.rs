@@ -304,7 +304,8 @@ impl Core {
         self.tick(10000);
     }
 
-    /// Generate a dungoen without altering the world state
+    /// Generate a dungeon without altering the world state
+    #[wasm_bindgen(js_name = "generateDungeon")]
     pub fn generate_dungeon(&self, params: JsValue) -> JsValue {
         let params: Option<MapGenParams> =
             serde_wasm_bindgen::from_value(params).expect("Failed to deserialize params");
