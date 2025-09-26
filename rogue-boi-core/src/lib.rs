@@ -18,7 +18,7 @@ use crate::systems::{
     drop_item, handle_click, init_world_systems, regenerate_dungeon, update_output,
 };
 use base64::{Engine, engine::GeneralPurpose};
-use cecs::{persister::WorldSerializer, prelude::*};
+use cecs::{prelude::*, serde::WorldSerializer};
 use colors::WHITE;
 use components::*;
 use grid::Grid;
@@ -55,7 +55,7 @@ fn compute_icons() -> IconCollection {
 }
 
 fn get_world_persister() -> impl WorldSerializer {
-    let persister = cecs::persister::WorldPersister::new()
+    let persister = cecs::serde::WorldPersister::new()
         .with_resource::<WorldDims>()
         .with_resource::<GameTick>()
         .with_resource::<LogHistory>()

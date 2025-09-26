@@ -1,5 +1,5 @@
-use crate::components::*;
 use crate::HashMap;
+use crate::components::*;
 
 #[derive(Debug, Clone)]
 pub struct StuffPrototype {

@@ -3,7 +3,7 @@
 //!
 use std::collections::VecDeque;
 
-use crate::{grid::Grid, math::Vec2, HashMap, Stuff};
+use crate::{HashMap, Stuff, grid::Grid, math::Vec2};
 use cecs::entity_id::EntityId;
 use serde_derive::{Deserialize, Serialize};
 use smallvec::SmallVec;

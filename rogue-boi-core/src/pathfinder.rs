@@ -1,4 +1,4 @@
-use crate::{components::Walkable, grid::Grid, math::Vec2, HashMap, Stuff};
+use crate::{HashMap, Stuff, components::Walkable, grid::Grid, math::Vec2};
 use arrayvec::ArrayVec;
 use cecs::query::Query;
 use smallvec::SmallVec;

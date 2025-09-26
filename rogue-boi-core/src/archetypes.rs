@@ -4,11 +4,11 @@ use serde_json::json;
 use wasm_bindgen::JsValue;
 
 use crate::{
+    Stuff,
     components::*,
     game_config::{insert_default_components, insert_default_transient_components},
     grid::Grid,
     math::Vec2,
-    Stuff,
 };
 
 pub fn icon(key: &'static str) -> Icon {
@@ -29,8 +29,8 @@ pub fn usable(tag: StuffTag) -> bool {
 }
 
 pub fn register_persistent_components(
-    persister: impl cecs::persister::WorldSerializer,
-) -> impl cecs::persister::WorldSerializer {
+    persister: impl cecs::serde::WorldSerializer,
+) -> impl cecs::serde::WorldSerializer {
     persister
         .with_component::<StuffTag>()
         .with_component::<LastPos>()
