@@ -593,16 +593,20 @@ impl Core {
                 .context("world has no dims")?;
             init_world_transient_resources(dims.0, &mut world);
 
+            // commands need to be applied between systems, so run them one at a time instead of
+            // iun a SystemStage
             world
-                .run_stage(
-                    SystemStage::new("init-loaded-world")
-                        .with_system(archetypes::insert_transient_components)
-                        .with_system(systems::init_grids)
-                        .with_system(systems::update_camera_pos)
-                        .with_system(systems::update_fov),
-                )
-                .result
-                .context("Failed to initialize the loaded world")?;
+                .run_system(archetypes::insert_transient_components)
+                .context("Failed to insert transient components")?;
+            world
+                .run_system(systems::init_grids)
+                .context("Failed to init grids")?;
+            world
+                .run_system(systems::update_camera_pos)
+                .context("Failed to update camera")?;
+            world
+                .run_system(systems::update_fov)
+                .context("Failed to update fov")?;
             init_world_systems(&mut world);
 
             self.world.replace(world);
