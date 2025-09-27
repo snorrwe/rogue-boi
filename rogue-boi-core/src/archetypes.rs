@@ -49,6 +49,7 @@ pub fn register_persistent_components(
         .with_component::<Defense>()
         .with_component::<Poisoned>()
         .with_component::<CoinValue>()
+        .with_component::<CoinPouch>()
 }
 
 fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {
@@ -58,7 +59,7 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
             cmd.insert_bundle((NextLevel, StaticVisibility));
         }
         StuffTag::Player => {
-            cmd.insert_bundle((PlayerTag,));
+            cmd.insert_bundle((PlayerTag, CoinPouch(0)));
         }
         StuffTag::Wall => {
             cmd.insert_bundle((StaticStuff, Opaque, StaticVisibility));
