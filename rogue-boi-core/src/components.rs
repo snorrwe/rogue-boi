@@ -487,3 +487,7 @@ pub struct WardScroll;
 /// Mark this item for unequip in this tick
 #[derive(Debug, Clone, Copy)]
 pub struct Unequip;
+
+/// Monetary value of an entity
+#[derive(Debug, Clone, Copy, serde_derive::Serialize, serde_derive::Deserialize)]
+pub struct CoinValue(pub u16);
