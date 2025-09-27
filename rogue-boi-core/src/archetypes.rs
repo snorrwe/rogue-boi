@@ -48,6 +48,7 @@ pub fn register_persistent_components(
         .with_component::<Equipment>()
         .with_component::<Defense>()
         .with_component::<Poisoned>()
+        .with_component::<CoinValue>()
 }
 
 fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {
@@ -189,6 +190,7 @@ pub type StuffToJsQuery<'a> = QuerySet<(
             Option<&'a Color>,
             Option<&'a Defense>,
             Option<&'a EquipmentType>,
+            Option<&'a CoinValue>,
         ),
         With<Item>,
     >,
@@ -204,6 +206,7 @@ pub type StuffToJsQuery<'a> = QuerySet<(
             Option<&'a Description>,
             Option<&'a Color>,
             Option<&'a Defense>,
+            Option<&'a CoinValue>,
         ),
         With<Ai>,
     >,
@@ -295,7 +298,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
         | StuffTag::Zombie
         | StuffTag::Minotaur => {
             let q = query.q2();
-            let (icon, name, ranged, melee, hp, description, color, defense) = q.fetch(id).unwrap();
+            let (icon, name, ranged, melee, hp, description, color, defense, value) =
+                q.fetch(id).unwrap();
             json! {{
                 "id": id,
                 "name": name.0,
@@ -308,7 +312,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
                 "targetable": true,
                 "color": color.map(|c|c.0.as_str()),
                 "creature": true,
-                "defense": defense
+                "defense": defense,
+                "value": value,
             }}
         }
         StuffTag::HpPotion
@@ -324,7 +329,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
         | StuffTag::WardScroll
         | StuffTag::FireBallScroll => {
             let q = query.q1();
-            let (icon, name, desc, ranged, heal, melee, pos, color, defense, eq_ty) =
+            let (icon, name, desc, ranged, heal, melee, pos, color, defense, eq_ty, value) =
                 q.fetch(id).unwrap();
 
             let equipped = query
@@ -351,7 +356,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
                 "equipped": equipped,
                 "color": color.map(|c|c.0.as_str()),
                 "item": true,
-                "defense": defense
+                "defense": defense,
+                "value": value,
             }}
         }
     };

@@ -110,6 +110,7 @@ struct StuffDescription {
     ranged_range: Option<i32>,
     ranged_skill: Option<i32>,
     aoe: Option<u32>,
+    value: Option<u32>,
 }
 
 fn optional_stuff<T>(
@@ -198,6 +199,7 @@ fn stuff_descriptors(sheet: calamine::Range<calamine::Data>) -> String {
             row.aoe,
             &mut body,
         );
+        optional_stuff("value", |x| format!("CoinValue({x})"), row.value, &mut body);
         writeln!(body, "}}),").unwrap();
     }
 

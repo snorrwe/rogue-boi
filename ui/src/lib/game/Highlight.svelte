@@ -9,6 +9,7 @@
   $effect(() => {
     console.assert(icon != null, "Highlight icon not found", icon);
   });
+  $inspect(selected);
   let droppable = $derived(
     selected.item && !selected.equipped && $inventory.some((i) => i.id == selected.id)
   );
@@ -67,6 +68,12 @@
   <div>Ranged Power: {selected.ranged.power}</div>
   <div>Ranged Skill: {selected.ranged.skill}</div>
 {/if}
+{#if selected.value}
+  <div>Value: {selected.value} coins</div>
+{/if}
+
+<!-- buttons -->
+
 {#if selected.usable}
   <Button onclick={useItem(selected)}>Use</Button>
 {/if}
