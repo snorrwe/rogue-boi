@@ -89,7 +89,6 @@ fn init_world_transient_resources(world_dims: Vec2, world: &mut World) {
     world.insert_resource(TickInMs(100));
     world.insert_resource(AppMode::Game);
     world.insert_resource(TargetPos::default());
-    world.insert_resource(None::<DesiredStat>);
     world.insert_resource(PlayerId::default());
 }
 
@@ -621,7 +620,7 @@ impl Core {
     pub fn set_levelup_stat(&mut self, stat: JsValue) {
         let stat: DesiredStat = serde_wasm_bindgen::from_value(stat).unwrap();
         let mut w = self.world.borrow_mut();
-        w.insert_resource(Some(stat));
+        w.insert_resource(stat);
     }
 }
 

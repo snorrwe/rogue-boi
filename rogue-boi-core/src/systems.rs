@@ -1429,10 +1429,11 @@ pub fn regenerate_dungeon(mut access: WorldAccess) {
 
 fn handle_levelup(
     mut app_mode: ResMut<AppMode>,
-    mut stat: ResMut<Option<DesiredStat>>,
+    mut stat: Option<ResMut<DesiredStat>>,
     mut player_q: Query<(&mut Hp, &mut Melee, &mut Level, &mut Defense), With<PlayerTag>>,
     player_id: Res<PlayerId>,
     mut log: ResMut<LogHistory>,
+    mut cmd: Commands,
 ) {
     if let Some((hp, melee, level, defense)) = player_id.get_mut(&mut player_q) {
         if !level.needs_levelup() {
@@ -1441,6 +1442,7 @@ fn handle_levelup(
         match stat.take() {
             Some(stat) => {
                 debug_assert!(matches!(*app_mode, AppMode::Levelup));
+                cmd.remove_resource::<DesiredStat>();
                 level.levelup();
                 // player _might_ level up multiple times in a single tick
                 if level.needs_levelup() {
@@ -1450,7 +1452,7 @@ fn handle_levelup(
                 } else {
                     *app_mode = AppMode::Game;
                 }
-                match stat {
+                match &*stat {
                     DesiredStat::Attack => {
                         melee.power += 1;
                     }
