@@ -57,7 +57,7 @@ fn compute_icons() -> IconCollection {
 
 fn get_world_persister() -> impl WorldSerializer {
     let persister = cecs::serde::WorldPersister::new()
-        .with_version(cecs::serde::Version::new(1, 0, 0))
+        .with_version(cecs::serde::Version::new(2, 0, 0))
         .with_resource::<WorldDims>()
         .with_resource::<GameTick>()
         .with_resource::<LogHistory>()
