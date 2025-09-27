@@ -17,6 +17,7 @@ use std::{cell::RefCell, rc::Rc};
 use crate::systems::{
     drop_item, handle_click, init_world_systems, regenerate_dungeon, update_output,
 };
+use anyhow::Context as _;
 use base64::{Engine, engine::GeneralPurpose};
 use cecs::{prelude::*, serde::WorldSerializer};
 use colors::WHITE;
@@ -579,29 +580,37 @@ impl Core {
         encoded
     }
 
-    pub fn load(&mut self, pl: String) {
+    pub fn load(&mut self, pl: String) -> Result<(), JsValue> {
         debug!("• loading");
-        let pl = BASE64_ENGINE.decode(pl).expect("failed to b64 decode");
+        let result: anyhow::Result<()> = (|| {
+            let pl = BASE64_ENGINE.decode(pl).context("failed to b64 decode")?;
 
-        let WorldDe { mut world } =
-            ciborium::from_reader(pl.as_slice()).expect("failed to load world");
+            let WorldDe { mut world } =
+                ciborium::from_reader(pl.as_slice()).context("failed to load world")?;
 
-        let dims = *world
-            .get_resource::<WorldDims>()
-            .expect("world has no dims");
-        init_world_transient_resources(dims.0, &mut world);
+            let dims = *world
+                .get_resource::<WorldDims>()
+                .context("world has no dims")?;
+            init_world_transient_resources(dims.0, &mut world);
 
-        world
-            .run_system(archetypes::insert_transient_components)
-            .unwrap();
-        world.run_system(systems::init_grids).unwrap();
-        world.run_system(systems::update_camera_pos).unwrap();
-        world.run_system(systems::update_fov).unwrap();
-        init_world_systems(&mut world);
+            world
+                .run_stage(
+                    SystemStage::new("init-loaded-world")
+                        .with_system(archetypes::insert_transient_components)
+                        .with_system(systems::init_grids)
+                        .with_system(systems::update_camera_pos)
+                        .with_system(systems::update_fov),
+                )
+                .result
+                .context("Failed to initialize the loaded world")?;
+            init_world_systems(&mut world);
 
-        self.world.replace(world);
-        self.tick(10000);
-        debug!("✓ loading");
+            self.world.replace(world);
+            self.tick(0);
+            Ok(())
+        })();
+        debug!(?result, "✓ loading");
+        result.map_err(|err| err.to_string().into())
     }
 
     #[wasm_bindgen(js_name = "setLevelupStat")]
