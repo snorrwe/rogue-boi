@@ -586,6 +586,7 @@ fn update_player_world_interact(
     actions: Res<PlayerActions>,
     mut level: ResMut<DungeonFloor>,
     mut log: ResMut<LogHistory>,
+    mut app_mode: ResMut<AppMode>,
 ) {
     if !actions.interact() {
         return;
@@ -642,6 +643,7 @@ fn update_player_world_interact(
             level.desired += 1;
         } else if is_shop {
             log.push(WHITE, "Enter the shop");
+            *app_mode = AppMode::Shop;
         } else {
             debug!("Cant interact with {}", id);
         }
@@ -1399,7 +1401,7 @@ fn handle_targeting(
     target_pos: Res<TargetPos>,
 ) {
     match *mode {
-        AppMode::Levelup | AppMode::Game => {}
+        AppMode::Shop | AppMode::Levelup | AppMode::Game => {}
         AppMode::Targeting => {
             if actions.target().is_some() {
                 *mode = AppMode::Game;
