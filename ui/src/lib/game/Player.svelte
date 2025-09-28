@@ -11,7 +11,6 @@
   let alive = $derived(player != null);
   let {
     playerHp: hp,
-    playerPos: pos,
     playerAttack: attack,
     currentXp,
     neededXp,
