@@ -300,6 +300,7 @@ pub enum AppMode {
     Targeting,
     TargetingPosition,
     Levelup,
+    Shop,
 }
 
 #[derive(Default, Debug, Clone, Copy)]
