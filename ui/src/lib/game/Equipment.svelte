@@ -20,7 +20,7 @@
       </li>
     {/if}
     {#if weapon != null}
-      <li class="item" onclick={() => selectItem(weapon)} onkeypress={() => selectItem(armor)}>
+      <li class="item" onclick={() => selectItem(weapon)} onkeypress={() => selectItem(weapon)}>
         <div
           title={weapon.get("description")}
           style="--fill-color: {weapon.get('color') || 'white'}"
