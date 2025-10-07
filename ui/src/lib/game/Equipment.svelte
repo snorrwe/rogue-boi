@@ -13,14 +13,24 @@
   <h2 class="text-xl">Equipment</h2>
   <ul>
     {#if armor != null}
-      <li class="item" onclick={() => selectItem(armor)} onkeypress={() => selectItem(armor)}>
+      <li
+        role="menuitem"
+        class="item"
+        onclick={() => selectItem(armor)}
+        onkeypress={() => selectItem(armor)}
+      >
         <div title={armor.get("description")} style="--fill-color: {armor.get('color') || 'white'}">
           {@html $icons[armor.get("icon")]}
         </div>
       </li>
     {/if}
     {#if weapon != null}
-      <li class="item" onclick={() => selectItem(weapon)} onkeypress={() => selectItem(weapon)}>
+      <li
+        role="menuitem"
+        class="item"
+        onclick={() => selectItem(weapon)}
+        onkeypress={() => selectItem(weapon)}
+      >
         <div
           title={weapon.get("description")}
           style="--fill-color: {weapon.get('color') || 'white'}"
