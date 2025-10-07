@@ -13,6 +13,7 @@
   <ul class="grid grid-cols-5 auto-rows-[2.2em] list-none">
     {#each inventory as item}
       <li
+        role="menuitem"
         class="h-[2.2rem] w-[2.2rem] cursor-pointer"
         onkeyup={() => useItem(item)}
         onclick={() => useItem(item)}
