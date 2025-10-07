@@ -12,6 +12,7 @@
   let droppable = $derived(
     selected.item && !selected.equipped && $inventory.some((i) => i.id == selected.id)
   );
+  let unequippable = $derived(selected.equipped);
 
   const useItem = (item) => () => {
     core.useItem(item.id);
@@ -19,6 +20,10 @@
 
   const dropItem = (item) => () => {
     core.dropItem(item.id);
+  };
+
+  const unequipItem = (item) => () => {
+    core.unequipItem(item.id);
   };
 
   const target = (item) => () => {
@@ -70,6 +75,9 @@
 {/if}
 {#if droppable}
   <Button onclick={dropItem(selected)}>Drop</Button>
+{/if}
+{#if unequippable}
+  <Button onclick={unequipItem(selected)}>Unequip</Button>
 {/if}
 {#if selected.targetable && targetingMode}
   <Button onclick={target(selected)}>Target</Button>
