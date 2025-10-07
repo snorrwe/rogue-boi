@@ -360,6 +360,7 @@ fn update_unequip(
     player_id: Res<PlayerId>,
     item: Query<(EntityId, &EquipmentType, &Name), With<Unequip>>,
     mut log: ResMut<LogHistory>,
+    mut stats_query: Query<(&mut Melee, &mut Defense)>,
 ) {
     let Some((equipment, inventory, pos)) = player_id.get_mut(&mut player_query) else {
         return;
@@ -374,10 +375,21 @@ fn update_unequip(
             EquipmentType::Weapon => {
                 assert_eq!(Some(id), equipment.weapon);
                 equipment.weapon.take();
+                let mut q: Query<&mut Melee> = stats_query.subset();
+                let item_power = *q.fetch(id).unwrap();
+                let player_power = player_id.get_mut(&mut q).unwrap();
+
+                *player_power -= item_power;
             }
             EquipmentType::Armor => {
                 assert_eq!(Some(id), equipment.armor);
                 equipment.armor.take();
+
+                let mut q: Query<&mut Defense> = stats_query.subset();
+                let item_power = *q.fetch(id).unwrap();
+                let player_power = player_id.get_mut(&mut q).unwrap();
+
+                *player_power -= item_power;
             }
         }
 
