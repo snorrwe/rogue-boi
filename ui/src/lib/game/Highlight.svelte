@@ -9,7 +9,6 @@
   $effect(() => {
     console.assert(icon != null, "Highlight icon not found", icon);
   });
-  $inspect(selected);
   let droppable = $derived(
     selected.item && !selected.equipped && $inventory.some((i) => i.id == selected.id)
   );
