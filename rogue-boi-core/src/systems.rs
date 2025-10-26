@@ -9,7 +9,7 @@ use crate::{
     pathfinder::find_path,
 };
 use cecs::{commands::EntityCommands, prelude::*};
-use rand::{Rng, prelude::IndexedRandom};
+use rand::{Rng, prelude::IndexedRandom, seq::SliceRandom};
 use tracing::{debug, info, warn};
 
 pub fn init_world_systems(world: &mut World) {
@@ -361,6 +361,7 @@ fn update_unequip(
     item: Query<(EntityId, &EquipmentType, &Name), With<Unequip>>,
     mut log: ResMut<LogHistory>,
     mut stats_query: Query<(&mut Melee, &mut Defense)>,
+    grid: Res<Grid<Stuff>>,
 ) {
     let Some((equipment, inventory, pos)) = player_id.get_mut(&mut player_query) else {
         return;
@@ -394,16 +395,43 @@ fn update_unequip(
         }
 
         if inventory.add(id).is_err() {
-            drop_item(cmd, pos, name, &mut log);
+            perform_drop_item(cmd, pos, name, &mut log, &grid);
         }
     }
 }
 
-pub fn drop_item(cmd: &mut EntityCommands, pos: &Pos, Name(name): &Name, log: &mut LogHistory) {
-    // remove item from inventory and add a position
-    // TODO: random empty nearby position intead of the player's?
+/// Try to find a random neighbour that's onuccupied.
+/// Prefers closer tiles to diagonal tiles
+pub fn unoccupied_neightbour(pos: Vec2, grid: &Grid<Stuff>) -> Option<Vec2> {
+    let mut rng = rand::rng();
+    let mut n = pos.neighbours();
+    n.sort_unstable_by_key(|a| a.manhatten(pos));
+    n[0..4].shuffle(&mut rng);
+    for p in &n[0..4] {
+        if grid.is_free(p.x, p.y) {
+            return Some(*p);
+        }
+    }
+    n[4..].shuffle(&mut rng);
+    for p in &n[4..] {
+        if grid.is_free(p.x, p.y) {
+            return Some(*p);
+        }
+    }
+    None
+}
+
+pub fn perform_drop_item(
+    cmd: &mut EntityCommands,
+    pos: &Pos,
+    Name(name): &Name,
+    log: &mut LogHistory,
+    grid: &Grid<Stuff>,
+) {
+    // as a fallback, drop on self position if none was found
+    let drop_pos = unoccupied_neightbour(pos.0, grid).unwrap_or(pos.0);
     log.push(WHITE, format!("Drop {name}"));
-    cmd.insert(*pos);
+    cmd.insert(Pos(drop_pos));
 }
 
 fn update_consumable_use(

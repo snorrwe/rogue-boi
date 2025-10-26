@@ -15,7 +15,7 @@ mod utils;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::systems::{
-    drop_item, handle_click, init_world_systems, regenerate_dungeon, update_output,
+    handle_click, init_world_systems, perform_drop_item, regenerate_dungeon, update_output,
 };
 use anyhow::Context as _;
 use base64::{Engine, engine::GeneralPurpose};
@@ -438,13 +438,14 @@ impl Core {
                  mut q: Query<(&Pos, &mut Inventory), With<PlayerTag>>,
                  q_item: Query<&Name>,
                  mut log: ResMut<LogHistory>,
-                 mut actions: ResMut<PlayerActions>| {
+                 mut actions: ResMut<PlayerActions>,
+                 grid: Res<Grid<Stuff>>| {
                     // remove item from inventory and add a position
                     // TODO: random empty nearby position intead of the player's?
                     if let Some((pos, inv)) = q.single_mut() {
                         if let Some(item) = inv.remove(id) {
                             if let Some(name) = q_item.fetch(item) {
-                                drop_item(cmd.entity(id), pos, name, &mut log);
+                                perform_drop_item(cmd.entity(id), pos, name, &mut log, &grid);
                             }
                         }
                     }

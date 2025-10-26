@@ -65,6 +65,22 @@ impl Vec2 {
     pub fn dot(self, rhs: Vec2) -> i32 {
         self.x * rhs.x + self.y * rhs.y
     }
+
+    pub fn neighbours(&self) -> [Self; 8] {
+        let x = self.x;
+        let y = self.y;
+
+        [
+            Vec2::new(x - 1, y - 1),
+            Vec2::new(x, y - 1),
+            Vec2::new(x + 1, y - 1),
+            Vec2::new(x - 1, y),
+            Vec2::new(x + 1, y),
+            Vec2::new(x - 1, y + 1),
+            Vec2::new(x, y + 1),
+            Vec2::new(x + 1, y + 1),
+        ]
+    }
 }
 
 impl Add for Vec2 {

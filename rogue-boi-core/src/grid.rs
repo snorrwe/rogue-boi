@@ -132,6 +132,12 @@ impl<T: serde::Serialize> Grid<T> {
     }
 }
 
+impl Grid<crate::Stuff> {
+    pub fn is_free(&self, x: i32, y: i32) -> bool {
+        self.at(x, y).map(|x| x.is_none()).unwrap_or(false)
+    }
+}
+
 impl<T: serde::Serialize> Index<Vec2> for Grid<T> {
     type Output = T;
 
