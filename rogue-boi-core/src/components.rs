@@ -293,7 +293,7 @@ impl Default for LogHistory {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "ty")]
 pub enum AppMode {
     Game,

@@ -62,6 +62,11 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(update_fov),
     );
     world.add_stage(
+        SystemStage::new("shop_update")
+            .with_should_run(should_update_shop)
+            .with_system(update_shop),
+    );
+    world.add_stage(
         SystemStage::new("render")
             .with_system(perform_move)
             .with_system(update_output.after(perform_move))
@@ -678,6 +683,7 @@ fn handle_player_move(
     let Some(delta) = actions.move_action() else {
         return;
     };
+    debug!(?delta, "Handling player move");
     let Some((power, pos)) = player_id.get_mut(&mut player_q) else {
         return;
     };
@@ -1123,6 +1129,17 @@ fn update_tick(mut t: ResMut<GameTick>) {
 
 fn should_update_world(should_tick: Res<ShouldTick>, r: Res<ShouldUpdateWorld>) -> bool {
     r.0 && should_tick.0
+}
+
+fn should_update_shop(app_mode: Res<AppMode>, should_tick: Res<ShouldTick>) -> bool {
+    *app_mode == AppMode::Shop && should_tick.0
+}
+
+fn update_shop(q: Query<&Inventory, With<Shop>>) {
+    info!("hiii");
+    for inventory in q.iter() {
+        debug!(?inventory, "");
+    }
 }
 
 pub fn update_camera_pos(
