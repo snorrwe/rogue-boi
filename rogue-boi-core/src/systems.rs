@@ -23,12 +23,12 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(handle_levelup),
     );
     world.add_stage(
-        SystemStage::new("pre-update")
+        SystemStage::new("pre_update")
             .with_should_run(|should_tick: Res<ShouldTick>| should_tick.0)
             .with_system(record_last_pos),
     );
     world.add_stage(
-        SystemStage::new("player-update")
+        SystemStage::new("player_update")
             .with_should_run(should_update_player)
             .with_system(update_consumable_use)
             .with_system(handle_player_move)
@@ -49,7 +49,7 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(use_fireball),
     );
     world.add_stage(
-        SystemStage::new("ai-update")
+        SystemStage::new("ai_update")
             .with_should_run(should_update_world)
             .with_system(update_poison)
             .with_system(update_ai_hp)
@@ -69,13 +69,13 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(clean_inputs),
     );
     world.add_stage(
-        SystemStage::new("post-render")
+        SystemStage::new("post_render")
             .with_should_run(should_update_world)
             .with_system(clear_consumable)
             .with_system(update_tick),
     );
     world.add_stage(
-        SystemStage::new("dungeon-delve")
+        SystemStage::new("dungeon_delve")
             .with_should_run(|level: Res<DungeonFloor>| level.current != level.desired)
             .with_system(regenerate_dungeon),
     );
