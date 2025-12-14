@@ -15,7 +15,8 @@
     currentXp,
     neededXp,
     level,
-    defense
+    defense,
+    coins
   } = $derived(player ? player : {});
   let levelup = $derived(appMode && appMode.ty == "Levelup");
 
@@ -88,6 +89,7 @@
         midColorFg="white"
       />
     {/if}
+    <p>Coins: {coins}</p>
     <div class="my-2">
       <Button onclick={() => $coreStore.wait()}>Wait</Button>
     </div>

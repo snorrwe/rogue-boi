@@ -157,6 +157,7 @@ pub struct PlayerOutput {
     pub needed_xp: u32,
     pub level: u32,
     pub defense: Defense,
+    pub coins: CoinPouch,
 }
 
 #[derive(Debug, Default, Clone)]

@@ -1153,7 +1153,7 @@ pub fn update_camera_pos(
 }
 
 pub fn update_output(
-    q_player: Query<(&Pos, &Hp, &Melee, &Level, &Defense), With<PlayerTag>>,
+    q_player: Query<(&Pos, &Hp, &Melee, &Level, &Defense, &CoinPouch), With<PlayerTag>>,
     player_id: Res<PlayerId>,
     mut output_cache: ResMut<Output>,
     selected: Res<Selected>,
@@ -1165,7 +1165,7 @@ pub fn update_output(
 
     let player = player_id
         .get(&q_player)
-        .map(|(pos, hp, attack, level, defense)| PlayerOutput {
+        .map(|(pos, hp, attack, level, defense, pouch)| PlayerOutput {
             level: level.current_level,
             current_xp: level.current_xp,
             needed_xp: level.experience_to_next_level(),
@@ -1173,6 +1173,7 @@ pub fn update_output(
             player_attack: attack.power,
             player_pos: pos.0,
             defense: *defense,
+            coins: *pouch,
         });
     let mut log = Vec::with_capacity(128);
     for line in history.items.iter() {
