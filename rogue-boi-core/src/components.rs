@@ -7,6 +7,7 @@ use crate::{HashMap, Stuff, grid::Grid, math::Vec2};
 use cecs::entity_id::EntityId;
 use serde_derive::{Deserialize, Serialize};
 use smallvec::SmallVec;
+use tracing::debug;
 use wasm_bindgen::JsValue;
 
 // reexport generated tags
@@ -272,11 +273,10 @@ pub struct LogHistory {
 
 impl LogHistory {
     pub fn push(&mut self, color: &str, line: impl AsRef<str>) {
-        self.items.push_back(format!(
-            "<span style=\"color:{}\">{}</span>",
-            color,
-            line.as_ref()
-        ));
+        let line = line.as_ref();
+        debug!(color, line, "log");
+        self.items
+            .push_back(format!(r#"<span style="color:{}">{}</span>"#, color, line));
         while self.items.len() > self.capacity {
             self.items.pop_front();
         }
