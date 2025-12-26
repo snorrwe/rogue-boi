@@ -285,10 +285,10 @@ impl LogHistory {
 
 impl Default for LogHistory {
     fn default() -> Self {
-        let capacity = 20;
+        const CAPACITY: usize = 20;
         LogHistory {
-            items: VecDeque::with_capacity(capacity),
-            capacity,
+            items: VecDeque::with_capacity(CAPACITY),
+            capacity: CAPACITY,
         }
     }
 }
