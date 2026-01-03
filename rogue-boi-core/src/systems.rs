@@ -20,35 +20,37 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(update_should_tick)
             .with_system(handle_targeting)
             .with_system(player_prepare)
-            .with_system(handle_levelup),
+            .with_system(handle_levelup)
+            .with_nested_stage(
+                SystemStage::new("pre_update")
+                    .with_should_run(should_tick)
+                    .with_system(record_last_pos),
+            ),
     );
     world.add_stage(
-        SystemStage::new("pre_update")
+        SystemStage::new("update")
             .with_should_run(should_tick)
-            .with_system(record_last_pos),
-    );
-    world.add_stage(
-        SystemStage::new("player_update")
-            .with_should_run(should_tick)
-            .with_should_run(should_update_player)
-            .with_system(update_consumable_use)
-            .with_system(handle_player_move)
-            .with_system(update_player_world_interact)
-            .with_system(update_camera_pos)
-            .with_system(update_unequip)
-            .with_system(cmd_flush_system) // interact may insert a new equipment use
-            .with_system(update_equipment_use),
-    );
-    world.add_stage(
-        SystemStage::new("update_item_use")
-            .with_should_run(should_tick)
-            .with_should_run(should_update_item_use)
-            .with_system(use_poison_scroll)
-            .with_system(use_confusion_scroll)
-            .with_system(use_lightning_scroll)
-            .with_system(use_ward_scroll)
-            .with_system(use_hp_potion)
-            .with_system(use_fireball),
+            .with_nested_stage(
+                SystemStage::new("player_update")
+                    .with_should_run(should_update_player)
+                    .with_system(update_consumable_use)
+                    .with_system(handle_player_move)
+                    .with_system(update_player_world_interact)
+                    .with_system(update_camera_pos)
+                    .with_system(update_unequip)
+                    .with_system(cmd_flush_system) // interact may insert a new equipment use
+                    .with_system(update_equipment_use),
+            )
+            .with_nested_stage(
+                SystemStage::new("update_item_use")
+                    .with_should_run(should_update_item_use)
+                    .with_system(use_poison_scroll)
+                    .with_system(use_confusion_scroll)
+                    .with_system(use_lightning_scroll)
+                    .with_system(use_ward_scroll)
+                    .with_system(use_hp_potion)
+                    .with_system(use_fireball),
+            ),
     );
     world.add_stage(
         SystemStage::new("ai_update")
