@@ -24,9 +24,9 @@
   function uploadSave(e) {
     e.preventDefault();
     saveFiles[0].text().then((data) => {
-      coreStore.set(null);
+      coreStore.set(null); // ensure save is not overwritten by an existing game
       localStorage.setItem("save", data);
-      window.location.reload();
+      window.location.reload(); // force reloading the game state
     });
   }
 </script>
