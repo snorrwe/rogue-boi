@@ -38,7 +38,7 @@ pub fn init_world_systems(world: &mut World) {
                             .with_system(update_camera_pos)
                             .with_system(update_unequip)
                             .with_system(cmd_flush_system) // interact may insert a new equipment use
-                            .with_system(update_equipment_use),
+                            .with_system(update_equipment_use.after(cmd_flush_system)),
                     )
                     .with_nested_stage(
                         SystemStage::new("update_item_use")
@@ -53,9 +53,15 @@ pub fn init_world_systems(world: &mut World) {
             )
             .with_nested_stage(
                 SystemStage::new("shop_update")
-                    .with_should_run(should_update_shop)
-                    .with_system(update_shop)
-                    .with_system(clean_inputs),
+                    .with_should_run(is_shop)
+                    .with_system(leave_shop)
+                    .with_nested_stage(
+                        SystemStage::new("shop_update")
+                            .with_should_run(should_update_shop)
+                            .with_system(update_shop)
+                            .with_system(test_update_shop)
+                            .with_system(clean_inputs),
+                    ),
             ),
     );
     world.add_stage(
@@ -668,6 +674,12 @@ fn update_player_world_interact(
     }
 }
 
+fn leave_shop(q: Query<&(), (With<MarkActive>, With<Shop>)>, mut app_mode: ResMut<AppMode>) {
+    if q.is_empty() {
+        *app_mode = AppMode::Game;
+    }
+}
+
 fn compute_melee_damage(power: i32, defense: &mut Defense) -> i32 {
     debug!(?defense, ?power, "compute_melee_damage");
     if defense.ward > 0 {
@@ -1141,14 +1153,24 @@ fn should_update_world(r: Res<ShouldUpdateWorld>) -> bool {
     r.0
 }
 
-fn should_update_shop(app_mode: Res<AppMode>) -> bool {
-    *app_mode == AppMode::Shop
+fn should_update_shop(
+    app_mode: Res<AppMode>,
+    q: Query<&Inventory, (With<Shop>, With<MarkActive>)>,
+) -> bool {
+    *app_mode == AppMode::Shop && q.any()
 }
 
 fn update_shop(q: Query<&Inventory, (With<Shop>, With<MarkActive>)>) {
     info!("hiii");
     for inventory in q.iter() {
         debug!(?inventory, "");
+    }
+}
+
+fn test_update_shop(mut cmd: Commands, q: Query<EntityId, (With<Shop>, With<MarkActive>)>) {
+    info!("byeeee");
+    for id in q.iter() {
+        cmd.entity(id).remove::<MarkActive>();
     }
 }
 
@@ -1203,6 +1225,10 @@ pub fn update_output(
 
 fn is_ingame(app_mode: Res<AppMode>) -> bool {
     matches!(*app_mode, AppMode::Game)
+}
+
+fn is_shop(app_mode: Res<AppMode>) -> bool {
+    matches!(*app_mode, AppMode::Shop)
 }
 
 fn should_update_player(s: Res<ShouldUpdatePlayer>) -> bool {
