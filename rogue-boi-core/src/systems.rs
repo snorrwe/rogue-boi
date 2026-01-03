@@ -1400,16 +1400,18 @@ fn update_should_tick(
     actions: Res<PlayerActions>,
     tick_time: Res<TickInMs>,
     q_item_use: Query<&(), Or<With<UseItem>, With<Unequip>>>,
+    _app_mode: Res<AppMode>,
 ) {
     time.0 += dt.0;
     should_tick.0 = (!q_item_use.is_empty() || !actions.is_empty())
         && (time.0 >= tick_time.0 || tick_time.0.abs_diff(time.0) <= 5); // lag compensation
     if should_tick.0 {
         debug!(
-            "Running update after {} ms. Actions: {:?}. Has item use: {}",
+            "Running update after {} ms. Actions: {:?}. Has item use: {}. AppMode: {:?}",
             time.0,
             &*actions,
-            !q_item_use.is_empty()
+            !q_item_use.is_empty(),
+            *_app_mode
         );
         time.0 = 0;
     }
