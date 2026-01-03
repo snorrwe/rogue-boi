@@ -24,11 +24,12 @@ pub fn init_world_systems(world: &mut World) {
     );
     world.add_stage(
         SystemStage::new("pre_update")
-            .with_should_run(|should_tick: Res<ShouldTick>| should_tick.0)
+            .with_should_run(should_tick)
             .with_system(record_last_pos),
     );
     world.add_stage(
         SystemStage::new("player_update")
+            .with_should_run(should_tick)
             .with_should_run(should_update_player)
             .with_system(update_consumable_use)
             .with_system(handle_player_move)
@@ -40,6 +41,7 @@ pub fn init_world_systems(world: &mut World) {
     );
     world.add_stage(
         SystemStage::new("update_item_use")
+            .with_should_run(should_tick)
             .with_should_run(should_update_item_use)
             .with_system(use_poison_scroll)
             .with_system(use_confusion_scroll)
@@ -50,6 +52,7 @@ pub fn init_world_systems(world: &mut World) {
     );
     world.add_stage(
         SystemStage::new("ai_update")
+            .with_should_run(should_tick)
             .with_should_run(should_update_world)
             .with_system(update_poison)
             .with_system(update_ai_hp)
@@ -63,6 +66,7 @@ pub fn init_world_systems(world: &mut World) {
     );
     world.add_stage(
         SystemStage::new("shop_update")
+            .with_should_run(should_tick)
             .with_should_run(should_update_shop)
             .with_system(update_shop),
     );
@@ -75,6 +79,7 @@ pub fn init_world_systems(world: &mut World) {
     );
     world.add_stage(
         SystemStage::new("post_render")
+            .with_should_run(should_tick)
             .with_should_run(should_update_world)
             .with_system(clear_consumable)
             .with_system(update_tick),
@@ -84,6 +89,10 @@ pub fn init_world_systems(world: &mut World) {
             .with_should_run(|level: Res<DungeonFloor>| level.current != level.desired)
             .with_system(regenerate_dungeon),
     );
+}
+
+fn should_tick(should_tick: Res<ShouldTick>) -> bool {
+    should_tick.0
 }
 
 fn cmd_flush_system(mut w: WorldAccess) {
@@ -1127,12 +1136,12 @@ fn update_tick(mut t: ResMut<GameTick>) {
     t.0 += 1;
 }
 
-fn should_update_world(should_tick: Res<ShouldTick>, r: Res<ShouldUpdateWorld>) -> bool {
-    r.0 && should_tick.0
+fn should_update_world(r: Res<ShouldUpdateWorld>) -> bool {
+    r.0
 }
 
-fn should_update_shop(app_mode: Res<AppMode>, should_tick: Res<ShouldTick>) -> bool {
-    *app_mode == AppMode::Shop && should_tick.0
+fn should_update_shop(app_mode: Res<AppMode>) -> bool {
+    *app_mode == AppMode::Shop
 }
 
 fn update_shop(q: Query<&Inventory, With<Shop>>) {
@@ -1191,12 +1200,12 @@ pub fn update_output(
     output_cache.0 = serde_wasm_bindgen::to_value(&result).unwrap();
 }
 
-fn should_update_player(should_tick: Res<ShouldTick>, s: Res<ShouldUpdatePlayer>) -> bool {
-    s.0 && should_tick.0
+fn should_update_player(s: Res<ShouldUpdatePlayer>) -> bool {
+    s.0
 }
 
-fn should_update_item_use(should_tick: Res<ShouldTick>, s: Query<&(), With<MarkConsume>>) -> bool {
-    should_tick.0 && s.any()
+fn should_update_item_use(s: Query<&(), With<MarkConsume>>) -> bool {
+    s.any()
 }
 
 fn player_prepare(
