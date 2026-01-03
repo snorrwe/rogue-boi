@@ -46,6 +46,11 @@ pub fn init_world_systems(world: &mut World) {
                     .with_system(use_ward_scroll)
                     .with_system(use_hp_potion)
                     .with_system(use_fireball),
+            )
+            .with_nested_stage(
+                SystemStage::new("shop_update")
+                    .with_should_run(should_update_shop)
+                    .with_system(update_shop),
             ),
     );
     world.add_stage(
@@ -61,12 +66,6 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(update_player_hp)
             .with_system(update_grid)
             .with_system(update_fov),
-    );
-    world.add_stage(
-        SystemStage::new("shop_update")
-            .with_should_run(should_tick)
-            .with_should_run(should_update_shop)
-            .with_system(update_shop),
     );
     world.add_stage(
         SystemStage::new("render")
