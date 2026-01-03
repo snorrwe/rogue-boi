@@ -20,16 +20,12 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(update_should_tick)
             .with_system(handle_targeting)
             .with_system(player_prepare)
-            .with_system(handle_levelup)
-            .with_nested_stage(
-                SystemStage::new("pre_update")
-                    .with_should_run(should_tick)
-                    .with_system(record_last_pos),
-            ),
+            .with_system(handle_levelup),
     );
     world.add_stage(
         SystemStage::new("update")
             .with_should_run(should_tick)
+            .with_system(record_last_pos)
             .with_nested_stage(
                 SystemStage::new("player_update")
                     .with_should_run(should_update_player)
