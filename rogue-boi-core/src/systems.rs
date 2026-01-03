@@ -54,14 +54,10 @@ pub fn init_world_systems(world: &mut World) {
             .with_nested_stage(
                 SystemStage::new("shop_update")
                     .with_should_run(is_shop)
-                    .with_system(leave_shop)
-                    .with_nested_stage(
-                        SystemStage::new("shop_update")
-                            .with_should_run(should_update_shop)
-                            .with_system(update_shop)
-                            .with_system(test_update_shop)
-                            .with_system(clean_inputs),
-                    ),
+                    .with_should_run(should_update_shop)
+                    .with_system(update_shop)
+                    .with_system(test_update_shop)
+                    .with_system(clean_inputs),
             ),
     );
     world.add_stage(
@@ -89,9 +85,17 @@ pub fn init_world_systems(world: &mut World) {
     world.add_stage(
         SystemStage::new("post_render")
             .with_should_run(should_tick)
-            .with_should_run(should_update_world)
-            .with_system(clear_consumable)
-            .with_system(update_tick),
+            .with_nested_stage(
+                SystemStage::new("update_world")
+                    .with_should_run(should_update_world)
+                    .with_system(clear_consumable)
+                    .with_system(update_tick),
+            )
+            .with_nested_stage(
+                SystemStage::new("shop_update")
+                    .with_should_run(is_shop)
+                    .with_system(leave_shop),
+            ),
     );
     world.add_stage(
         SystemStage::new("dungeon_delve")
