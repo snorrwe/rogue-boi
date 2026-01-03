@@ -8,10 +8,21 @@
   }
 
   function downloadSave() {
-    const data = localStorage.getItem("save");
+    const str = localStorage.getItem("save");
+    let url = "data:text,null";
+    if (str) {
+      let binary = Buffer.from(str, "base64");
+      let bytes = new Uint8Array(binary.length);
 
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+
+      const blob = new Blob([bytes], { type: "application/octet-stream" });
+      url = URL.createObjectURL(blob);
+    }
     let link = document.createElement("a");
-    link.href = `data:text,${data}`;
+    link.href = url;
     link.download = "rogueBoi.save";
     document.body.appendChild(link);
     link.click();
@@ -23,9 +34,9 @@
 
   function uploadSave(e) {
     e.preventDefault();
-    saveFiles[0].text().then((data) => {
+    saveFiles[0].bytes().then((data) => {
       coreStore.set(null); // ensure save is not overwritten by an existing game
-      localStorage.setItem("save", data);
+      localStorage.setItem("save", data.toString("base64"));
       window.location.reload(); // force reloading the game state
     });
   }
