@@ -1426,7 +1426,9 @@ fn handle_targeting(
     target_pos: Res<TargetPos>,
 ) {
     match *mode {
-        AppMode::Shop | AppMode::Levelup | AppMode::Game => {}
+        AppMode::Shop | AppMode::Levelup | AppMode::Game => {
+            return;
+        }
         AppMode::Targeting => {
             if actions.target().is_some() {
                 *mode = AppMode::Game;
