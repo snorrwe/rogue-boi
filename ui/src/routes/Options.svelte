@@ -17,9 +17,27 @@
     link.click();
     document.body.removeChild(link);
   }
+
+  /** @type{FileList} */
+  let saveFiles;
+
+  function uploadSave(e) {
+    e.preventDefault();
+    saveFiles[0].text().then((data) => {
+      coreStore.set(null);
+      localStorage.setItem("save", data);
+      window.location.reload();
+    });
+  }
 </script>
 
 <button class="bg-red-800 my-2 p-2 rounded-2xl" onclick={clearSave}>Clear save game</button>
-<button class="bg-amber-900 my-2 p-2 rounded-2xl" onclick={downloadSave}
+<button class="bg-green-900 my-2 p-2 rounded-2xl" onclick={downloadSave}
   >Download the current save file</button
 >
+
+<form class="my-4 p-2" onsubmit={uploadSave}>
+  <h2 class="text-xl">Upload save file</h2>
+  <input class="bg-yellow-600 p-2 rounded-2xl" type="file" required bind:files={saveFiles} />
+  <input type="submit" class="bg-green-800 p-2 rounded-2xl" value="Upload" />
+</form>
