@@ -160,7 +160,7 @@ fn clear_consumable(
 fn use_poison_scroll(
     mut cmd: Commands,
     mut target_query: Query<(Option<&mut Poisoned>, Option<&Name>)>,
-    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkConsume>, With<PoisionAttack>)>,
+    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkActive>, With<PoisionAttack>)>,
     mut log: ResMut<LogHistory>,
     mut should_run: ResMut<ShouldUpdateWorld>,
 ) {
@@ -199,7 +199,7 @@ fn use_hp_potion(
     mut cmd: Commands,
     mut player_query: Query<&mut Hp, With<PlayerTag>>,
     player_id: Res<PlayerId>,
-    item_query: Query<(EntityId, &Heal), With<MarkConsume>>,
+    item_query: Query<(EntityId, &Heal), With<MarkActive>>,
     mut log: ResMut<LogHistory>,
 ) {
     let Some(hp) = player_id.get_mut(&mut player_query) else {
@@ -219,7 +219,7 @@ fn use_hp_potion(
 
 fn use_confusion_scroll(
     mut cmd: Commands,
-    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkConsume>, With<ConfusionBolt>)>,
+    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkActive>, With<ConfusionBolt>)>,
     mut target_query: Query<(Option<&mut ConfusedAi>, Option<&Name>)>,
     mut log: ResMut<LogHistory>,
     mut should_run: ResMut<ShouldUpdateWorld>,
@@ -258,7 +258,7 @@ fn use_confusion_scroll(
 
 fn use_ward_scroll(
     mut cmd: Commands,
-    item_query: Query<(EntityId, &Ranged), (With<MarkConsume>, With<WardScroll>)>,
+    item_query: Query<(EntityId, &Ranged), (With<MarkActive>, With<WardScroll>)>,
     mut player_query: Query<&mut Defense, With<PlayerTag>>,
     player_id: Res<PlayerId>,
     mut log: ResMut<LogHistory>,
@@ -281,7 +281,7 @@ fn use_ward_scroll(
 
 fn use_lightning_scroll(
     mut cmd: Commands,
-    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkConsume>, With<LightningBolt>)>,
+    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkActive>, With<LightningBolt>)>,
     mut target_query: Query<(&mut Hp, Option<&Name>)>,
     mut log: ResMut<LogHistory>,
     mut should_run: ResMut<ShouldUpdateWorld>,
@@ -316,10 +316,7 @@ fn use_lightning_scroll(
 
 fn use_fireball(
     mut cmd: Commands,
-    item_query: Query<
-        (EntityId, &Ranged, &Aoe, &TargetingPos),
-        (With<MarkConsume>, With<FireBall>),
-    >,
+    item_query: Query<(EntityId, &Ranged, &Aoe, &TargetingPos), (With<MarkActive>, With<FireBall>)>,
     mut target_query: Query<(&mut Hp, Option<&Name>)>,
     mut log: ResMut<LogHistory>,
     mut should_run: ResMut<ShouldUpdateWorld>,
@@ -497,7 +494,7 @@ fn update_consumable_use(
                 }
 
                 cmd.entity(id)
-                    .insert_bundle((MarkConsume, Targeting(target_id)));
+                    .insert_bundle((MarkActive, Targeting(target_id)));
             }
         }
     }
@@ -511,7 +508,7 @@ fn update_consumable_use(
                     return;
                 }
                 cmd.entity(id).insert_bundle((
-                    MarkConsume,
+                    MarkActive,
                     TargetingPos {
                         src: player_pos.0,
                         dst: target_pos,
@@ -527,7 +524,7 @@ fn update_consumable_use(
         }
     }
     for id in q.q2().iter() {
-        cmd.entity(id).insert(MarkConsume);
+        cmd.entity(id).insert(MarkActive);
     }
 }
 
@@ -655,6 +652,7 @@ fn update_player_world_interact(
         } else if is_shop {
             log.push(WHITE, "Enter the shop");
             *app_mode = AppMode::Shop;
+            cmd.entity(stuff_id).insert(MarkActive);
         } else {
             debug!("Cant interact with {}", id);
         }
@@ -1141,7 +1139,7 @@ fn should_update_shop(app_mode: Res<AppMode>) -> bool {
     *app_mode == AppMode::Shop
 }
 
-fn update_shop(q: Query<&Inventory, With<Shop>>) {
+fn update_shop(q: Query<&Inventory, (With<Shop>, With<MarkActive>)>) {
     info!("hiii");
     for inventory in q.iter() {
         debug!(?inventory, "");
@@ -1201,7 +1199,7 @@ fn should_update_player(s: Res<ShouldUpdatePlayer>) -> bool {
     s.0
 }
 
-fn should_update_item_use(s: Query<&(), With<MarkConsume>>) -> bool {
+fn should_update_item_use(s: Query<&(), With<MarkActive>>) -> bool {
     s.any()
 }
 

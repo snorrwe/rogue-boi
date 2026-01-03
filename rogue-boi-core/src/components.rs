@@ -451,9 +451,9 @@ pub struct Poisoned {
 #[derive(Debug, Clone, Copy)]
 pub struct ClearInventoryItem;
 
-/// Mark item for consumtion
+/// Mark entity as active. E.g. for items: it is being used
 #[derive(Debug, Clone, Copy)]
-pub struct MarkConsume;
+pub struct MarkActive;
 
 #[derive(Debug, Clone, Copy)]
 pub struct PoisionAttack;
