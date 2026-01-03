@@ -1235,7 +1235,7 @@ fn should_update_player(s: Res<ShouldUpdatePlayer>) -> bool {
     s.0
 }
 
-fn should_update_item_use(s: Query<&(), With<MarkActive>>) -> bool {
+fn should_update_item_use(s: Query<&(), (With<MarkActive>, With<Item>)>) -> bool {
     s.any()
 }
 
