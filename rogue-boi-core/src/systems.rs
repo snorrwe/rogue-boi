@@ -18,7 +18,7 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(set_player_id)
             .with_system(update_input_events)
             .with_system(update_should_tick)
-            .with_system(handle_targeting)
+            .with_system(handle_targeting.after(update_should_tick))
             .with_system(player_prepare)
             .with_system(handle_levelup),
     );
