@@ -8,7 +8,9 @@ use crate::{
     game_config::{ENEMY_CHANCES, ITEM_CHANCES, ROOM_CHANCES, RoomKind},
 };
 use cecs::prelude::*;
-use rand::{Rng, distr::weighted::WeightedIndex, prelude::Distribution, seq::IndexedRandom as _};
+use rand::{
+    RngExt, distr::weighted::WeightedIndex, prelude::Distribution, seq::IndexedRandom as _,
+};
 use tracing::debug;
 
 use crate::{
@@ -112,7 +114,7 @@ impl EntityChances {
 
 /// return number of monsters placed
 fn place_entities(
-    rng: &mut impl Rng,
+    rng: &mut impl RngExt,
     grid: &mut Grid<Option<StuffTag>>,
     room: &RectRoom,
     max_monsters: u32,
@@ -138,7 +140,7 @@ fn place_entities(
     n_monsters
 }
 
-fn place_stairs(rng: &mut impl Rng, grid: &mut Grid<Option<StuffTag>>, room: &RectRoom) {
+fn place_stairs(rng: &mut impl RngExt, grid: &mut Grid<Option<StuffTag>>, room: &RectRoom) {
     loop {
         let x = rng.random_range(room.min.x + 1..room.max.x + 1);
         let y = rng.random_range(room.min.y + 1..room.max.y + 1);
@@ -152,7 +154,7 @@ fn place_stairs(rng: &mut impl Rng, grid: &mut Grid<Option<StuffTag>>, room: &Re
     }
 }
 
-fn place_shop(rng: &mut impl Rng, grid: &mut Grid<Option<StuffTag>>, room: &RectRoom) {
+fn place_shop(rng: &mut impl RngExt, grid: &mut Grid<Option<StuffTag>>, room: &RectRoom) {
     loop {
         let x = rng.random_range(room.min.x + 1..room.max.x + 1);
         let y = rng.random_range(room.min.y + 1..room.max.y + 1);
@@ -167,7 +169,7 @@ fn place_shop(rng: &mut impl Rng, grid: &mut Grid<Option<StuffTag>>, room: &Rect
 }
 
 fn place_items(
-    rng: &mut impl Rng,
+    rng: &mut impl RngExt,
     grid: &mut Grid<Option<StuffTag>>,
     room: &RectRoom,
     min_items: u32,
@@ -320,7 +322,11 @@ fn adjacency_set(matrix: &mut Grid<i8>, i: i32, j: i32, val: i8) {
     matrix[Vec2::new(j, i)] = val;
 }
 
-fn assign_rooms_roles(mut rng: impl Rng, entity_weights: &EntityChances, rooms: &mut [RectRoom]) {
+fn assign_rooms_roles(
+    mut rng: impl RngExt,
+    entity_weights: &EntityChances,
+    rooms: &mut [RectRoom],
+) {
     let room_kind_dist = WeightedIndex::new(&entity_weights.room_weights[..]).unwrap();
 
     let mut room_max = HashMap::<RoomKind, usize>::default();
@@ -512,7 +518,7 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
     place_stairs(&mut rng, grid, end_room);
 }
 
-fn tunnel_between(mut rng: impl Rng, start: Vec2, end: Vec2) -> TunnelIter {
+fn tunnel_between(mut rng: impl RngExt, start: Vec2, end: Vec2) -> TunnelIter {
     let Vec2 { x: x1, y: y1 } = start;
     let Vec2 { x: x2, y: y2 } = end;
 

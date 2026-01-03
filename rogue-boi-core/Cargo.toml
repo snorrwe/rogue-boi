@@ -12,7 +12,7 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-cecs = { git = "https://github.com/caolo-game/cecs", default-features = false, features = [
+cecs = { git = "https://github.com/snorrwe/cecs", default-features = false, features = [
     "serde",
 ] }
 rand = { version = "0.9.1", features = [] }
@@ -50,7 +50,7 @@ anyhow = "1.0.100"
 wasm-bindgen-test = "0.3.50"
 
 [build-dependencies]
-calamine = "0.30.0"
+calamine = "0.32.0"
 itertools = "0.14.0"
 serde = { version = "1.0.219" }
 serde_derive = { version = "1.0.219" }

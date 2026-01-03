@@ -9,7 +9,7 @@ use crate::{
     pathfinder::find_path,
 };
 use cecs::{commands::EntityCommands, prelude::*};
-use rand::{Rng, prelude::IndexedRandom, seq::SliceRandom};
+use rand::{RngExt, prelude::IndexedRandom, seq::SliceRandom};
 use tracing::{debug, info, warn};
 
 pub fn init_world_systems(world: &mut World) {
