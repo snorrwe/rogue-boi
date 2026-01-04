@@ -11,13 +11,8 @@
     const str = localStorage.getItem("save");
     let url = "data:text,null";
     if (str) {
-      let binary = Buffer.from(str, "base64");
-      let bytes = new Uint8Array(binary.length);
-
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-
+      const binString = atob(str);
+      const bytes = Uint8Array.from(binString, (m) => m.codePointAt(0));
       const blob = new Blob([bytes], { type: "application/octet-stream" });
       url = URL.createObjectURL(blob);
     }
@@ -35,8 +30,11 @@
   function uploadSave(e) {
     e.preventDefault();
     saveFiles[0].bytes().then((data) => {
+      const binStr = Array.from(data, (d) => String.fromCodePoint(d)).join("");
+      const base64 = btoa(binStr);
+
       coreStore.set(null); // ensure save is not overwritten by an existing game
-      localStorage.setItem("save", data.toString("base64"));
+      localStorage.setItem("save", base64);
       window.location.reload(); // force reloading the game state
     });
   }

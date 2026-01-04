@@ -259,7 +259,8 @@ fn to_item_desc(id: EntityId, i: ItemPropsTuple) -> ItemDesc {
     }
 }
 
-const BASE64_ENGINE: GeneralPurpose = base64::engine::general_purpose::STANDARD_NO_PAD;
+// the engine has to be able to load browser-encoded data as well
+const BASE64_ENGINE: GeneralPurpose = base64::engine::general_purpose::STANDARD;
 
 #[derive(serde::Deserialize)]
 pub struct MapGenParams {
