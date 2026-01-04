@@ -47,6 +47,12 @@
 
 <form class="my-4 p-2" onsubmit={uploadSave}>
   <h2 class="text-xl">Upload save file</h2>
-  <input class="bg-yellow-600 p-2 rounded-2xl" type="file" required bind:files={saveFiles} />
-  <input type="submit" class="bg-green-800 p-2 rounded-2xl" value="Upload" />
+  <input
+    name="save-file"
+    class="bg-yellow-600 p-2 rounded-2xl"
+    type="file"
+    required
+    bind:files={saveFiles}
+  />
+  <input name="submit-save" type="submit" class="bg-green-800 p-2 rounded-2xl" value="Upload" />
 </form>
