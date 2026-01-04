@@ -29,14 +29,19 @@
 
   function uploadSave(e) {
     e.preventDefault();
-    saveFiles[0].bytes().then((data) => {
+
+    const reader = new FileReader();
+    reader.onload = function () {
+      const data = new Uint8Array(this.result);
       const binStr = Array.from(data, (d) => String.fromCodePoint(d)).join("");
       const base64 = btoa(binStr);
 
       coreStore.set(null); // ensure save is not overwritten by an existing game
       localStorage.setItem("save", base64);
       window.location.reload(); // force reloading the game state
-    });
+    };
+
+    reader.readAsArrayBuffer(saveFiles[0]);
   }
 </script>
 
