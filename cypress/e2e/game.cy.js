@@ -47,7 +47,8 @@ describe("shop tests", () => {
             .should("be.visible")
             .attachFile("shop.save", { force: true });
         cy.get('input[name="submit-save"]').should("be.visible").click();
-        cy.visit("/#game");
+        cy.visit("/");
+        cy.get('a[href="#game"]').should("be.visible").click();
     });
 
     it("some shop test here", () => { });
