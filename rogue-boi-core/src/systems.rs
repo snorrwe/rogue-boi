@@ -56,8 +56,7 @@ pub fn init_world_systems(world: &mut World) {
                     .with_should_run(is_shop)
                     .with_should_run(should_update_shop)
                     .with_system(update_shop)
-                    .with_system(test_update_shop)
-                    .with_system(clean_inputs),
+                    .with_system(test_update_shop),
             ),
     );
     world.add_stage(
@@ -94,6 +93,7 @@ pub fn init_world_systems(world: &mut World) {
             .with_nested_stage(
                 SystemStage::new("shop_update")
                     .with_should_run(is_shop)
+                    .with_system(clean_inputs)
                     .with_system(leave_shop),
             ),
     );
