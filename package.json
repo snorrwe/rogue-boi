@@ -21,8 +21,7 @@
   },
   "devDependencies": {
     "concurrently": "^6.3.0",
-    "cypress": "^13.3.0",
-    "cypress-file-upload": "^5.0.8"
+    "cypress": "^13.3.0"
   },
   "type": "module"
 }
