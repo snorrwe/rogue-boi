@@ -43,12 +43,22 @@ describe("basic game tests", () => {
 describe("shop tests", () => {
     beforeEach(() => {
         cy.visit("/#options");
-        cy.get('input[type="file"]')
-            .should("be.visible")
-            .attachFile("shop.save", { force: true });
-        cy.get('input[name="submit-save"]').should("be.visible").click();
-        cy.visit("/");
-        cy.get('a[href="#game"]').should("be.visible").click();
+
+        cy.fixture("shop.save", "base64")
+            .then(Cypress.Blob.binaryStringtoBlob)
+            .then((saveFile) => {
+                cy.get('input[type="file"]').should("be.visible").attachFile({
+                    fileContent: saveFile,
+                    filePath: "savefile",
+                    mimeType: "application/octet-stream",
+                    encoding: "base64",
+                    lastModified: new Date().getTime(),
+                    force: true,
+                });
+                cy.get('input[name="submit-save"]').should("be.visible").click();
+                cy.visit("/");
+                cy.get('a[href="#game"]').should("be.visible").click();
+            });
     });
 
     it("some shop test here", () => { });
