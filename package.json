@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "concurrently": "^6.3.0",
-    "cypress": "^13.3.0"
+    "cypress": "^15"
   },
   "type": "module"
 }
