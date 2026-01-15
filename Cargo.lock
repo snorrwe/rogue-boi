@@ -190,7 +190,7 @@ dependencies = [
 [[package]]
 name = "cecs"
 version = "0.1.8"
-source = "git+https://github.com/snorrwe/cecs#276f5590db2d08759f85a89dab0bcaf1249cb65d"
+source = "git+https://github.com/snorrwe/cecs#1bc50fe7b610c98f39ab543682f0d4d73c560e01"
 dependencies = [
  "cfg-if",
  "rustc-hash",
