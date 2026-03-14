@@ -246,8 +246,25 @@ pub struct LastPos(pub Vec2);
 #[derive(Debug, Clone, Copy)]
 pub struct StaticStuff;
 
-#[derive(Debug, Clone, Copy)]
-pub struct Shop;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Shop {
+    pub items: Box<[Option<ShopEntry>]>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShopEntry {
+    pub tag: StuffTag,
+    pub cost: u16,
+}
+
+impl Shop {
+    pub fn new(capacity: usize) -> Self {
+        let items = vec![None; capacity];
+        Self {
+            items: items.into_boxed_slice(),
+        }
+    }
+}
 
 /// Holds the static stuff
 pub struct StaticGrid(pub Grid<Stuff>);

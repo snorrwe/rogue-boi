@@ -152,7 +152,7 @@ pub struct RenderedOutput<'a> {
 #[serde(rename_all = "camelCase")]
 pub struct ShopOutput<'a> {
     pub id: EntityId,
-    pub inventory: &'a Inventory,
+    pub inventory: &'a Shop,
 }
 
 #[derive(serde::Serialize)]

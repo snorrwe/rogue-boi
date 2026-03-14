@@ -5,6 +5,7 @@ use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
 use crate::{
     HashMap,
+    components::{Shop, ShopEntry},
     game_config::{ENEMY_CHANCES, ITEM_CHANCES, ROOM_CHANCES, RoomKind},
 };
 use cecs::prelude::*;
@@ -202,6 +203,7 @@ pub fn generate_map(
     dims: Res<WorldDims>,
     floor: Res<DungeonFloor>,
 ) {
+    let mut rng = rand::rng();
     // player may or may not exist at this point
     let player_id = player_q.iter().next();
     for (_p, stuff) in grid.iter_mut() {
@@ -234,6 +236,27 @@ pub fn generate_map(
                     grid[pos] = Some(player_id);
                 } else {
                     init_entity(pos, tag, &mut cmd, &mut grid);
+                }
+            }
+            StuffTag::Shop => {
+                init_entity(pos, tag, &mut cmd, &mut grid);
+                // TODO: size based on level / random?
+                let mut shop = Shop::new(8);
+                // TODO: choose based on level, config
+                let items = ITEM_CHANCES
+                    .iter()
+                    .take_while(|(key, _)| key <= &floor.current)
+                    .flat_map(|(_, t)| t.iter().map(|(x, _)| *x))
+                    .collect::<Vec<_>>();
+                for slot in shop.items.iter_mut() {
+                    if rng.random_bool(0.8) {
+                        let tag = *items.choose(&mut rng).unwrap();
+                        // TODO: price from config file
+                        *slot = Some(ShopEntry {
+                            tag,
+                            cost: rng.random_range(10..=50),
+                        });
+                    }
                 }
             }
             StuffTag::Wall => {

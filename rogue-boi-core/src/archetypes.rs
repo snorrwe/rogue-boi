@@ -50,6 +50,7 @@ pub fn register_persistent_components(
         .with_component::<Poisoned>()
         .with_component::<CoinValue>()
         .with_component::<CoinPouch>()
+        .with_component::<Shop>()
 }
 
 fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {
@@ -72,7 +73,7 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
         }
         StuffTag::Shop => {
             // not StaticStuff, because StaticStuff can not be interacted with
-            cmd.insert_bundle((Shop, StaticVisibility));
+            cmd.insert_bundle((StaticVisibility,));
         }
         StuffTag::Gargoyle
         | StuffTag::Troll
@@ -129,8 +130,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         StuffTag::Stairs => {}
         StuffTag::Tombstone => {}
         StuffTag::Shop => {
-            cmd.insert_bundle((Inventory::new(8),));
-            // TODO: init inventory
+            cmd.insert_bundle((Shop::new(8),));
         }
         StuffTag::Player => {
             cmd.insert_bundle((

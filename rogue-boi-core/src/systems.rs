@@ -1164,12 +1164,12 @@ fn should_update_world(r: Res<ShouldUpdateWorld>) -> bool {
 
 fn should_update_shop(
     app_mode: Res<AppMode>,
-    q: Query<&Inventory, (With<Shop>, With<MarkActive>)>,
+    q: Query<&(), (With<Shop>, With<MarkActive>)>,
 ) -> bool {
     *app_mode == AppMode::Shop && q.any()
 }
 
-fn update_shop(q: Query<&Inventory, (With<Shop>, With<MarkActive>)>) {
+fn update_shop(q: Query<&Shop, With<MarkActive>>) {
     info!("hiii");
     for inventory in q.iter() {
         debug!(?inventory, "");
@@ -1201,7 +1201,7 @@ pub fn update_output(
     history: Res<LogHistory>,
     app_mode: Res<AppMode>,
     dungeon_level: Res<DungeonFloor>,
-    q_shop: Query<(EntityId, &Inventory), (With<Shop>, With<MarkActive>)>,
+    q_shop: Query<(EntityId, &Shop), With<MarkActive>>,
 ) {
     let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
 
