@@ -13,6 +13,7 @@
   import Log from "@rogueBoi/game/Log.svelte";
   import Player from "@rogueBoi/game/Player.svelte";
   import Help from "@rogueBoi/game/Help.svelte";
+  import Shop from "@rogueBoi/game/Shop.svelte";
 
   let core = $state();
   coreStore.subscribe((c) => (core = c));
@@ -55,6 +56,8 @@
     }, 30000);
     return () => clearInterval(autoSaveHandle);
   });
+
+  let appMode = $derived($coreOutput?.appMode?.ty);
 </script>
 
 <svelte:window onkeydown={onKey} />
@@ -76,10 +79,17 @@
         </div>
       </div>
 
-      <div class="min-w-106.5 min-h-106.5">
-        <div>Dungeon floor: {$coreOutput.dungeonLevel}</div>
-        <Grid />
-      </div>
+      {#if appMode === "Game"}
+        <div class="min-w-106.5 min-h-106.5">
+          <div>Dungeon floor: {$coreOutput.dungeonLevel}</div>
+          <Grid />
+        </div>
+      {/if}
+      {#if appMode === "Shop"}
+        <div class="min-w-106.5 min-h-106.5">
+          <Shop />
+        </div>
+      {/if}
 
       <div class="max-h-full overflow-auto">
         <h2 class="text-xl">Log</h2>
