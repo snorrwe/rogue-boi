@@ -1,5 +1,5 @@
 use crate::{
-    InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff,
+    InputEvent, PlayerActions, PlayerOutput, RenderedOutput, ShopOutput, Stuff,
     archetypes::icon,
     colors::*,
     components::*,
@@ -1201,6 +1201,7 @@ pub fn update_output(
     history: Res<LogHistory>,
     app_mode: Res<AppMode>,
     dungeon_level: Res<DungeonFloor>,
+    q_shop: Query<(EntityId, &Inventory), (With<Shop>, With<MarkActive>)>,
 ) {
     let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
 
@@ -1218,9 +1219,17 @@ pub fn update_output(
         });
     let mut log = Vec::with_capacity(128);
     for line in history.items.iter() {
-        log.push(line.clone());
+        log.push(line.as_str());
     }
     let targeting = matches!(*app_mode, AppMode::Targeting);
+
+    let mut shop = None;
+    if matches!(*app_mode, AppMode::Shop) {
+        shop = q_shop
+            .single()
+            .map(|(id, inventory)| ShopOutput { id, inventory });
+    }
+
     let result = RenderedOutput {
         dungeon_level: dungeon_level.current,
         app_mode: *app_mode,
@@ -1228,6 +1237,7 @@ pub fn update_output(
         log,
         selected: selected.0,
         targeting,
+        shop,
     };
     output_cache.0 = serde_wasm_bindgen::to_value(&result).unwrap();
 }

@@ -138,13 +138,21 @@ pub enum InputEvent {
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RenderedOutput {
+pub struct RenderedOutput<'a> {
     pub selected: Option<EntityId>,
     pub player: Option<PlayerOutput>,
-    pub log: Vec<String>,
+    pub log: Vec<&'a str>,
     pub targeting: bool,
     pub dungeon_level: u32,
     pub app_mode: AppMode,
+    pub shop: Option<ShopOutput<'a>>,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ShopOutput<'a> {
+    pub id: EntityId,
+    pub inventory: &'a Inventory,
 }
 
 #[derive(serde::Serialize)]
