@@ -148,11 +148,20 @@ pub struct RenderedOutput<'a> {
     pub shop: Option<ShopOutput<'a>>,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ShopOutput<'a> {
     pub id: EntityId,
-    pub inventory: &'a Shop,
+    pub inventory: Vec<Option<ShopEntryOutput<'a>>>,
+}
+
+#[derive(Debug, Clone, serde:: Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ShopEntryOutput<'a> {
+    pub tag: StuffTag,
+    pub icon: &'a str,
+    pub color: Option<&'a str>,
+    pub cost: u16,
 }
 
 #[derive(serde::Serialize)]

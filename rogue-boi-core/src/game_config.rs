@@ -23,6 +23,14 @@ fn insert_optional<T: cecs::Component>(cmd: &mut cecs::commands::EntityCommands,
     }
 }
 
+pub fn get_icon(tag: StuffTag) -> Icon {
+    STUFF_PROTOTYPES[&tag].icon
+}
+
+pub fn get_color(tag: StuffTag) -> Option<&'static Color> {
+    STUFF_PROTOTYPES[&tag].color.as_ref()
+}
+
 pub fn insert_default_transient_components(
     cmd: &mut cecs::commands::EntityCommands,
     tag: StuffTag,

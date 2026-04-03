@@ -8,12 +8,14 @@
 <h1 class="text-3xl">Shop</h1>
 
 <div class="mt-8 grid grid-cols-4 align-middle gap-4">
-  {#each inventory?.items ?? [] as item}
+  {#each inventory ?? [] as item}
     <div class="border-2 p-4 align-middle content-center justify-center">
       {#if item}
         <div class="flex flex-col">
+          <span style="--fill-color: {item.color || 'white'}">
+            {@html $icons[item.icon]}
+          </span>
           <span>
-            {@html $icons[item.tag]}
             {item.tag}
           </span>
           <span>

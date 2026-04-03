@@ -1,8 +1,9 @@
 use crate::{
-    InputEvent, PlayerActions, PlayerOutput, RenderedOutput, ShopOutput, Stuff,
+    InputEvent, PlayerActions, PlayerOutput, RenderedOutput, ShopEntryOutput, ShopOutput, Stuff,
     archetypes::icon,
     colors::*,
     components::*,
+    game_config::{get_color, get_icon},
     grid::Grid,
     map_gen,
     math::{Vec2, remap_f64, walk_square},
@@ -1225,9 +1226,25 @@ pub fn update_output(
 
     let mut shop = None;
     if matches!(*app_mode, AppMode::Shop) {
-        shop = q_shop
-            .single()
-            .map(|(id, inventory)| ShopOutput { id, inventory });
+        shop = q_shop.single().map(|(id, inventory)| {
+            let out = ShopOutput {
+                id,
+                inventory: inventory
+                    .items
+                    .iter()
+                    .map(|e| {
+                        e.as_ref().map(|e| ShopEntryOutput {
+                            tag: e.tag,
+                            icon: get_icon(e.tag).0,
+                            color: get_color(e.tag).map(|c| c.0.as_str()),
+                            cost: e.cost,
+                        })
+                    })
+                    .collect(),
+            };
+            debug!(?out, "Shop output");
+            out
+        });
     }
 
     let result = RenderedOutput {
