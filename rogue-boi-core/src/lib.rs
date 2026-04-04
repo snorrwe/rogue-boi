@@ -643,6 +643,34 @@ impl Core {
         let mut w = self.world.borrow_mut();
         w.insert_resource(stat);
     }
+
+    #[wasm_bindgen(js_name = "buyItem")]
+    pub fn buy_item(&mut self, item_idx: usize) -> Result<(), JsValue> {
+        let mut world = self.world.borrow_mut();
+
+        world
+            .run_system(|q: Query<&Shop, With<MarkActive>>| {
+                let Some(shop) = q.single() else {
+                    return Err("Not in a shop".into());
+                };
+                match shop.items.get(item_idx).and_then(|x| x.as_ref()) {
+                    Some(item) => {
+                        // TODO:
+                        // fetch player inventory and coins
+                        // check that player inventory is not full
+                        // check that player has enough coin
+                        // subtract item value from coints
+                        // spawn item with tag from the shop
+                        // move that item into player inventory
+                        // remove item from shop inventory
+                        // set app mode to game
+                        Err("TODO".into())
+                    }
+                    None => return Err("Invalid item index".into()),
+                }
+            })
+            .unwrap()
+    }
 }
 
 #[derive(serde::Serialize)]
