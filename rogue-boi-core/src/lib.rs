@@ -649,26 +649,43 @@ impl Core {
         let mut world = self.world.borrow_mut();
 
         world
-            .run_system(|q: Query<&Shop, With<MarkActive>>| {
-                let Some(shop) = q.single() else {
-                    return Err("Not in a shop".into());
-                };
-                match shop.items.get(item_idx).and_then(|x| x.as_ref()) {
-                    Some(item) => {
-                        // TODO:
-                        // fetch player inventory and coins
-                        // check that player inventory is not full
-                        // check that player has enough coin
-                        // subtract item value from coints
-                        // spawn item with tag from the shop
-                        // move that item into player inventory
-                        // remove item from shop inventory
-                        // set app mode to game
-                        Err("TODO".into())
+            .run_system(
+                |mut q_shop: Query<&mut Shop, With<MarkActive>>,
+                 mut q_player: Query<(&mut Inventory, &mut CoinPouch), With<PlayerTag>>,
+                 mut app_mode: ResMut<AppMode>,
+                 mut log: ResMut<LogHistory>| {
+                    let Some(shop) = q_shop.single_mut() else {
+                        return Err("Not in a shop".into());
+                    };
+                    let Some((inventory, coins)) = q_player.single_mut() else {
+                        return Err("Player inventory not found".into());
+                    };
+                    if inventory.is_full() {
+                        // TODO: place the item on the ground instead
+                        log.push(colors::IMPOSSIBLE, "Inventory is full");
+                        return Ok(());
                     }
-                    None => return Err("Invalid item index".into()),
-                }
-            })
+                    match shop.items.get(item_idx).and_then(|x| x.as_ref()) {
+                        Some(item) => {
+                            if coins.0 < item.cost as u32 {
+                                log.push(colors::IMPOSSIBLE, "Not enough coins");
+                                return Ok(());
+                            }
+                            coins.0 -= item.cost as u32;
+                            log.push(colors::WHITE, format!("Purchase {:?}", item.tag));
+                            shop.items.get_mut(item_idx).take();
+                            *app_mode = AppMode::Game;
+
+                            // TODO:
+                            // spawn item with tag from the shop
+                            // move that item into player inventory
+                            // set app mode to game
+                            Err("TODO".into())
+                        }
+                        None => return Err("Invalid item index".into()),
+                    }
+                },
+            )
             .unwrap()
     }
 }

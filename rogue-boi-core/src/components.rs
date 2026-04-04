@@ -75,7 +75,7 @@ impl Inventory {
     }
 
     pub fn add(&mut self, item: EntityId) -> Result<(), InventoryError> {
-        if self.items.len() >= self.capacity {
+        if self.is_full() {
             return Err(InventoryError::Full);
         }
         self.items.push(item);
@@ -89,6 +89,14 @@ impl Inventory {
 
     pub fn iter(&self) -> impl Iterator<Item = EntityId> + '_ {
         self.items.iter().copied()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.items.is_empty()
+    }
+
+    pub fn is_full(&self) -> bool {
+        self.items.len() >= self.capacity
     }
 }
 
