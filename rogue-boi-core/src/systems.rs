@@ -56,8 +56,7 @@ pub fn init_world_systems(world: &mut World) {
                 SystemStage::new("shop_update")
                     .with_should_run(is_shop)
                     .with_should_run(should_update_shop)
-                    .with_system(update_shop)
-                    .with_system(test_update_shop),
+                    .with_system(update_shop_on_action),
             ),
     );
     world.add_stage(
@@ -1164,15 +1163,7 @@ fn should_update_shop(
     *app_mode == AppMode::Shop && q.any()
 }
 
-fn update_shop(q: Query<&Shop, With<MarkActive>>) {
-    info!("hiii");
-    for inventory in q.iter() {
-        debug!(?inventory, "");
-    }
-}
-
-fn test_update_shop(mut cmd: Commands, q: Query<EntityId, (With<Shop>, With<MarkActive>)>) {
-    info!("byeeee");
+fn update_shop_on_action(mut cmd: Commands, q: Query<EntityId, (With<Shop>, With<MarkActive>)>) {
     for id in q.iter() {
         cmd.entity(id).remove::<MarkActive>();
     }
