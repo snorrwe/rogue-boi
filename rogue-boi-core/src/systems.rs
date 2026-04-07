@@ -667,7 +667,6 @@ fn update_player_world_interact(
             log.push(WHITE, "You descend the staircase");
             level.desired += 1;
         } else if is_shop {
-            log.push(WHITE, "Enter the shop");
             *app_mode = AppMode::Shop;
             cmd.entity(stuff_id).insert(MarkActive);
         } else {
@@ -679,13 +678,8 @@ fn update_player_world_interact(
     }
 }
 
-fn leave_shop(
-    q: Query<&(), (With<MarkActive>, With<Shop>)>,
-    mut app_mode: ResMut<AppMode>,
-    mut log: ResMut<LogHistory>,
-) {
+fn leave_shop(q: Query<&(), (With<MarkActive>, With<Shop>)>, mut app_mode: ResMut<AppMode>) {
     if q.is_empty() {
-        log.push(WHITE, "Leave the shop");
         *app_mode = AppMode::Game;
     }
 }
