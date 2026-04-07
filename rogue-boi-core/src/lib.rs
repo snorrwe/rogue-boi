@@ -695,6 +695,30 @@ impl Core {
             )
             .unwrap()
     }
+
+    #[wasm_bindgen(js_name = "sellItem")]
+    pub fn sell_item(&mut self, id: JsValue) -> Result<(), JsValue> {
+        let id: EntityId = serde_wasm_bindgen::from_value(id)
+            .map_err(|err| format!("Failed to parse id: {err}"))?;
+
+        let mut world = self.world.borrow_mut();
+
+        world
+            .run_system(
+                |mut cmd: Commands,
+                 mut q_player: Query<(&mut Inventory, &mut Equipment, &mut CoinPouch)>,
+                 q_item: Query<&CoinValue>| {
+                    // TODO:
+                    // ensure item is in the inventory or equipment
+                    // if in equipment, run take-off code
+                    // run drop code
+                    // add value to coins
+                    // delete item
+                },
+            )
+            .unwrap();
+        Ok(())
+    }
 }
 
 #[derive(serde::Serialize)]
