@@ -379,7 +379,7 @@ fn use_fireball(
 
 // FIXME:
 // remove stats of the unequipped item
-fn update_unequip(
+pub fn update_unequip(
     mut cmd: Commands,
     mut player_query: Query<(&mut Equipment, &mut Inventory, &Pos), With<PlayerTag>>,
     player_id: Res<PlayerId>,

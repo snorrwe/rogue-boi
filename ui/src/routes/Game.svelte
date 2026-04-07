@@ -69,7 +69,12 @@
     >
       <div id="game-ui" class="text-white text-left">
         {#if $selected != null}
-          <Highlight targetingMode={$coreOutput.targeting} selected={$selected} {core} />
+          <Highlight
+            targetingMode={$coreOutput.targeting}
+            appMode={$coreOutput.appMode}
+            selected={$selected}
+            {core}
+          />
         {/if}
         <div>
           <Player />

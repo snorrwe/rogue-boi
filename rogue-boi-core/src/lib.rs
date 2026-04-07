@@ -18,6 +18,7 @@ use crate::{
     archetypes::init_entity,
     systems::{
         handle_click, init_world_systems, perform_drop_item, regenerate_dungeon, update_output,
+        update_unequip,
     },
 };
 use anyhow::Context as _;
@@ -411,7 +412,7 @@ impl Core {
             .next()
             .map(|inv| {
                 inv.iter()
-                    .map(|id| to_item_desc(id, item_props.fetch(id).unwrap()))
+                    .filter_map(|id| Some(to_item_desc(id, item_props.fetch(id)?)))
                     .collect::<Vec<_>>()
             });
 
@@ -703,21 +704,43 @@ impl Core {
 
         let mut world = self.world.borrow_mut();
 
+        // check for eligibility
+        // if item is equipped, then unequip it
+        // then get its value and delete it
+
+        world
+            .run_system(
+                |mut cmd: Commands, q_player: Query<(&Inventory, &Equipment), With<PlayerTag>>| {
+                    let Some((inventory, equipment)) = q_player.single() else {
+                        return Err("Failed to find player");
+                    };
+                    let in_inventory = inventory.items.contains(&id);
+                    let in_weapon_slot = equipment.weapon == Some(id);
+                    let in_armor_slot = equipment.armor == Some(id);
+                    if !in_inventory && !in_weapon_slot && !in_armor_slot {
+                        return Err("Item is not in inventory");
+                    }
+                    if !in_inventory {
+                        cmd.entity(id).insert(Unequip);
+                    }
+                    Ok(())
+                },
+            )
+            .unwrap()?;
+        world.run_system(update_unequip).unwrap();
         world
             .run_system(
                 |mut cmd: Commands,
-                 mut q_player: Query<(&mut Inventory, &mut Equipment, &mut CoinPouch)>,
+                 mut q_player: Query<&mut CoinPouch, With<PlayerTag>>,
                  q_item: Query<&CoinValue>| {
-                    // TODO:
-                    // ensure item is in the inventory or equipment
-                    // if in equipment, run take-off code
-                    // run drop code
-                    // add value to coins
-                    // delete item
+                    let item_value = q_item.fetch(id).unwrap();
+                    let coins = q_player.one_mut();
+                    coins.0 += item_value.0 as u32;
+                    cmd.delete(id);
+                    Ok(())
                 },
             )
-            .unwrap();
-        Ok(())
+            .unwrap()
     }
 }
 
