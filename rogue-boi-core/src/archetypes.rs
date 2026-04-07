@@ -119,7 +119,12 @@ pub fn insert_transient_components(mut cmd: Commands, q: Query<(EntityId, &Stuff
     }
 }
 
-pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid<Stuff>) {
+pub fn init_entity<'a>(
+    pos: Vec2,
+    tag: StuffTag,
+    cmd: &'a mut Commands,
+    grid: &mut Grid<Stuff>,
+) -> &'a mut EntityCommands {
     let cmd = cmd.spawn();
     grid[pos] = Some(Default::default());
     cmd.insert_bundle((tag, Pos(pos)));
@@ -172,6 +177,7 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         | StuffTag::WardScroll
         | StuffTag::FireBallScroll => {}
     }
+    cmd
 }
 
 pub type StuffToJsQuery<'a> = QuerySet<(

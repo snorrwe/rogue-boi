@@ -14,8 +14,11 @@ mod utils;
 
 use std::{cell::RefCell, rc::Rc};
 
-use crate::systems::{
-    handle_click, init_world_systems, perform_drop_item, regenerate_dungeon, update_output,
+use crate::{
+    archetypes::init_entity,
+    systems::{
+        handle_click, init_world_systems, perform_drop_item, regenerate_dungeon, update_output,
+    },
 };
 use anyhow::Context as _;
 use base64::{Engine, engine::GeneralPurpose};
@@ -647,12 +650,15 @@ impl Core {
     #[wasm_bindgen(js_name = "buyItem")]
     pub fn buy_item(&mut self, item_idx: usize) -> Result<(), JsValue> {
         let mut world = self.world.borrow_mut();
+        // make room for the new item
+        world.reserve_entities(1);
 
         world
             .run_system(
                 |mut q_shop: Query<&mut Shop, With<MarkActive>>,
+                 mut cmd: Commands,
+                 mut grid: ResMut<Grid<Stuff>>,
                  mut q_player: Query<(&mut Inventory, &mut CoinPouch), With<PlayerTag>>,
-                 mut app_mode: ResMut<AppMode>,
                  mut log: ResMut<LogHistory>| {
                     let Some(shop) = q_shop.single_mut() else {
                         return Err("Not in a shop".into());
@@ -673,14 +679,15 @@ impl Core {
                             }
                             coins.0 -= item.cost as u32;
                             log.push(colors::WHITE, format!("Purchase {:?}", item.tag));
-                            shop.items.get_mut(item_idx).take();
-                            *app_mode = AppMode::Game;
 
-                            // TODO:
-                            // spawn item with tag from the shop
-                            // move that item into player inventory
-                            // set app mode to game
-                            Err("TODO".into())
+                            let cmd = init_entity(Vec2::ZERO, item.tag, &mut cmd, &mut grid);
+                            let Ok(id) = cmd.remove::<Pos>().id() else {
+                                unreachable!("Failed to spawn item");
+                            };
+                            inventory.add(id).unwrap();
+
+                            shop.items.get_mut(item_idx).take();
+                            Ok(())
                         }
                         None => return Err("Invalid item index".into()),
                     }
