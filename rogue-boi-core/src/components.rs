@@ -7,6 +7,7 @@ use crate::{HashMap, Stuff, grid::Grid, math::Vec2};
 use cecs::entity_id::EntityId;
 use serde_derive::{Deserialize, Serialize};
 use smallvec::SmallVec;
+use tracing::debug;
 use wasm_bindgen::JsValue;
 
 // reexport generated tags
@@ -74,7 +75,7 @@ impl Inventory {
     }
 
     pub fn add(&mut self, item: EntityId) -> Result<(), InventoryError> {
-        if self.items.len() >= self.capacity {
+        if self.is_full() {
             return Err(InventoryError::Full);
         }
         self.items.push(item);
@@ -88,6 +89,10 @@ impl Inventory {
 
     pub fn iter(&self) -> impl Iterator<Item = EntityId> + '_ {
         self.items.iter().copied()
+    }
+
+    pub fn is_full(&self) -> bool {
+        self.items.len() >= self.capacity
     }
 }
 
@@ -245,6 +250,26 @@ pub struct LastPos(pub Vec2);
 #[derive(Debug, Clone, Copy)]
 pub struct StaticStuff;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Shop {
+    pub items: Box<[Option<ShopEntry>]>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShopEntry {
+    pub tag: StuffTag,
+    pub cost: u16,
+}
+
+impl Shop {
+    pub fn new(capacity: usize) -> Self {
+        let items = vec![None; capacity];
+        Self {
+            items: items.into_boxed_slice(),
+        }
+    }
+}
+
 /// Holds the static stuff
 pub struct StaticGrid(pub Grid<Stuff>);
 
@@ -269,11 +294,10 @@ pub struct LogHistory {
 
 impl LogHistory {
     pub fn push(&mut self, color: &str, line: impl AsRef<str>) {
-        self.items.push_back(format!(
-            "<span style=\"color:{}\">{}</span>",
-            color,
-            line.as_ref()
-        ));
+        let line = line.as_ref();
+        debug!(color, line, "log");
+        self.items
+            .push_back(format!(r#"<span style="color:{}">{}</span>"#, color, line));
         while self.items.len() > self.capacity {
             self.items.pop_front();
         }
@@ -282,21 +306,22 @@ impl LogHistory {
 
 impl Default for LogHistory {
     fn default() -> Self {
-        let capacity = 20;
+        const CAPACITY: usize = 20;
         LogHistory {
-            items: VecDeque::with_capacity(capacity),
-            capacity,
+            items: VecDeque::with_capacity(CAPACITY),
+            capacity: CAPACITY,
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "ty")]
 pub enum AppMode {
     Game,
     Targeting,
     TargetingPosition,
     Levelup,
+    Shop,
 }
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -447,9 +472,9 @@ pub struct Poisoned {
 #[derive(Debug, Clone, Copy)]
 pub struct ClearInventoryItem;
 
-/// Mark item for consumtion
+/// Mark entity as active. E.g. for items: it is being used
 #[derive(Debug, Clone, Copy)]
-pub struct MarkConsume;
+pub struct MarkActive;
 
 #[derive(Debug, Clone, Copy)]
 pub struct PoisionAttack;
@@ -484,3 +509,10 @@ pub struct WardScroll;
 /// Mark this item for unequip in this tick
 #[derive(Debug, Clone, Copy)]
 pub struct Unequip;
+
+/// Monetary value of an entity
+#[derive(Debug, Clone, Copy, serde_derive::Serialize, serde_derive::Deserialize)]
+pub struct CoinValue(pub u16);
+
+#[derive(Debug, Clone, Copy, serde_derive::Serialize, serde_derive::Deserialize)]
+pub struct CoinPouch(pub u32);

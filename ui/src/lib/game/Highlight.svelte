@@ -3,7 +3,7 @@
   import ProgressBar from "./ProgressBar.svelte";
   import Button from "../Button.svelte";
 
-  let { selected, core, targetingMode } = $props();
+  let { selected, core, appMode } = $props();
 
   let icon = $derived($icons[selected.icon]);
   $effect(() => {
@@ -28,6 +28,10 @@
 
   const target = (item) => () => {
     core.setTarget(item.id);
+  };
+
+  const sell = (item) => () => {
+    core.sellItem(item.id);
   };
 </script>
 
@@ -67,6 +71,12 @@
   <div>Ranged Power: {selected.ranged.power}</div>
   <div>Ranged Skill: {selected.ranged.skill}</div>
 {/if}
+{#if selected.value}
+  <div>Value: {selected.value} coins</div>
+{/if}
+
+<!-- buttons -->
+
 {#if selected.usable}
   <Button onclick={useItem(selected)}>Use</Button>
 {/if}
@@ -81,6 +91,9 @@
 {/if}
 {#if selected.targetable && targetingMode}
   <Button onclick={target(selected)}>Target</Button>
+{/if}
+{#if appMode.ty === "Shop"}
+  <Button onclick={sell(selected)}>Sell</Button>
 {/if}
 
 <style>

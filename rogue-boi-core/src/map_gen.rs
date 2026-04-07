@@ -5,11 +5,14 @@ use self::rect_room::RectRoom;
 use self::tunnel_iter::TunnelIter;
 use crate::{
     HashMap,
+    components::{Shop, ShopEntry},
     game_config::{ENEMY_CHANCES, ITEM_CHANCES, ROOM_CHANCES, RoomKind},
 };
 use cecs::prelude::*;
-use rand::{Rng, distr::weighted::WeightedIndex, prelude::Distribution, seq::IndexedRandom as _};
-use tracing::{debug, warn};
+use rand::{
+    RngExt, distr::weighted::WeightedIndex, prelude::Distribution, seq::IndexedRandom as _,
+};
+use tracing::debug;
 
 use crate::{
     Stuff,
@@ -112,7 +115,7 @@ impl EntityChances {
 
 /// return number of monsters placed
 fn place_entities(
-    rng: &mut impl Rng,
+    rng: &mut impl RngExt,
     grid: &mut Grid<Option<StuffTag>>,
     room: &RectRoom,
     max_monsters: u32,
@@ -138,22 +141,36 @@ fn place_entities(
     n_monsters
 }
 
-fn place_stairs(rng: &mut impl Rng, grid: &mut Grid<Option<StuffTag>>, room: &RectRoom) {
+fn place_stairs(rng: &mut impl RngExt, grid: &mut Grid<Option<StuffTag>>, room: &RectRoom) {
     loop {
         let x = rng.random_range(room.min.x + 1..room.max.x + 1);
         let y = rng.random_range(room.min.y + 1..room.max.y + 1);
 
         let pos = Vec2::new(x, y);
         if grid[pos].is_none() {
-            debug!("Placing end at {}", pos);
+            debug!("Placing Stairs at {}", pos);
             grid[pos] = Some(StuffTag::Stairs);
             return;
         }
     }
 }
 
+fn place_shop(rng: &mut impl RngExt, grid: &mut Grid<Option<StuffTag>>, room: &RectRoom) {
+    loop {
+        let x = rng.random_range(room.min.x + 1..room.max.x + 1);
+        let y = rng.random_range(room.min.y + 1..room.max.y + 1);
+
+        let pos = Vec2::new(x, y);
+        if grid[pos].is_none() {
+            debug!("Placing Shop at {}", pos);
+            grid[pos] = Some(StuffTag::Shop);
+            return;
+        }
+    }
+}
+
 fn place_items(
-    rng: &mut impl Rng,
+    rng: &mut impl RngExt,
     grid: &mut Grid<Option<StuffTag>>,
     room: &RectRoom,
     min_items: u32,
@@ -186,6 +203,7 @@ pub fn generate_map(
     dims: Res<WorldDims>,
     floor: Res<DungeonFloor>,
 ) {
+    let mut rng = rand::rng();
     // player may or may not exist at this point
     let player_id = player_q.iter().next();
     for (_p, stuff) in grid.iter_mut() {
@@ -218,6 +236,27 @@ pub fn generate_map(
                     grid[pos] = Some(player_id);
                 } else {
                     init_entity(pos, tag, &mut cmd, &mut grid);
+                }
+            }
+            StuffTag::Shop => {
+                init_entity(pos, tag, &mut cmd, &mut grid);
+                // TODO: size based on level / random?
+                let mut shop = Shop::new(8);
+                // TODO: choose based on level, config
+                let items = ITEM_CHANCES
+                    .iter()
+                    .take_while(|(key, _)| key <= &floor.current)
+                    .flat_map(|(_, t)| t.iter().map(|(x, _)| *x))
+                    .collect::<Vec<_>>();
+                for slot in shop.items.iter_mut() {
+                    if rng.random_bool(0.8) {
+                        let tag = *items.choose(&mut rng).unwrap();
+                        // TODO: price from config file
+                        *slot = Some(ShopEntry {
+                            tag,
+                            cost: rng.random_range(10..=50),
+                        });
+                    }
                 }
             }
             StuffTag::Wall => {
@@ -306,7 +345,11 @@ fn adjacency_set(matrix: &mut Grid<i8>, i: i32, j: i32, val: i8) {
     matrix[Vec2::new(j, i)] = val;
 }
 
-fn assign_rooms_roles(mut rng: impl Rng, entity_weights: &EntityChances, rooms: &mut [RectRoom]) {
+fn assign_rooms_roles(
+    mut rng: impl RngExt,
+    entity_weights: &EntityChances,
+    rooms: &mut [RectRoom],
+) {
     let room_kind_dist = WeightedIndex::new(&entity_weights.room_weights[..]).unwrap();
 
     let mut room_max = HashMap::<RoomKind, usize>::default();
@@ -468,8 +511,7 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
     for room in &rooms[1..] {
         match room.role {
             RoomKind::Shop => {
-                // TODO:
-                warn!("Shops not yet implemented")
+                place_shop(&mut rng, grid, room);
             }
             RoomKind::Normal => {
                 let n = place_entities(
@@ -499,7 +541,7 @@ fn build_rooms(grid: &mut Grid<Option<StuffTag>>, props: &MapGenProps, floor: u3
     place_stairs(&mut rng, grid, end_room);
 }
 
-fn tunnel_between(mut rng: impl Rng, start: Vec2, end: Vec2) -> TunnelIter {
+fn tunnel_between(mut rng: impl RngExt, start: Vec2, end: Vec2) -> TunnelIter {
     let Vec2 { x: x1, y: y1 } = start;
     let Vec2 { x: x2, y: y2 } = end;
 

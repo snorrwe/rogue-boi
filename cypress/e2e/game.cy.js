@@ -39,3 +39,18 @@ describe("basic game tests", () => {
         cy.get("h2").contains("Log");
     });
 });
+
+describe("shop tests", () => {
+    beforeEach(() => {
+        cy.visit("/#options");
+
+        cy.get('input[type="file"]')
+            .should("be.visible")
+            .selectFile("test/shop_test_data.bin");
+        cy.get('input[name="submit-save"]').should("be.visible").click();
+        cy.visit("/");
+        cy.get('a[href="#game"]').should("be.visible").click();
+    });
+
+    it("some shop test here", () => { });
+});

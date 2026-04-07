@@ -12,10 +12,10 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-cecs = { git = "https://github.com/caolo-game/cecs", default-features = false, features = [
+cecs = { git = "https://github.com/snorrwe/cecs", default-features = false, features = [
     "serde",
 ] }
-rand = { version = "0.9.1", features = [] }
+rand = { version = "0.10.0", features = [] }
 wasm-bindgen = { version = "0.2.100", features = ["serde-serialize"] }
 serde = { version = "1.0.219" }
 serde_derive = { version = "1.0.219" }
@@ -29,7 +29,7 @@ tracing-wasm = "0.2.1"
 smallvec = "1.15.1"
 arrayvec = "0.7.6"
 lazy_static = "1.5.0"
-getrandom = { version = "0.3.3", features = ["wasm_js"] }
+getrandom = { version = "0.4.1", features = ["wasm_js"] }
 thiserror = "2.0.12"
 serde_json = "1.0.140"
 icons = { version = "0.1.0", path = "../icons" }
@@ -50,7 +50,7 @@ anyhow = "1.0.100"
 wasm-bindgen-test = "0.3.50"
 
 [build-dependencies]
-calamine = "0.30.0"
+calamine = "0.33.0"
 itertools = "0.14.0"
 serde = { version = "1.0.219" }
 serde_derive = { version = "1.0.219" }

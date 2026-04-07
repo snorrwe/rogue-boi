@@ -14,12 +14,21 @@ pub struct StuffPrototype {
     pub heal: Option<Heal>,
     pub ranged: Option<Ranged>,
     pub aoe: Option<Aoe>,
+    pub value: Option<CoinValue>,
 }
 
 fn insert_optional<T: cecs::Component>(cmd: &mut cecs::commands::EntityCommands, stuff: Option<T>) {
     if let Some(s) = stuff {
         cmd.insert(s);
     }
+}
+
+pub fn get_icon(tag: StuffTag) -> Icon {
+    STUFF_PROTOTYPES[&tag].icon
+}
+
+pub fn get_color(tag: StuffTag) -> Option<&'static Color> {
+    STUFF_PROTOTYPES[&tag].color.as_ref()
 }
 
 pub fn insert_default_transient_components(
@@ -44,6 +53,7 @@ pub fn insert_default_components(cmd: &mut cecs::commands::EntityCommands, tag: 
     insert_optional(cmd, desc.heal);
     insert_optional(cmd, desc.ranged);
     insert_optional(cmd, desc.aoe);
+    insert_optional(cmd, desc.value);
 }
 
 include!(concat!(env!("OUT_DIR"), "/game_config_gen.rs"));

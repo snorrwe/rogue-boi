@@ -39,9 +39,7 @@
             cargo-watch
             git-cliff
             bzip2
-            nodePackages.nodejs
-            nodePackages.npm
-            nodejs_24
+            nodejs-slim_25
             cypress
           ];
         };

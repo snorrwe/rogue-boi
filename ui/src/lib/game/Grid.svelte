@@ -1,5 +1,5 @@
 <script>
-  import { onDestroy, onMount } from "svelte";
+  import { onMount } from "svelte";
   import { canvasStore } from "@rogueBoi/store.js";
 
   let box = $state();
@@ -20,10 +20,10 @@
       });
     });
     observer.observe(box);
-  });
-  onDestroy(() => {
-    canvasStore.set(null);
-    if (observer) observer.disconnect();
+    return () => {
+      observer.disconnect();
+      canvasStore.set(null);
+    };
   });
 </script>
 

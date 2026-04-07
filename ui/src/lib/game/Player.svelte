@@ -6,17 +6,23 @@
   import ProgressBar from "./ProgressBar.svelte";
   import Button from "@rogueBoi/Button.svelte";
 
-  let { player, targeting, appMode } = $derived($coreOutput);
+  let {
+    player,
+    targeting,
+    appMode: { ty: appMode }
+  } = $derived($coreOutput);
+  let isInGame = $derived(appMode === "Game");
+  $inspect(isInGame);
 
   let alive = $derived(player != null);
   let {
     playerHp: hp,
-    playerPos: pos,
     playerAttack: attack,
     currentXp,
     neededXp,
     level,
-    defense
+    defense,
+    coins
   } = $derived(player ? player : {});
   let levelup = $derived(appMode && appMode.ty == "Levelup");
 
@@ -89,8 +95,9 @@
         midColorFg="white"
       />
     {/if}
+    <p>Coins: {coins}</p>
     <div class="my-2">
-      <Button onclick={() => $coreStore.wait()}>Wait</Button>
+      <Button disabled={!isInGame} onclick={() => $coreStore.wait()}>Wait</Button>
     </div>
   {:else}
     <p>You died!</p>

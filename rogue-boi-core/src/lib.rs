@@ -14,8 +14,12 @@ mod utils;
 
 use std::{cell::RefCell, rc::Rc};
 
-use crate::systems::{
-    handle_click, init_world_systems, perform_drop_item, regenerate_dungeon, update_output,
+use crate::{
+    archetypes::init_entity,
+    systems::{
+        handle_click, init_world_systems, perform_drop_item, regenerate_dungeon, update_output,
+        update_unequip,
+    },
 };
 use anyhow::Context as _;
 use base64::{Engine, engine::GeneralPurpose};
@@ -57,7 +61,7 @@ fn compute_icons() -> IconCollection {
 
 fn get_world_persister() -> impl WorldSerializer {
     let persister = cecs::serde::WorldPersister::new()
-        .with_version(cecs::serde::Version::new(1, 0, 0))
+        .with_version(cecs::serde::Version::new(2, 0, 0))
         .with_resource::<WorldDims>()
         .with_resource::<GameTick>()
         .with_resource::<LogHistory>()
@@ -138,13 +142,30 @@ pub enum InputEvent {
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RenderedOutput {
+pub struct RenderedOutput<'a> {
     pub selected: Option<EntityId>,
     pub player: Option<PlayerOutput>,
-    pub log: Vec<String>,
+    pub log: Vec<&'a str>,
     pub targeting: bool,
     pub dungeon_level: u32,
     pub app_mode: AppMode,
+    pub shop: Option<ShopOutput<'a>>,
+}
+
+#[derive(serde::Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ShopOutput<'a> {
+    pub id: EntityId,
+    pub inventory: Vec<Option<ShopEntryOutput<'a>>>,
+}
+
+#[derive(Debug, Clone, serde:: Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ShopEntryOutput<'a> {
+    pub tag: StuffTag,
+    pub icon: &'a str,
+    pub color: Option<&'a str>,
+    pub cost: u16,
 }
 
 #[derive(serde::Serialize)]
@@ -157,6 +178,7 @@ pub struct PlayerOutput {
     pub needed_xp: u32,
     pub level: u32,
     pub defense: Defense,
+    pub coins: CoinPouch,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -258,7 +280,8 @@ fn to_item_desc(id: EntityId, i: ItemPropsTuple) -> ItemDesc {
     }
 }
 
-const BASE64_ENGINE: GeneralPurpose = base64::engine::general_purpose::STANDARD_NO_PAD;
+// the engine has to be able to load browser-encoded data as well
+const BASE64_ENGINE: GeneralPurpose = base64::engine::general_purpose::STANDARD;
 
 #[derive(serde::Deserialize)]
 pub struct MapGenParams {
@@ -304,7 +327,8 @@ impl Core {
         self.tick(10000);
     }
 
-    /// Generate a dungoen without altering the world state
+    /// Generate a dungeon without altering the world state
+    #[wasm_bindgen(js_name = "generateDungeon")]
     pub fn generate_dungeon(&self, params: JsValue) -> JsValue {
         let params: Option<MapGenParams> =
             serde_wasm_bindgen::from_value(params).expect("Failed to deserialize params");
@@ -388,7 +412,7 @@ impl Core {
             .next()
             .map(|inv| {
                 inv.iter()
-                    .map(|id| to_item_desc(id, item_props.fetch(id).unwrap()))
+                    .filter_map(|id| Some(to_item_desc(id, item_props.fetch(id)?)))
                     .collect::<Vec<_>>()
             });
 
@@ -622,6 +646,106 @@ impl Core {
         let stat: DesiredStat = serde_wasm_bindgen::from_value(stat).unwrap();
         let mut w = self.world.borrow_mut();
         w.insert_resource(stat);
+    }
+
+    #[wasm_bindgen(js_name = "buyItem")]
+    pub fn buy_item(&mut self, item_idx: usize) -> Result<(), JsValue> {
+        let mut world = self.world.borrow_mut();
+        // make room for the new item
+        world.reserve_entities(1);
+
+        world
+            .run_system(
+                |mut q_shop: Query<&mut Shop, With<MarkActive>>,
+                 mut cmd: Commands,
+                 mut grid: ResMut<Grid<Stuff>>,
+                 mut q_player: Query<(&mut Inventory, &mut CoinPouch), With<PlayerTag>>,
+                 mut log: ResMut<LogHistory>| {
+                    let Some(shop) = q_shop.single_mut() else {
+                        return Err("Not in a shop".into());
+                    };
+                    let Some((inventory, coins)) = q_player.single_mut() else {
+                        return Err("Player inventory not found".into());
+                    };
+                    if inventory.is_full() {
+                        // TODO: place the item on the ground instead
+                        log.push(colors::IMPOSSIBLE, "Inventory is full");
+                        return Ok(());
+                    }
+                    match shop.items.get(item_idx).and_then(|x| x.as_ref()) {
+                        Some(item) => {
+                            if coins.0 < item.cost as u32 {
+                                log.push(colors::IMPOSSIBLE, "Not enough coins");
+                                return Ok(());
+                            }
+                            coins.0 -= item.cost as u32;
+                            log.push(colors::WHITE, format!("Purchase {:?}", item.tag));
+
+                            let cmd = init_entity(Vec2::ZERO, item.tag, &mut cmd, &mut grid);
+                            let Ok(id) = cmd.remove::<Pos>().id() else {
+                                unreachable!("Failed to spawn item");
+                            };
+                            inventory.add(id).unwrap();
+
+                            shop.items.get_mut(item_idx).unwrap().take();
+                            Ok(())
+                        }
+                        None => return Err("Invalid item index".into()),
+                    }
+                },
+            )
+            .unwrap()
+    }
+
+    #[wasm_bindgen(js_name = "sellItem")]
+    pub fn sell_item(&mut self, id: JsValue) -> Result<(), JsValue> {
+        let id: EntityId = serde_wasm_bindgen::from_value(id)
+            .map_err(|err| format!("Failed to parse id: {err}"))?;
+
+        let mut world = self.world.borrow_mut();
+
+        // check for eligibility
+        // if item is equipped, then unequip it
+        // then get its value and delete it
+
+        world
+            .run_system(
+                |mut cmd: Commands, q_player: Query<(&Inventory, &Equipment), With<PlayerTag>>| {
+                    let Some((inventory, equipment)) = q_player.single() else {
+                        return Err("Failed to find player");
+                    };
+                    let in_inventory = inventory.items.contains(&id);
+                    let in_weapon_slot = equipment.weapon == Some(id);
+                    let in_armor_slot = equipment.armor == Some(id);
+                    if !in_inventory && !in_weapon_slot && !in_armor_slot {
+                        return Err("Item is not in inventory");
+                    }
+                    if !in_inventory {
+                        cmd.entity(id).insert(Unequip);
+                    }
+                    Ok(())
+                },
+            )
+            .unwrap()?;
+        world.run_system(update_unequip).unwrap();
+        world
+            .run_system(
+                |mut cmd: Commands,
+                 mut q_player: Query<&mut CoinPouch, With<PlayerTag>>,
+                 mut log: ResMut<LogHistory>,
+                 q_item: Query<(&Name, &CoinValue)>| {
+                    let (item_name, item_value) = q_item.fetch(id).unwrap();
+                    let coins = q_player.one_mut();
+                    coins.0 += item_value.0 as u32;
+                    cmd.delete(id);
+                    log.push(
+                        WHITE,
+                        format!("Sell {} for {} coins", item_name.0, item_value.0),
+                    );
+                    Ok(())
+                },
+            )
+            .unwrap()
     }
 }
 

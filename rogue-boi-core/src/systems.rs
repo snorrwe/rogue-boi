@@ -1,15 +1,16 @@
 use crate::{
-    InputEvent, PlayerActions, PlayerOutput, RenderedOutput, Stuff,
+    InputEvent, PlayerActions, PlayerOutput, RenderedOutput, ShopEntryOutput, ShopOutput, Stuff,
     archetypes::icon,
     colors::*,
     components::*,
+    game_config::{get_color, get_icon},
     grid::Grid,
     map_gen,
     math::{Vec2, remap_f64, walk_square},
     pathfinder::find_path,
 };
 use cecs::{commands::EntityCommands, prelude::*};
-use rand::{Rng, prelude::IndexedRandom, seq::SliceRandom};
+use rand::{RngExt, prelude::IndexedRandom, seq::SliceRandom};
 use tracing::{debug, info, warn};
 
 pub fn init_world_systems(world: &mut World) {
@@ -18,42 +19,54 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(set_player_id)
             .with_system(update_input_events)
             .with_system(update_should_tick)
-            .with_system(handle_targeting)
-            .with_system(player_prepare)
+            .with_system(handle_targeting.after(update_should_tick))
+            .with_system(player_prepare.after(update_should_tick))
             .with_system(handle_levelup),
     );
     world.add_stage(
-        SystemStage::new("pre-update")
-            .with_should_run(|should_tick: Res<ShouldTick>| should_tick.0)
-            .with_system(record_last_pos),
+        SystemStage::new("update")
+            .with_should_run(should_tick)
+            .with_system(record_last_pos)
+            .with_nested_stage(
+                SystemStage::new("game_update")
+                    .with_should_run(is_ingame)
+                    .with_nested_stage(
+                        SystemStage::new("player_update")
+                            .with_should_run(should_update_player)
+                            .with_system(update_consumable_use)
+                            .with_system(handle_player_move)
+                            .with_system(update_player_world_interact)
+                            .with_system(update_camera_pos)
+                            .with_system(update_unequip)
+                            .with_system(cmd_flush_system) // interact may insert a new equipment use
+                            .with_system(update_equipment_use.after(cmd_flush_system)),
+                    )
+                    .with_nested_stage(
+                        SystemStage::new("update_item_use")
+                            .with_should_run(should_update_item_use)
+                            .with_system(use_poison_scroll)
+                            .with_system(use_confusion_scroll)
+                            .with_system(use_lightning_scroll)
+                            .with_system(use_ward_scroll)
+                            .with_system(use_hp_potion)
+                            .with_system(use_fireball),
+                    ),
+            )
+            .with_nested_stage(
+                SystemStage::new("shop_update")
+                    .with_should_run(is_shop)
+                    .with_should_run(should_update_shop)
+                    .with_system(update_shop_on_action),
+            ),
     );
     world.add_stage(
-        SystemStage::new("player-update")
-            .with_should_run(should_update_player)
-            .with_system(update_consumable_use)
-            .with_system(handle_player_move)
-            .with_system(update_player_world_interact)
-            .with_system(update_camera_pos)
-            .with_system(update_unequip)
-            .with_system(cmd_flush_system) // interact may insert a new equipment use
-            .with_system(update_equipment_use),
-    );
-    world.add_stage(
-        SystemStage::new("update_item_use")
-            .with_should_run(should_update_item_use)
-            .with_system(use_poison_scroll)
-            .with_system(use_confusion_scroll)
-            .with_system(use_lightning_scroll)
-            .with_system(use_ward_scroll)
-            .with_system(use_hp_potion)
-            .with_system(use_fireball),
-    );
-    world.add_stage(
-        SystemStage::new("ai-update")
+        SystemStage::new("ai_update")
+            .with_should_run(should_tick)
             .with_should_run(should_update_world)
+            .with_should_run(is_ingame)
             .with_system(update_poison)
-            .with_system(update_ai_hp)
-            .with_system(cmd_flush_system)
+            .with_system(update_ai_hp.after(update_poison))
+            .with_system(cmd_flush_system.after(update_ai_hp))
             .with_system(update_ai_move)
             .with_system(update_melee_ai)
             .with_system(update_confusion)
@@ -69,16 +82,30 @@ pub fn init_world_systems(world: &mut World) {
             .with_system(clean_inputs),
     );
     world.add_stage(
-        SystemStage::new("post-render")
-            .with_should_run(should_update_world)
-            .with_system(clear_consumable)
-            .with_system(update_tick),
+        SystemStage::new("post_render")
+            .with_should_run(should_tick)
+            .with_nested_stage(
+                SystemStage::new("update_world")
+                    .with_should_run(should_update_world)
+                    .with_system(clear_consumable)
+                    .with_system(update_tick),
+            )
+            .with_nested_stage(
+                SystemStage::new("shop_update")
+                    .with_should_run(is_shop)
+                    .with_system(clean_inputs)
+                    .with_system(leave_shop),
+            ),
     );
     world.add_stage(
-        SystemStage::new("dungeon-delve")
+        SystemStage::new("dungeon_delve")
             .with_should_run(|level: Res<DungeonFloor>| level.current != level.desired)
             .with_system(regenerate_dungeon),
     );
+}
+
+fn should_tick(should_tick: Res<ShouldTick>) -> bool {
+    should_tick.0
 }
 
 fn cmd_flush_system(mut w: WorldAccess) {
@@ -149,7 +176,7 @@ fn clear_consumable(
 fn use_poison_scroll(
     mut cmd: Commands,
     mut target_query: Query<(Option<&mut Poisoned>, Option<&Name>)>,
-    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkConsume>, With<PoisionAttack>)>,
+    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkActive>, With<PoisionAttack>)>,
     mut log: ResMut<LogHistory>,
     mut should_run: ResMut<ShouldUpdateWorld>,
 ) {
@@ -188,7 +215,7 @@ fn use_hp_potion(
     mut cmd: Commands,
     mut player_query: Query<&mut Hp, With<PlayerTag>>,
     player_id: Res<PlayerId>,
-    item_query: Query<(EntityId, &Heal), With<MarkConsume>>,
+    item_query: Query<(EntityId, &Heal), With<MarkActive>>,
     mut log: ResMut<LogHistory>,
 ) {
     let Some(hp) = player_id.get_mut(&mut player_query) else {
@@ -208,7 +235,7 @@ fn use_hp_potion(
 
 fn use_confusion_scroll(
     mut cmd: Commands,
-    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkConsume>, With<ConfusionBolt>)>,
+    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkActive>, With<ConfusionBolt>)>,
     mut target_query: Query<(Option<&mut ConfusedAi>, Option<&Name>)>,
     mut log: ResMut<LogHistory>,
     mut should_run: ResMut<ShouldUpdateWorld>,
@@ -247,7 +274,7 @@ fn use_confusion_scroll(
 
 fn use_ward_scroll(
     mut cmd: Commands,
-    item_query: Query<(EntityId, &Ranged), (With<MarkConsume>, With<WardScroll>)>,
+    item_query: Query<(EntityId, &Ranged), (With<MarkActive>, With<WardScroll>)>,
     mut player_query: Query<&mut Defense, With<PlayerTag>>,
     player_id: Res<PlayerId>,
     mut log: ResMut<LogHistory>,
@@ -270,7 +297,7 @@ fn use_ward_scroll(
 
 fn use_lightning_scroll(
     mut cmd: Commands,
-    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkConsume>, With<LightningBolt>)>,
+    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkActive>, With<LightningBolt>)>,
     mut target_query: Query<(&mut Hp, Option<&Name>)>,
     mut log: ResMut<LogHistory>,
     mut should_run: ResMut<ShouldUpdateWorld>,
@@ -305,10 +332,7 @@ fn use_lightning_scroll(
 
 fn use_fireball(
     mut cmd: Commands,
-    item_query: Query<
-        (EntityId, &Ranged, &Aoe, &TargetingPos),
-        (With<MarkConsume>, With<FireBall>),
-    >,
+    item_query: Query<(EntityId, &Ranged, &Aoe, &TargetingPos), (With<MarkActive>, With<FireBall>)>,
     mut target_query: Query<(&mut Hp, Option<&Name>)>,
     mut log: ResMut<LogHistory>,
     mut should_run: ResMut<ShouldUpdateWorld>,
@@ -354,7 +378,7 @@ fn use_fireball(
 
 // FIXME:
 // remove stats of the unequipped item
-fn update_unequip(
+pub fn update_unequip(
     mut cmd: Commands,
     mut player_query: Query<(&mut Equipment, &mut Inventory, &Pos), With<PlayerTag>>,
     player_id: Res<PlayerId>,
@@ -486,7 +510,7 @@ fn update_consumable_use(
                 }
 
                 cmd.entity(id)
-                    .insert_bundle((MarkConsume, Targeting(target_id)));
+                    .insert_bundle((MarkActive, Targeting(target_id)));
             }
         }
     }
@@ -500,7 +524,7 @@ fn update_consumable_use(
                     return;
                 }
                 cmd.entity(id).insert_bundle((
-                    MarkConsume,
+                    MarkActive,
                     TargetingPos {
                         src: player_pos.0,
                         dst: target_pos,
@@ -516,7 +540,7 @@ fn update_consumable_use(
         }
     }
     for id in q.q2().iter() {
-        cmd.entity(id).insert(MarkConsume);
+        cmd.entity(id).insert(MarkActive);
     }
 }
 
@@ -579,12 +603,14 @@ fn update_player_world_interact(
         Option<&EquipmentType>,
         Has<NextLevel>,
         Option<&Name>,
+        Has<Shop>,
     )>,
     grid: Res<Grid<Stuff>>,
     mut should_run: ResMut<ShouldUpdateWorld>,
     actions: Res<PlayerActions>,
     mut level: ResMut<DungeonFloor>,
     mut log: ResMut<LogHistory>,
+    mut app_mode: ResMut<AppMode>,
 ) {
     if !actions.interact() {
         return;
@@ -594,12 +620,17 @@ fn update_player_world_interact(
     };
     if grid[pos.0] != Some(id) {
         let stuff_id = grid[pos.0].unwrap();
-        let (item_tag, equipment_ty, next_level_tag, name) = q_item.fetch(stuff_id).unwrap();
+        let (is_item, equipment_ty, is_next_level, name, is_shop) = q_item.fetch(stuff_id).unwrap();
         debug!(
-            id = tracing::field::display(stuff_id),
+            id = ?stuff_id,
+            is_item,
+            is_next_level,
+            is_shop,
+            ?name,
+            ?equipment_ty,
             "Interacting with entity"
         );
-        if item_tag {
+        if is_item {
             let mut equip = false;
             match equipment_ty {
                 Some(EquipmentType::Weapon) => {
@@ -631,15 +662,24 @@ fn update_player_world_interact(
                     }
                 },
             }
-        } else if next_level_tag {
+        } else if is_next_level {
             log.push(WHITE, "You descend the staircase");
             level.desired += 1;
+        } else if is_shop {
+            *app_mode = AppMode::Shop;
+            cmd.entity(stuff_id).insert(MarkActive);
         } else {
             debug!("Cant interact with {}", id);
         }
     } else {
         log.push(IMPOSSIBLE, "Nothing to do...");
         should_run.0 = false;
+    }
+}
+
+fn leave_shop(q: Query<&(), (With<MarkActive>, With<Shop>)>, mut app_mode: ResMut<AppMode>) {
+    if q.is_empty() {
+        *app_mode = AppMode::Game;
     }
 }
 
@@ -668,6 +708,7 @@ fn handle_player_move(
     let Some(delta) = actions.move_action() else {
         return;
     };
+    debug!(?delta, "Handling player move");
     let Some((power, pos)) = player_id.get_mut(&mut player_q) else {
         return;
     };
@@ -727,6 +768,7 @@ fn handle_player_move(
             | StuffTag::ConfusionScroll
             | StuffTag::FireBallScroll
             | StuffTag::Tombstone
+            | StuffTag::Shop
             | StuffTag::Stairs => {
                 grid_step(pos, new_pos, &mut grid);
             }
@@ -1110,8 +1152,21 @@ fn update_tick(mut t: ResMut<GameTick>) {
     t.0 += 1;
 }
 
-fn should_update_world(should_tick: Res<ShouldTick>, r: Res<ShouldUpdateWorld>) -> bool {
-    r.0 && should_tick.0
+fn should_update_world(r: Res<ShouldUpdateWorld>) -> bool {
+    r.0
+}
+
+fn should_update_shop(
+    app_mode: Res<AppMode>,
+    q: Query<&(), (With<Shop>, With<MarkActive>)>,
+) -> bool {
+    *app_mode == AppMode::Shop && q.any()
+}
+
+fn update_shop_on_action(mut cmd: Commands, q: Query<EntityId, (With<Shop>, With<MarkActive>)>) {
+    for id in q.iter() {
+        cmd.entity(id).remove::<MarkActive>();
+    }
 }
 
 pub fn update_camera_pos(
@@ -1125,19 +1180,20 @@ pub fn update_camera_pos(
 }
 
 pub fn update_output(
-    q_player: Query<(&Pos, &Hp, &Melee, &Level, &Defense), With<PlayerTag>>,
+    q_player: Query<(&Pos, &Hp, &Melee, &Level, &Defense, &CoinPouch), With<PlayerTag>>,
     player_id: Res<PlayerId>,
     mut output_cache: ResMut<Output>,
     selected: Res<Selected>,
     history: Res<LogHistory>,
     app_mode: Res<AppMode>,
     dungeon_level: Res<DungeonFloor>,
+    q_shop: Query<(EntityId, &Shop), With<MarkActive>>,
 ) {
     let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
 
     let player = player_id
         .get(&q_player)
-        .map(|(pos, hp, attack, level, defense)| PlayerOutput {
+        .map(|(pos, hp, attack, level, defense, pouch)| PlayerOutput {
             level: level.current_level,
             current_xp: level.current_xp,
             needed_xp: level.experience_to_next_level(),
@@ -1145,12 +1201,37 @@ pub fn update_output(
             player_attack: attack.power,
             player_pos: pos.0,
             defense: *defense,
+            coins: *pouch,
         });
     let mut log = Vec::with_capacity(128);
     for line in history.items.iter() {
-        log.push(line.clone());
+        log.push(line.as_str());
     }
     let targeting = matches!(*app_mode, AppMode::Targeting);
+
+    let mut shop = None;
+    if matches!(*app_mode, AppMode::Shop) {
+        shop = q_shop.single().map(|(id, inventory)| {
+            let out = ShopOutput {
+                id,
+                inventory: inventory
+                    .items
+                    .iter()
+                    .map(|e| {
+                        e.as_ref().map(|e| ShopEntryOutput {
+                            tag: e.tag,
+                            icon: get_icon(e.tag).0,
+                            color: get_color(e.tag).map(|c| c.0.as_str()),
+                            cost: e.cost,
+                        })
+                    })
+                    .collect(),
+            };
+            debug!(?out, "Shop output");
+            out
+        });
+    }
+
     let result = RenderedOutput {
         dungeon_level: dungeon_level.current,
         app_mode: *app_mode,
@@ -1158,16 +1239,25 @@ pub fn update_output(
         log,
         selected: selected.0,
         targeting,
+        shop,
     };
     output_cache.0 = serde_wasm_bindgen::to_value(&result).unwrap();
 }
 
-fn should_update_player(should_tick: Res<ShouldTick>, s: Res<ShouldUpdatePlayer>) -> bool {
-    s.0 && should_tick.0
+fn is_ingame(app_mode: Res<AppMode>) -> bool {
+    matches!(*app_mode, AppMode::Game)
 }
 
-fn should_update_item_use(should_tick: Res<ShouldTick>, s: Query<&(), With<MarkConsume>>) -> bool {
-    should_tick.0 && s.any()
+fn is_shop(app_mode: Res<AppMode>) -> bool {
+    matches!(*app_mode, AppMode::Shop)
+}
+
+fn should_update_player(s: Res<ShouldUpdatePlayer>) -> bool {
+    s.0
+}
+
+fn should_update_item_use(s: Query<&(), (With<MarkActive>, With<Item>)>) -> bool {
+    s.any()
 }
 
 fn player_prepare(
@@ -1367,16 +1457,18 @@ fn update_should_tick(
     actions: Res<PlayerActions>,
     tick_time: Res<TickInMs>,
     q_item_use: Query<&(), Or<With<UseItem>, With<Unequip>>>,
+    _app_mode: Res<AppMode>,
 ) {
     time.0 += dt.0;
     should_tick.0 = (!q_item_use.is_empty() || !actions.is_empty())
         && (time.0 >= tick_time.0 || tick_time.0.abs_diff(time.0) <= 5); // lag compensation
     if should_tick.0 {
         debug!(
-            "Running update after {} ms. Actions: {:?}. Has item use: {}",
+            "Running update after {} ms. Actions: {:?}. Has item use: {}. AppMode: {:?}",
             time.0,
             &*actions,
-            !q_item_use.is_empty()
+            !q_item_use.is_empty(),
+            *_app_mode
         );
         time.0 = 0;
     }
@@ -1390,7 +1482,9 @@ fn handle_targeting(
     target_pos: Res<TargetPos>,
 ) {
     match *mode {
-        AppMode::Levelup | AppMode::Game => {}
+        AppMode::Shop | AppMode::Levelup | AppMode::Game => {
+            return;
+        }
         AppMode::Targeting => {
             if actions.target().is_some() {
                 *mode = AppMode::Game;

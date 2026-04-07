@@ -48,6 +48,9 @@ pub fn register_persistent_components(
         .with_component::<Equipment>()
         .with_component::<Defense>()
         .with_component::<Poisoned>()
+        .with_component::<CoinValue>()
+        .with_component::<CoinPouch>()
+        .with_component::<Shop>()
 }
 
 fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {
@@ -67,6 +70,10 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
         }
         StuffTag::Tombstone => {
             cmd.insert_bundle((StaticStuff,));
+        }
+        StuffTag::Shop => {
+            // not StaticStuff, because StaticStuff can not be interacted with
+            cmd.insert_bundle((StaticVisibility,));
         }
         StuffTag::Gargoyle
         | StuffTag::Troll
@@ -112,7 +119,12 @@ pub fn insert_transient_components(mut cmd: Commands, q: Query<(EntityId, &Stuff
     }
 }
 
-pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid<Stuff>) {
+pub fn init_entity<'a>(
+    pos: Vec2,
+    tag: StuffTag,
+    cmd: &'a mut Commands,
+    grid: &mut Grid<Stuff>,
+) -> &'a mut EntityCommands {
     let cmd = cmd.spawn();
     grid[pos] = Some(Default::default());
     cmd.insert_bundle((tag, Pos(pos)));
@@ -122,12 +134,16 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
     match tag {
         StuffTag::Stairs => {}
         StuffTag::Tombstone => {}
+        StuffTag::Shop => {
+            cmd.insert_bundle((Shop::new(8),));
+        }
         StuffTag::Player => {
             cmd.insert_bundle((
                 LastPos(pos),
                 Inventory::new(16),
                 Level::default(),
                 Equipment::default(),
+                CoinPouch(0),
             ));
         }
 
@@ -162,10 +178,13 @@ pub fn init_entity(pos: Vec2, tag: StuffTag, cmd: &mut Commands, grid: &mut Grid
         | StuffTag::WardScroll
         | StuffTag::FireBallScroll => {}
     }
+    cmd
 }
 
 pub type StuffToJsQuery<'a> = QuerySet<(
+    // q0
     Query<'a, (&'a Icon, Option<&'a Color>)>,
+    // q1
     Query<
         'a,
         (
@@ -179,9 +198,11 @@ pub type StuffToJsQuery<'a> = QuerySet<(
             Option<&'a Color>,
             Option<&'a Defense>,
             Option<&'a EquipmentType>,
+            Option<&'a CoinValue>,
         ),
         With<Item>,
     >,
+    // q2
     Query<
         'a,
         (
@@ -193,12 +214,29 @@ pub type StuffToJsQuery<'a> = QuerySet<(
             Option<&'a Description>,
             Option<&'a Color>,
             Option<&'a Defense>,
+            Option<&'a CoinValue>,
         ),
         With<Ai>,
     >,
+    // q3
     Query<'a, (&'a Icon, &'a Melee, &'a Hp, &'a Defense), With<PlayerTag>>,
+    // q4
     Query<'a, (&'a Icon, Option<&'a Name>, Option<&'a Description>)>,
+    // q5
     Query<'a, &'a Equipment, With<PlayerTag>>,
+    // q6
+    Query<
+        'a,
+        (
+            &'a Icon,
+            &'a Name,
+            &'a Description,
+            &'a Inventory,
+            Option<&'a Color>,
+        ),
+    >,
+    // q7
+    crate::ItemPropsQ<'a>,
 )>;
 
 pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsValue {
@@ -239,6 +277,27 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
                 "color": color.map(|c|c.0.as_str())
             }}
         }
+        StuffTag::Shop => {
+            let q = query.q6();
+            let item_props = query.q7();
+            let (icon, name, description, inventory, color) = q.fetch(id).unwrap();
+            let inventory = inventory
+                .iter()
+                .map(|id| crate::to_item_desc(id, item_props.fetch(id).unwrap()))
+                .collect::<Vec<_>>();
+            json! {{
+                "id": id,
+                "tag": tag,
+                "icon": icon.0,
+                "color": color.map(|c|c.0.as_str()),
+                "name": name.0,
+                "color": color.map(|c|c.0.as_str()),
+                "description": description,
+                "icon": icon.0,
+                "targetable": true,
+                "inventory": inventory,
+            }}
+        }
         StuffTag::Gargoyle
         | StuffTag::Goblin
         | StuffTag::Troll
@@ -247,7 +306,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
         | StuffTag::Zombie
         | StuffTag::Minotaur => {
             let q = query.q2();
-            let (icon, name, ranged, melee, hp, description, color, defense) = q.fetch(id).unwrap();
+            let (icon, name, ranged, melee, hp, description, color, defense, value) =
+                q.fetch(id).unwrap();
             json! {{
                 "id": id,
                 "name": name.0,
@@ -260,7 +320,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
                 "targetable": true,
                 "color": color.map(|c|c.0.as_str()),
                 "creature": true,
-                "defense": defense
+                "defense": defense,
+                "value": value,
             }}
         }
         StuffTag::HpPotion
@@ -276,7 +337,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
         | StuffTag::WardScroll
         | StuffTag::FireBallScroll => {
             let q = query.q1();
-            let (icon, name, desc, ranged, heal, melee, pos, color, defense, eq_ty) =
+            let (icon, name, desc, ranged, heal, melee, pos, color, defense, eq_ty, value) =
                 q.fetch(id).unwrap();
 
             let equipped = query
@@ -303,7 +364,8 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
                 "equipped": equipped,
                 "color": color.map(|c|c.0.as_str()),
                 "item": true,
-                "defense": defense
+                "defense": defense,
+                "value": value,
             }}
         }
     };
