@@ -91,10 +91,6 @@ impl Inventory {
         self.items.iter().copied()
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.items.is_empty()
-    }
-
     pub fn is_full(&self) -> bool {
         self.items.len() >= self.capacity
     }
