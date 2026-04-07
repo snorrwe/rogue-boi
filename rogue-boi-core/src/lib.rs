@@ -732,11 +732,16 @@ impl Core {
             .run_system(
                 |mut cmd: Commands,
                  mut q_player: Query<&mut CoinPouch, With<PlayerTag>>,
-                 q_item: Query<&CoinValue>| {
-                    let item_value = q_item.fetch(id).unwrap();
+                 mut log: ResMut<LogHistory>,
+                 q_item: Query<(&Name, &CoinValue)>| {
+                    let (item_name, item_value) = q_item.fetch(id).unwrap();
                     let coins = q_player.one_mut();
                     coins.0 += item_value.0 as u32;
                     cmd.delete(id);
+                    log.push(
+                        WHITE,
+                        format!("Sell {} for {} coins", item_name.0, item_value.0),
+                    );
                     Ok(())
                 },
             )
