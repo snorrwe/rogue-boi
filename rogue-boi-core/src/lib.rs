@@ -687,7 +687,7 @@ impl Core {
                             };
                             inventory.add(id).unwrap();
 
-                            shop.items.get_mut(item_idx).take();
+                            shop.items.get_mut(item_idx).unwrap().take();
                             Ok(())
                         }
                         None => return Err("Invalid item index".into()),
