@@ -516,3 +516,12 @@ pub struct CoinValue(pub u16);
 
 #[derive(Debug, Clone, Copy, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct CoinPouch(pub u32);
+
+#[derive(Debug, Clone, Copy, serde_derive::Serialize, serde_derive::Deserialize)]
+pub struct Slow(pub u16);
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+pub struct Slowed {
+    pub duration: u16,
+    pub power: u16,
+}

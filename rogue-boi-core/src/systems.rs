@@ -46,6 +46,7 @@ pub fn init_world_systems(world: &mut World) {
                             .with_should_run(should_update_item_use)
                             .with_system(use_poison_scroll)
                             .with_system(use_confusion_scroll)
+                            .with_system(use_slow_scroll)
                             .with_system(use_lightning_scroll)
                             .with_system(use_ward_scroll)
                             .with_system(use_hp_potion)
@@ -65,6 +66,7 @@ pub fn init_world_systems(world: &mut World) {
             .with_should_run(should_update_world)
             .with_should_run(is_ingame)
             .with_system(update_poison)
+            .with_system(update_slowed)
             .with_system(update_ai_hp.after(update_poison))
             .with_system(cmd_flush_system.after(update_ai_hp))
             .with_system(update_ai_move)
@@ -206,6 +208,44 @@ fn use_poison_scroll(
             }
         } else {
             log.push(WHITE, "Poison Bolt misses!");
+        }
+        cmd.entity(item_id).insert(ClearInventoryItem);
+    }
+}
+
+fn use_slow_scroll(
+    mut cmd: Commands,
+    mut target_query: Query<(Option<&mut Slowed>, Option<&Name>)>,
+    item_query: Query<(EntityId, &Ranged, &Targeting), (With<MarkActive>, With<Slow>)>,
+    mut log: ResMut<LogHistory>,
+    mut should_run: ResMut<ShouldUpdateWorld>,
+) {
+    for (item_id, range, Targeting(target_id)) in item_query.iter() {
+        let target_id = *target_id;
+        debug!("Use SlowScroll");
+        let Some((target_poison, target_name)) = target_query.fetch_mut(target_id) else {
+            log.push(IMPOSSIBLE, "Invalid target");
+            should_run.0 = false;
+            return;
+        };
+
+        if skill_check(range.skill) {
+            // TODO: config duration
+            let duration = 5;
+            debug!("Slow Bolt hits {} for {} turns!", target_id, duration);
+            if let Some(poision) = target_poison {
+                poision.duration += duration;
+            } else {
+                cmd.entity(target_id).insert(Slowed {
+                    duration,
+                    power: range.power.try_into().unwrap_or(2).clamp(2, 6),
+                });
+            }
+            if let Some(Name(name)) = target_name {
+                log.push(WHITE, &format!("{} suffers from slow!", name));
+            }
+        } else {
+            log.push(WHITE, "Slow Bolt misses!");
         }
         cmd.entity(item_id).insert(ClearInventoryItem);
     }
@@ -495,7 +535,6 @@ fn update_consumable_use(
                 *app_mode = AppMode::Targeting;
             }
             Some(target_id) => {
-                debug!("Use PoisonScroll");
                 let Some(target_pos) = target_query.fetch(target_id) else {
                     log.push(IMPOSSIBLE, "Invalid target");
                     should_run.0 = false;
@@ -509,8 +548,8 @@ fn update_consumable_use(
                     }
                 }
 
-                cmd.entity(id)
-                    .insert_bundle((MarkActive, Targeting(target_id)));
+                let cmd = cmd.entity(id);
+                cmd.insert_bundle((MarkActive, Targeting(target_id)));
             }
         }
     }
@@ -769,6 +808,7 @@ fn handle_player_move(
             | StuffTag::FireBallScroll
             | StuffTag::Tombstone
             | StuffTag::Shop
+            | StuffTag::SlowScroll
             | StuffTag::Stairs => {
                 grid_step(pos, new_pos, &mut grid);
             }
@@ -955,16 +995,26 @@ fn update_confusion(
     }
 }
 
-fn update_ai_move(
+fn update_ai_move<'a>(
     q_player: Query<(&Pos, &LastPos), (With<Pos>, With<PlayerTag>)>,
     player_id: Res<PlayerId>,
     grid: Res<Grid<Stuff>>,
-    mut melee: Query<
-        (EntityId, &mut PathCache, &Pos, Option<&Leash>),
-        (With<Melee>, With<Velocity>, WithOut<ConfusedAi>),
-    >,
-    mut confused: Query<EntityId, (With<ConfusedAi>, With<Velocity>)>,
-    mut q_vel: Query<&mut Velocity>,
+    mut q: QuerySet<(
+        // melee
+        Query<
+            'a,
+            (
+                &mut PathCache,
+                &Pos,
+                Option<&Leash>,
+                &mut Velocity,
+                Option<&Slowed>,
+            ),
+            (With<Melee>, WithOut<ConfusedAi>),
+        >,
+        // confused
+        Query<'a, &mut Velocity, With<ConfusedAi>>,
+    )>,
     q_walk: Query<&Walkable>,
     opaque: Query<&(), With<Opaque>>,
 ) {
@@ -972,8 +1022,7 @@ fn update_ai_move(
         debug!("No player on the map! Skipping melee update");
         return;
     };
-    for (id, cache, Pos(pos), leash) in melee.iter_mut() {
-        let vel = q_vel.fetch_mut(id).unwrap();
+    for (cache, Pos(pos), leash, vel, slow) in q.q0_mut().iter_mut() {
         if pos.manhatten(*player_pos) > 1 {
             if walk_grid_on_segment(*pos, *player_pos, &grid, &opaque).is_none() {
                 debug!("Player is visible, finding path");
@@ -998,6 +1047,14 @@ fn update_ai_move(
                 }
             }
             if let Some(mut new_pos) = cache.path.pop() {
+                if let Some(slow) = slow
+                    && !skill_check(slow.power.clamp(2, 6) as i32)
+                {
+                    debug!("Enemy is slowed. Move failed.");
+                    cache.path.push(new_pos);
+                    break;
+                }
+
                 if let Some(leash) = leash {
                     // if at the end of leash, don't move
                     if new_pos.manhatten(leash.origin) > leash.radius {
@@ -1020,8 +1077,7 @@ fn update_ai_move(
 
     let delta = [Vec2::X, -Vec2::X, Vec2::Y, -Vec2::Y];
     let mut rng = rand::rng();
-    for id in confused.iter_mut() {
-        let vel = q_vel.fetch_mut(id).unwrap();
+    for vel in q.q1_mut().iter_mut() {
         vel.0 = *delta.choose(&mut rng).unwrap();
     }
 }
@@ -1619,7 +1675,7 @@ fn update_poison(
         &mut Hp,
         &mut Poisoned,
         Option<&mut Name>,
-        Option<&PlayerTag>,
+        Has<PlayerTag>,
     )>,
     mut log: ResMut<LogHistory>,
 ) {
@@ -1629,11 +1685,7 @@ fn update_poison(
             continue;
         }
         if let Some(name) = name {
-            let color = if player.is_some() {
-                ENEMY_ATTACK
-            } else {
-                PLAYER_ATTACK
-            };
+            let color = if player { ENEMY_ATTACK } else { PLAYER_ATTACK };
             log.push(
                 color,
                 format!("{} is hit for {} damage by poison", name.0, poison.power),
@@ -1642,5 +1694,23 @@ fn update_poison(
         poison.duration -= 1;
         // TODO: poison resistance
         hp.current -= poison.power;
+    }
+}
+
+fn update_slowed(
+    mut cmd: Commands,
+    mut q: Query<(EntityId, &mut Slowed, Option<&mut Name>, Has<PlayerTag>)>,
+    mut log: ResMut<LogHistory>,
+) {
+    for (id, slow, name, player) in q.iter_mut() {
+        if slow.duration <= 0 {
+            cmd.entity(id).remove::<Slowed>();
+            if let Some(name) = name {
+                let color = if player { PLAYER_ATTACK } else { ENEMY_ATTACK };
+                log.push(color, format!("{} no longer slowed", name.0));
+            }
+            continue;
+        }
+        slow.duration -= 1;
     }
 }

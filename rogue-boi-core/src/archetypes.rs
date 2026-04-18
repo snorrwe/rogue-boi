@@ -51,6 +51,7 @@ pub fn register_persistent_components(
         .with_component::<CoinValue>()
         .with_component::<CoinPouch>()
         .with_component::<Shop>()
+        .with_component::<Slow>()
 }
 
 fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityCommands, tag: StuffTag) {
@@ -107,6 +108,9 @@ fn insert_transient_components_for_entity(cmd: &mut cecs::commands::EntityComman
         }
         StuffTag::WardScroll => {
             cmd.insert_bundle((Item, StaticVisibility, WardScroll));
+        }
+        StuffTag::SlowScroll => {
+            cmd.insert_bundle((Item, StaticVisibility, NeedsTargetEntity));
         }
     }
 }
@@ -176,6 +180,7 @@ pub fn init_entity<'a>(
         | StuffTag::LightningScroll
         | StuffTag::ConfusionScroll
         | StuffTag::WardScroll
+        | StuffTag::SlowScroll
         | StuffTag::FireBallScroll => {}
     }
     cmd
@@ -199,6 +204,7 @@ pub type StuffToJsQuery<'a> = QuerySet<(
             Option<&'a Defense>,
             Option<&'a EquipmentType>,
             Option<&'a CoinValue>,
+            Option<&'a Slow>,
         ),
         With<Item>,
     >,
@@ -335,9 +341,10 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
         | StuffTag::ConfusionScroll
         | StuffTag::PoisonScroll
         | StuffTag::WardScroll
+        | StuffTag::SlowScroll
         | StuffTag::FireBallScroll => {
             let q = query.q1();
-            let (icon, name, desc, ranged, heal, melee, pos, color, defense, eq_ty, value) =
+            let (icon, name, desc, ranged, heal, melee, pos, color, defense, eq_ty, value, slow) =
                 q.fetch(id).unwrap();
 
             let equipped = query
@@ -366,6 +373,7 @@ pub fn stuff_to_js(id: EntityId, tag: StuffTag, query: &StuffToJsQuery) -> JsVal
                 "item": true,
                 "defense": defense,
                 "value": value,
+                "slow": slow,
             }}
         }
     };

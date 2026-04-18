@@ -74,6 +74,9 @@
 {#if selected.value}
   <div>Value: {selected.value} coins</div>
 {/if}
+{#if selected.slow}
+  <div>Slow Skill: {selected.slow}</div>
+{/if}
 
 <!-- buttons -->
 

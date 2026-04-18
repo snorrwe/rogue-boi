@@ -15,6 +15,7 @@ pub struct StuffPrototype {
     pub ranged: Option<Ranged>,
     pub aoe: Option<Aoe>,
     pub value: Option<CoinValue>,
+    pub slow: Option<Slow>,
 }
 
 fn insert_optional<T: cecs::Component>(cmd: &mut cecs::commands::EntityCommands, stuff: Option<T>) {
@@ -54,6 +55,7 @@ pub fn insert_default_components(cmd: &mut cecs::commands::EntityCommands, tag: 
     insert_optional(cmd, desc.ranged);
     insert_optional(cmd, desc.aoe);
     insert_optional(cmd, desc.value);
+    insert_optional(cmd, desc.slow);
 }
 
 include!(concat!(env!("OUT_DIR"), "/game_config_gen.rs"));
