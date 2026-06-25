@@ -39,7 +39,7 @@
             cargo-watch
             git-cliff
             bzip2
-            nodejs-slim_25
+            nodejs-slim
             cypress
           ];
         };
