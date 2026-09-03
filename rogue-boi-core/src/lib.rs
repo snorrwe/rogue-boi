@@ -23,7 +23,7 @@ use crate::{
 };
 use anyhow::Context as _;
 use base64::{Engine, engine::GeneralPurpose};
-use cecs::{prelude::*, serde::WorldSerializer};
+use cecs::prelude::*;
 use colors::WHITE;
 use components::*;
 use grid::Grid;
@@ -59,9 +59,9 @@ fn compute_icons() -> IconCollection {
     IconCollection(inner)
 }
 
-fn get_world_persister() -> impl WorldSerializer {
+fn get_world_persister() -> cecs::serde::WorldPersister {
     let persister = cecs::serde::WorldPersister::new()
-        .with_version(cecs::serde::Version::new(2, 0, 0))
+        .with_version(cecs::serde::Version::new(3, 0, 0))
         .with_resource::<WorldDims>()
         .with_resource::<GameTick>()
         .with_resource::<LogHistory>()

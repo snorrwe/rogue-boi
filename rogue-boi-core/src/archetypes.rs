@@ -29,8 +29,8 @@ pub fn usable(tag: StuffTag) -> bool {
 }
 
 pub fn register_persistent_components(
-    persister: impl cecs::serde::WorldSerializer,
-) -> impl cecs::serde::WorldSerializer {
+    persister: cecs::serde::WorldPersister,
+) -> cecs::serde::WorldPersister {
     persister
         .with_component::<StuffTag>()
         .with_component::<LastPos>()
