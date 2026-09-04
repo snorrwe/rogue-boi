@@ -12,6 +12,7 @@ clean:
     rm -rf ui/public/icons
     rm -rf ui/dist
     cargo clean
+    rm -rf ./node_modules/
 
 format:
     npm run format
