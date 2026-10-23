@@ -20,6 +20,9 @@
         overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs {
           inherit system overlays;
+          config.permittedInsecurePackages = [
+            "cypress-15.19.0"
+          ];
         };
       in
       with pkgs;
@@ -41,6 +44,7 @@
             bzip2
             nodejs-slim
             cypress
+            cargo-edit
           ];
         };
       }

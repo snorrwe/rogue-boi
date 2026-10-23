@@ -3,7 +3,7 @@ dev:
 
 update:
     nix flake update
-    cargo update --breaking --recursive -Z unstable-options
+    cargo upgrade --incompatible --pinned
     cargo update
     npm update --force
 
