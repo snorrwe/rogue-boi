@@ -898,8 +898,6 @@ fn set_visible(
 /// go over the visible range and if an item is adjacent to a visible empty tile, then set that to
 /// visible as well
 fn flood_vizibility(grid: &Grid<Stuff>, visible: &mut Grid<bool>, player_pos: Vec2, radius: i32) {
-    let _s = tracing::debug_span!("flood").entered();
-
     let mut to_update = smallvec::SmallVec::<[_; 64]>::new();
     walk_square(-Vec2::splat(radius), Vec2::splat(radius))
         .map(|d| player_pos + d)
@@ -1245,8 +1243,6 @@ pub fn update_output(
     dungeon_level: Res<DungeonFloor>,
     q_shop: Query<(EntityId, &Shop), With<MarkActive>>,
 ) {
-    let _span = tracing::span!(tracing::Level::DEBUG, "update_output").entered();
-
     let player = player_id
         .get(&q_player)
         .map(|(pos, hp, attack, level, defense, pouch)| PlayerOutput {
