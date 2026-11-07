@@ -545,15 +545,13 @@ fn tunnel_between(mut rng: impl RngExt, start: Vec2, end: Vec2) -> TunnelIter {
     let Vec2 { x: x1, y: y1 } = start;
     let Vec2 { x: x2, y: y2 } = end;
 
-    let cornerx;
-    let cornery;
-    if rng.random_bool(0.5) {
-        cornerx = x2;
-        cornery = y1;
+    
+    
+    let (cornerx, cornery) = if rng.random_bool(0.5) {
+        (x2, y1)
     } else {
-        cornerx = x1;
-        cornery = y2;
-    }
+        (x1, y2)
+    };
 
     TunnelIter::new(start, end, Vec2::new(cornerx, cornery))
 }

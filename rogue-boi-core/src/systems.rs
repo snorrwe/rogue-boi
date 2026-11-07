@@ -204,7 +204,7 @@ fn use_poison_scroll(
                 });
             }
             if let Some(Name(name)) = target_name {
-                log.push(WHITE, &format!("{} suffers from poison!", name));
+                log.push(WHITE, format!("{} suffers from poison!", name));
             }
         } else {
             log.push(WHITE, "Poison Bolt misses!");
@@ -242,7 +242,7 @@ fn use_slow_scroll(
                 });
             }
             if let Some(Name(name)) = target_name {
-                log.push(WHITE, &format!("{} suffers from slow!", name));
+                log.push(WHITE, format!("{} suffers from slow!", name));
             }
         } else {
             log.push(WHITE, "Slow Bolt misses!");
@@ -299,10 +299,7 @@ fn use_confusion_scroll(
             if let Some(Name(name)) = target_name {
                 log.push(
                     WHITE,
-                    &format!(
-                        "The eyes of the {} look vacant, as it starts to stumble around!",
-                        name
-                    ),
+                    format!("The eyes of the {name} look vacant, as it starts to stumble around!"),
                 );
             }
         } else {
@@ -328,7 +325,7 @@ fn use_ward_scroll(
 
         log.push(
             WHITE,
-            &format!("Gain ward, negating {} instances of damage", range.power),
+            format!("Gain ward, negating {} instances of damage", range.power),
         );
         player_def.ward = player_def.ward.saturating_add(range.power as u8);
         debug!("Player ward: {}", player_def.ward);
@@ -360,7 +357,7 @@ fn use_lightning_scroll(
             if let Some(Name(name)) = target_name {
                 log.push(
                     WHITE,
-                    &format!("Lightning Bolt hits {} for {} damage!", name, dmg),
+                    format!("Lightning Bolt hits {} for {} damage!", name, dmg),
                 );
             }
         } else {
@@ -395,19 +392,19 @@ fn use_fireball(
         grid.scan_range(
             [target_pos.dst - radius, target_pos.dst + radius],
             |_pos, id| {
-                if let Some(id) = id {
-                    if let Some((hp, name)) = target_query.fetch_mut(*id) {
-                        // TODO skill check?
-                        hp.current -= power;
-                        if let Some(Name(name)) = name {
-                            log.push(
-                                PLAYER_ATTACK,
-                                format!(
-                                    "{} is engulfed in a fiery explosion, taking {} damage",
-                                    name, power
-                                ),
-                            );
-                        }
+                if let Some(id) = id
+                    && let Some((hp, name)) = target_query.fetch_mut(*id)
+                {
+                    // TODO skill check?
+                    hp.current -= power;
+                    if let Some(Name(name)) = name {
+                        log.push(
+                            PLAYER_ATTACK,
+                            format!(
+                                "{} is engulfed in a fiery explosion, taking {} damage",
+                                name, power
+                            ),
+                        );
                     }
                 }
             },
@@ -540,12 +537,12 @@ fn update_consumable_use(
                     should_run.0 = false;
                     return;
                 };
-                if let Some(range) = range {
-                    if target_pos.0.chebyshev(player_pos.0) > range.range {
-                        log.push(IMPOSSIBLE, "Target is too far away");
-                        should_run.0 = false;
-                        return;
-                    }
+                if let Some(range) = range
+                    && target_pos.0.chebyshev(player_pos.0) > range.range
+                {
+                    log.push(IMPOSSIBLE, "Target is too far away");
+                    should_run.0 = false;
+                    return;
                 }
 
                 let cmd = cmd.entity(id);
@@ -677,11 +674,10 @@ fn update_player_world_interact(
                         equip = true;
                     }
                 }
-                Some(EquipmentType::Armor) => {
-                    if equipment.armor.is_none() {
-                        equip = true;
-                    }
+                Some(EquipmentType::Armor) if equipment.armor.is_none() => {
+                    equip = true;
                 }
+                Some(EquipmentType::Armor) => {}
                 None => {}
             }
             match inventory.add(stuff_id) {
@@ -887,10 +883,10 @@ fn set_visible(
     walk_square(-Vec2::splat(radius), Vec2::splat(radius))
         .map(|d| player_pos + d)
         .for_each(|limit| {
-            if walk_grid_on_segment(player_pos, limit, grid, opaque).is_none() {
-                if let Some(visible) = visible.at_mut(limit.x, limit.y) {
-                    *visible = true;
-                }
+            if walk_grid_on_segment(player_pos, limit, grid, opaque).is_none()
+                && let Some(visible) = visible.at_mut(limit.x, limit.y)
+            {
+                *visible = true;
             }
         });
 }
@@ -1112,16 +1108,16 @@ fn update_melee_ai(
         if confused.is_some() {
             if let Some(vel) = vel {
                 let target_pos = *pos + vel.0;
-                if let Some(t_id) = grid[target_pos] {
-                    if let Some(t) = q_target.fetch_mut(t_id) {
-                        target = Some((t.0, t.1.map(|n| n.0.as_str()), t_id));
-                    }
+                if let Some(t_id) = grid[target_pos]
+                    && let Some(t) = q_target.fetch_mut(t_id)
+                {
+                    target = Some((t.0, t.1.map(|n| n.0.as_str()), t_id));
                 }
             }
-        } else if pos.manhatten(*player_pos) <= 1 {
-            if let Some(t) = q_target.fetch_mut(player_id) {
-                target = Some((t.0, Some("you"), player_id));
-            }
+        } else if pos.manhatten(*player_pos) <= 1
+            && let Some(t) = q_target.fetch_mut(player_id)
+        {
+            target = Some((t.0, Some("you"), player_id));
         }
 
         if let Some((target_hp, target_name, target_id)) = target {
@@ -1385,9 +1381,9 @@ pub fn render_onto_canvas(
             let render_y = render_pos.y as f64 * cell_size;
 
             if visible {
-                ctx.set_fill_style_str(&black);
+                ctx.set_fill_style_str(black);
             } else {
-                ctx.set_fill_style_str(&darkgrey);
+                ctx.set_fill_style_str(darkgrey);
             }
             // either the icon background or the empty space
             ctx.fill_rect(render_x, render_y, cell_size, cell_size);
@@ -1699,7 +1695,7 @@ fn update_slowed(
     mut log: ResMut<LogHistory>,
 ) {
     for (id, slow, name, player) in q.iter_mut() {
-        if slow.duration <= 0 {
+        if slow.duration == 0 {
             cmd.entity(id).remove::<Slowed>();
             if let Some(name) = name {
                 let color = if player { PLAYER_ATTACK } else { ENEMY_ATTACK };

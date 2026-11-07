@@ -354,7 +354,7 @@ impl Core {
 
     /// return the name of the icons (without the extension!)
     pub fn icons(&self) -> JsValue {
-        let entries: Vec<_> = ICONS.iter().map(|(k, _x)| k).collect();
+        let entries: Vec<_> = ICONS.keys().collect();
         serde_wasm_bindgen::to_value(&entries).unwrap()
     }
 
@@ -389,7 +389,7 @@ impl Core {
         let world = self.world.borrow();
         let item_props = ItemPropsQ::new(&world);
 
-        let result = match Query::<&Equipment, With<PlayerTag>>::new(&world)
+        match Query::<&Equipment, With<PlayerTag>>::new(&world)
             .iter()
             .next()
         {
@@ -399,8 +399,7 @@ impl Core {
             }))
             .unwrap(),
             None => JsValue::null(),
-        };
-        result
+        }
     }
 
     #[wasm_bindgen(js_name = "getInventory")]
@@ -466,12 +465,11 @@ impl Core {
                  grid: Res<Grid<Stuff>>| {
                     // remove item from inventory and add a position
                     // TODO: random empty nearby position intead of the player's?
-                    if let Some((pos, inv)) = q.single_mut() {
-                        if let Some(item) = inv.remove(id) {
-                            if let Some(name) = q_item.fetch(item) {
-                                perform_drop_item(cmd.entity(id), pos, name, &mut log, &grid);
-                            }
-                        }
+                    if let Some((pos, inv)) = q.single_mut()
+                        && let Some(item) = inv.remove(id)
+                        && let Some(name) = q_item.fetch(item)
+                    {
+                        perform_drop_item(cmd.entity(id), pos, name, &mut log, &grid);
                     }
 
                     actions.insert_empty();
@@ -690,7 +688,7 @@ impl Core {
                             shop.items.get_mut(item_idx).unwrap().take();
                             Ok(())
                         }
-                        None => return Err("Invalid item index".into()),
+                        None => Err("Invalid item index".into()),
                     }
                 },
             )

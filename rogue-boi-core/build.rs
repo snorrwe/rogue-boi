@@ -90,7 +90,7 @@ fn read_rooms(sheet: calamine::Range<calamine::Data>) -> String {
         let row: RoomRow = result.expect("Failed to deserialize row");
         weights.push(row);
     }
-    rooms_const("ROOM_CHANCES", &mut weights)
+    rooms_const("ROOM_CHANCES", &weights)
 }
 
 #[derive(Deserialize, Debug)]
@@ -173,8 +173,7 @@ fn stuff_descriptors(sheet: calamine::Range<calamine::Data>) -> String {
         optional_stuff(
             "melee",
             |(power, skill)| format!("Melee{{ power: {}, skill: {} }}", power, skill),
-            row.melee_power
-                .and_then(|p| row.melee_skill.map(|s| (p, s))),
+            row.melee_power.zip(row.melee_skill),
             &mut body,
         );
         optional_stuff(
@@ -189,7 +188,7 @@ fn stuff_descriptors(sheet: calamine::Range<calamine::Data>) -> String {
             |(p, s, r)| format!("Ranged{{ power: {}, skill: {}, range: {} }}", p, s, r),
             row.ranged_power.and_then(|p| {
                 row.ranged_range
-                    .and_then(|r| row.ranged_skill.map(|s| (r, s)))
+                    .zip(row.ranged_skill)
                     .map(|(r, s)| (p, r, s))
             }),
             &mut body,
