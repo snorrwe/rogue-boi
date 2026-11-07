@@ -248,6 +248,10 @@ pub fn generate_map(
                     .take_while(|(key, _)| key <= &floor.current)
                     .flat_map(|(_, t)| t.iter().map(|(x, _)| *x))
                     .collect::<Vec<_>>();
+                // FIXME:
+                // can happen that all slots end up empty kinda sucks.
+                // - Ensure at least some minimum N number of items in each shop
+                // - Maybe use a marble bag for randomization?
                 for slot in shop.items.iter_mut() {
                     if rng.random_bool(0.8) {
                         let tag = *items.choose(&mut rng).unwrap();
@@ -545,8 +549,6 @@ fn tunnel_between(mut rng: impl RngExt, start: Vec2, end: Vec2) -> TunnelIter {
     let Vec2 { x: x1, y: y1 } = start;
     let Vec2 { x: x2, y: y2 } = end;
 
-    
-    
     let (cornerx, cornery) = if rng.random_bool(0.5) {
         (x2, y1)
     } else {
